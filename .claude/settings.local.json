@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npm run setup:*)",
+      "Bash(npm run:*)",
+      "Bash(npx drizzle-kit push:sqlite:*)",
+      "Bash(curl:*)",
+      "Bash(pkill:*)",
+      "Bash(true)",
+      "Bash(find:*)",
+      "Bash(sed:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(npm view:*)",
+      "Bash(npm update:*)"
+    ],
+    "deny": []
+  }
+}
