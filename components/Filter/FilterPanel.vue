@@ -44,8 +44,8 @@
           size="small"
           @change="handleLocationTypeChange"
         >
-          <el-radio label="current">使用目前位置</el-radio>
-          <el-radio label="custom">手動選擇</el-radio>
+          <el-radio value="current">使用目前位置</el-radio>
+          <el-radio value="custom">手動選擇</el-radio>
         </el-radio-group>
 
         <!-- 目前位置狀態 -->
@@ -170,8 +170,8 @@
           size="small"
           @change="handleTimeTypeChange"
         >
-          <el-radio label="quick">快速選項</el-radio>
-          <el-radio label="custom">自訂日期</el-radio>
+          <el-radio value="quick">快速選項</el-radio>
+          <el-radio value="custom">自訂日期</el-radio>
         </el-radio-group>
 
         <!-- 快速時間選項 -->

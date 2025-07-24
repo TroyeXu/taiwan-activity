@@ -207,6 +207,10 @@
 import { Calendar, LocationFilled, Share, CircleCheckFilled, CircleCloseFilled } from '@element-plus/icons-vue';
 import type { Activity } from '~/types';
 
+// 導入缺失的組件
+import ActivityMap from '~/components/Map/ActivityMap.vue';
+import FavoriteButton from '~/components/Activity/FavoriteButton.vue';
+
 // Props
 interface Props {
   visible: boolean;
