@@ -9,7 +9,7 @@ export const useFavorites = () => {
 
   // 從 localStorage 載入收藏（未登入使用者）
   const loadFavoritesFromStorage = () => {
-    if (process.client) {
+    if (import.meta.client) {
       try {
         const stored = localStorage.getItem('tourism-favorites');
         if (stored) {
@@ -24,7 +24,7 @@ export const useFavorites = () => {
 
   // 儲存收藏到 localStorage
   const saveFavoritesToStorage = () => {
-    if (process.client) {
+    if (import.meta.client) {
       try {
         const ids = Array.from(favoriteIds.value);
         localStorage.setItem('tourism-favorites', JSON.stringify(ids));

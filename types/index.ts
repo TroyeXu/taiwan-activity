@@ -1,3 +1,21 @@
+// 媒體相關類型
+export interface ActivityImage {
+  url: string;
+  alt?: string;
+  caption?: string;
+  width?: number;
+  height?: number;
+}
+
+export interface ActivityMedia {
+  images?: ActivityImage[];
+  videos?: Array<{
+    url: string;
+    title?: string;
+    thumbnail?: string;
+  }>;
+}
+
 // 核心類型定義
 export interface Activity {
   id: string;
@@ -13,13 +31,18 @@ export interface Activity {
   categories?: Category[];
   source?: DataSource;
   validation?: ValidationInfo;
+  // 新增媒體相關屬性
+  media?: ActivityMedia;
+  images?: ActivityImage[]; // 為了向後相容
+  // 新增搜尋結果相關屬性
+  distance?: number;
 }
 
 export interface Location {
   id: string;
   activityId: string;
   address: string;
-  district?: string;
+  district?: string; // 統一使用 undefined 而非 null
   city: string;
   region: Region;
   latitude?: number;

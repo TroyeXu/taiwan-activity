@@ -73,7 +73,7 @@ export default defineNuxtConfig({
   // TypeScript 配置
   typescript: {
     strict: false,
-    typeCheck: false
+    typeCheck: false // 暫時禁用以確保應用能運行，後續可逐步修復
   },
   
   // Element Plus 配置

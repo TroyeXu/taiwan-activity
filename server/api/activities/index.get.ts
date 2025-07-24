@@ -245,12 +245,12 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
         id: row.location.id,
         activityId: row.location.activityId,
         address: row.location.address,
-        district: row.location.district,
+        district: row.location.district || undefined, // 轉換 null 為 undefined
         city: row.location.city,
         region: row.location.region as any,
         latitude: row.location.latitude,
         longitude: row.location.longitude,
-        venue: row.location.venue,
+        venue: row.location.venue || undefined,
         landmarks: row.location.landmarks ? JSON.parse(row.location.landmarks) : []
       } : undefined,
       time: row.time ? {

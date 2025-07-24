@@ -35,7 +35,7 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
     }
 
     try {
-      if (process.client) {
+      if (import.meta.client) {
         const L = await import('leaflet');
         const MarkerClusterGroup = await import('leaflet.markercluster');
         isMapLoaded.value = true;

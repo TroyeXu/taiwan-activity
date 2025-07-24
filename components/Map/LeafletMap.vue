@@ -241,7 +241,7 @@ const refreshMap = () => {
 };
 
 // 全域函數供 popup 使用
-if (process.client) {
+if (import.meta.client) {
   (window as any).selectActivity = (activityId: string) => {
     const activity = props.activities.find(a => a.id === activityId);
     if (activity) {

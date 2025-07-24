@@ -230,8 +230,8 @@ export function parseDateFilter(timeFilter: string): { startDate: string; endDat
   }
 
   return {
-    startDate: startDate.toISOString().split('T')[0],
-    endDate: endDate.toISOString().split('T')[0]
+    startDate: startDate?.toISOString().split('T')[0] || '',
+    endDate: endDate?.toISOString().split('T')[0] || ''
   };
 }
 
