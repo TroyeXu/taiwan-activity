@@ -298,6 +298,10 @@ import {
 } from '@element-plus/icons-vue';
 import type { Activity } from '~/types';
 
+// 導入組件
+import ActivityMap from '~/components/Map/ActivityMap.vue';
+import FavoriteButton from '~/components/Activity/FavoriteButton.vue';
+
 // 路由參數
 const route = useRoute();
 const activityId = route.params.id as string;

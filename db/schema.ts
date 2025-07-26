@@ -9,6 +9,15 @@ export const activities = sqliteTable('activities', {
   summary: text('summary'),
   status: text('status').default('pending').notNull(),
   qualityScore: integer('quality_score').default(0).notNull(),
+  // 價格相關
+  price: integer('price').default(0),
+  priceType: text('price_type', { enum: ['free', 'paid', 'donation'] }).default('free'),
+  currency: text('currency').default('TWD'),
+  // 熱門度相關
+  viewCount: integer('view_count').default(0),
+  favoriteCount: integer('favorite_count').default(0),
+  clickCount: integer('click_count').default(0),
+  popularityScore: real('popularity_score').default(0.0),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 });
@@ -111,6 +120,24 @@ export const searchLogs = sqliteTable('search_logs', {
   userAgent: text('user_agent'),
 });
 
+// 標籤表
+export const tags = sqliteTable('tags', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  slug: text('slug').notNull().unique(),
+  category: text('category'),
+  usageCount: integer('usage_count').default(0),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+});
+
+// 活動標籤關聯表
+export const activityTags = sqliteTable('activity_tags', {
+  id: text('id').primaryKey(),
+  activityId: text('activity_id').references(() => activities.id, { onDelete: 'cascade' }).notNull(),
+  tagId: text('tag_id').references(() => tags.id, { onDelete: 'cascade' }).notNull(),
+});
+
 // 關聯定義
 export const activitiesRelations = relations(activities, ({ one, many }) => ({
   location: one(locations, {
@@ -126,6 +153,7 @@ export const activitiesRelations = relations(activities, ({ one, many }) => ({
     references: [dataSources.activityId],
   }),
   categories: many(activityCategories),
+  tags: many(activityTags),
   validationLogs: many(validationLogs),
   favorites: many(userFavorites),
 }));
@@ -182,6 +210,22 @@ export const userFavoritesRelations = relations(userFavorites, ({ one }) => ({
   }),
 }));
 
+// 標籤關聯定義
+export const tagsRelations = relations(tags, ({ many }) => ({
+  activities: many(activityTags),
+}));
+
+export const activityTagsRelations = relations(activityTags, ({ one }) => ({
+  activity: one(activities, {
+    fields: [activityTags.activityId],
+    references: [activities.id],
+  }),
+  tag: one(tags, {
+    fields: [activityTags.tagId],
+    references: [tags.id],
+  }),
+}));
+
 // 類型導出
 export type Activity = typeof activities.$inferSelect;
 export type NewActivity = typeof activities.$inferInsert;
@@ -197,3 +241,7 @@ export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type UserFavorite = typeof userFavorites.$inferSelect;
 export type NewUserFavorite = typeof userFavorites.$inferInsert;
+export type Tag = typeof tags.$inferSelect;
+export type NewTag = typeof tags.$inferInsert;
+export type ActivityTag = typeof activityTags.$inferSelect;
+export type NewActivityTag = typeof activityTags.$inferInsert;

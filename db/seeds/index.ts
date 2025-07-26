@@ -2,6 +2,7 @@ import { db } from '../index';
 import { categories, activities, locations, activityTimes, dataSources, activityCategories } from '../schema';
 import { seedCategories } from './categories';
 import { sampleActivities, getActivityCategoriesRelations } from './sample-activities';
+import { extendedActivities } from './extended-activities';
 
 async function seedDatabase() {
   console.log('🌱 開始種子資料建立...');
@@ -26,32 +27,39 @@ async function seedDatabase() {
 
     // 產生範例活動資料
     const sampleData = sampleActivities();
+    const extendedData = extendedActivities();
     
     // 插入活動資料
     console.log('🎭 插入活動資料...');
-    await db.insert(activities).values(sampleData.activities);
-    console.log(`✅ 已插入 ${sampleData.activities.length} 個活動`);
+    const allActivities = [...sampleData.activities, ...extendedData.activities];
+    await db.insert(activities).values(allActivities);
+    console.log(`✅ 已插入 ${allActivities.length} 個活動`);
 
     // 插入地點資料
     console.log('📍 插入地點資料...');
-    await db.insert(locations).values(sampleData.locations);
-    console.log(`✅ 已插入 ${sampleData.locations.length} 個地點`);
+    const allLocations = [...sampleData.locations, ...extendedData.locations];
+    await db.insert(locations).values(allLocations);
+    console.log(`✅ 已插入 ${allLocations.length} 個地點`);
 
     // 插入時間資料
     console.log('⏰ 插入時間資料...');
-    await db.insert(activityTimes).values(sampleData.activityTimes);
-    console.log(`✅ 已插入 ${sampleData.activityTimes.length} 個時間記錄`);
+    const allActivityTimes = [...sampleData.activityTimes, ...extendedData.activityTimes];
+    await db.insert(activityTimes).values(allActivityTimes);
+    console.log(`✅ 已插入 ${allActivityTimes.length} 個時間記錄`);
 
     // 插入資料來源
     console.log('🔗 插入資料來源...');
-    await db.insert(dataSources).values(sampleData.dataSources);
-    console.log(`✅ 已插入 ${sampleData.dataSources.length} 個資料來源`);
+    const allDataSources = [...sampleData.dataSources, ...extendedData.dataSources];
+    await db.insert(dataSources).values(allDataSources);
+    console.log(`✅ 已插入 ${allDataSources.length} 個資料來源`);
 
     // 插入活動分類關聯
     console.log('🏷️ 插入活動分類關聯...');
-    const categoryRelations = getActivityCategoriesRelations(sampleData.activities, insertedCategories);
-    await db.insert(activityCategories).values(categoryRelations);
-    console.log(`✅ 已插入 ${categoryRelations.length} 個分類關聯`);
+    const sampleCategoryRelations = getActivityCategoriesRelations(sampleData.activities, insertedCategories);
+    const extendedCategoryRelations = getActivityCategoriesRelations(extendedData.activities, insertedCategories);
+    const allCategoryRelations = [...sampleCategoryRelations, ...extendedCategoryRelations];
+    await db.insert(activityCategories).values(allCategoryRelations);
+    console.log(`✅ 已插入 ${allCategoryRelations.length} 個分類關聯`);
 
     console.log('🎉 種子資料建立完成！');
     

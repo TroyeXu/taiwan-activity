@@ -1,3 +1,4 @@
+import { ref, computed, onMounted, readonly } from 'vue';
 import type { MapCenter } from '~/types';
 
 interface GeolocationOptions {
@@ -52,6 +53,11 @@ export const useGeolocation = (options: GeolocationOptions = {}) => {
 
   // 取得目前位置
   const getCurrentPosition = async (): Promise<MapCenter | null> => {
+    if (!import.meta.client) {
+      error.value = '僅在瀏覽器環境可使用定位功能';
+      return null;
+    }
+
     if (!checkSupport()) {
       error.value = '瀏覽器不支援地理位置功能';
       return null;
@@ -83,26 +89,31 @@ export const useGeolocation = (options: GeolocationOptions = {}) => {
       // 嘗試反向地理編碼取得地址
       await reverseGeocode(coords);
 
+      console.log('成功取得位置:', coords);
       return coords;
 
-    } catch (err) {
+    } catch (err: any) {
       let errorMessage = '無法取得位置資訊';
 
-      if (err instanceof GeolocationPositionError) {
+      if (err instanceof GeolocationPositionError || err.code !== undefined) {
         switch (err.code) {
-          case err.PERMISSION_DENIED:
-            errorMessage = '使用者拒絕了地理位置請求';
+          case 1: // PERMISSION_DENIED
+            errorMessage = '無法取得位置，請檢查瀏覽器權限設定';
+            console.error('定位權限被拒絕，請在瀏覽器設定中允許此網站存取您的位置');
             break;
-          case err.POSITION_UNAVAILABLE:
+          case 2: // POSITION_UNAVAILABLE
             errorMessage = '無法取得位置資訊';
+            console.error('無法取得位置資訊，請確認您的裝置已開啟定位功能');
             break;
-          case err.TIMEOUT:
+          case 3: // TIMEOUT
             errorMessage = '取得位置資訊超時';
+            console.error('取得位置超時，請稍後再試');
             break;
         }
       }
 
       error.value = errorMessage;
+      console.error('定位錯誤:', err);
       return null;
 
     } finally {
@@ -162,27 +173,20 @@ export const useGeolocation = (options: GeolocationOptions = {}) => {
     }
   };
 
-  // 反向地理編碼 (座標轉地址)
+  // 反向地理編碼 (座標轉地址) - 使用免費的 Nominatim API
   const reverseGeocode = async (coords: MapCenter): Promise<string | null> => {
     try {
-      const config = useRuntimeConfig();
-      if (!config.public.googleMapsKey) {
-        console.warn('Google Maps API Key 未設定，無法進行地理編碼');
-        return null;
-      }
-
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${coords.lat},${coords.lng}&key=${config.public.googleMapsKey}&language=zh-TW`
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords.lat}&lon=${coords.lng}&accept-language=zh-TW,zh,en`
       );
 
       const data = await response.json();
 
-      if (data.status === 'OK' && data.results.length > 0) {
-        const result = data.results[0];
-        address.value = result.formatted_address;
-        return result.formatted_address;
+      if (data && data.display_name) {
+        address.value = data.display_name;
+        return data.display_name;
       } else {
-        console.warn('反向地理編碼失敗:', data.status);
+        console.warn('反向地理編碼失敗: 無資料');
         return null;
       }
 
@@ -192,35 +196,29 @@ export const useGeolocation = (options: GeolocationOptions = {}) => {
     }
   };
 
-  // 正向地理編碼 (地址轉座標)
+  // 正向地理編碼 (地址轉座標) - 使用免費的 Nominatim API
   const geocodeAddress = async (addressQuery: string): Promise<MapCenter | null> => {
     try {
-      const config = useRuntimeConfig();
-      if (!config.public.googleMapsKey) {
-        console.warn('Google Maps API Key 未設定，無法進行地理編碼');
-        return null;
-      }
-
       const encodedAddress = encodeURIComponent(addressQuery);
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${config.public.googleMapsKey}&language=zh-TW&region=TW`
+        `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodedAddress}&countrycodes=tw&accept-language=zh-TW,zh,en&limit=1`
       );
 
       const data = await response.json();
 
-      if (data.status === 'OK' && data.results.length > 0) {
-        const result = data.results[0];
+      if (data && data.length > 0) {
+        const result = data[0];
         const coords = {
-          lat: result.geometry.location.lat,
-          lng: result.geometry.location.lng
+          lat: parseFloat(result.lat),
+          lng: parseFloat(result.lon)
         };
 
         coordinates.value = coords;
-        address.value = result.formatted_address;
+        address.value = result.display_name;
 
         return coords;
       } else {
-        console.warn('地理編碼失敗:', data.status);
+        console.warn('地理編碼失敗: 找不到地址');
         return null;
       }
 

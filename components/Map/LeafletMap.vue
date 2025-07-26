@@ -1,19 +1,15 @@
 <template>
   <div class="leaflet-map-container">
-    <div ref="mapContainer" class="leaflet-map"></div>
+    <!-- 載入中狀態 -->
+    <div v-if="!mapReady" class="map-loading">
+      <ElIcon class="loading-icon"><Loading /></ElIcon>
+      <span>地圖載入中...</span>
+    </div>
+    
+    <div ref="mapContainer" class="leaflet-map" :class="{ 'map-hidden': !mapReady }"></div>
     
     <!-- 地圖控制按鈕 -->
     <div class="map-controls">
-      <ElButton 
-        circle 
-        type="primary" 
-        @click="centerOnUser"
-        :loading="locating"
-        title="定位到我的位置"
-      >
-        <ElIcon><Location /></ElIcon>
-      </ElButton>
-      
       <ElButton 
         circle 
         type="default" 
@@ -36,18 +32,13 @@
 </template>
 
 <script setup lang="ts">
-import L from 'leaflet';
-import 'leaflet.markercluster';
-import { Location, FullScreen, Refresh } from '@element-plus/icons-vue';
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
+import { ElMessage } from 'element-plus';
+import { FullScreen, Refresh, Loading } from '@element-plus/icons-vue';
 import type { Activity, MapCenter } from '~/types';
 
-// 修復 Leaflet 預設圖標問題
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-});
+// Leaflet 將在需要時動態載入
+let L: any = null;
 
 interface Props {
   activities: Activity[];
@@ -57,14 +48,14 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  zoom: 13,
+  zoom: 7,
   height: '400px'
 });
 
 interface Emits {
   activityClick: [activity: Activity];
-  mapReady: [map: L.Map];
-  boundsChanged: [bounds: L.LatLngBounds];
+  mapReady: [map: any];
+  boundsChanged: [bounds: any];
   centerChanged: [center: MapCenter];
 }
 
@@ -72,30 +63,99 @@ const emit = defineEmits<Emits>();
 
 // 響應式狀態
 const mapContainer = ref<HTMLElement>();
-const map = ref<L.Map>();
-const markers = ref<L.Marker[]>([]);
-const markerClusterGroup = ref<L.MarkerClusterGroup>();
-const locating = ref(false);
+const map = ref<any>();
+const markers = ref<any[]>([]);
+const markerClusterGroup = ref<any>();
+const mapReady = ref(false);
 
 // 地理位置
 const { getCurrentPosition } = useGeolocation();
 
 // 初始化地圖
-const initMap = () => {
-  if (!mapContainer.value) return;
+const initMap = async () => {
+  console.log('開始初始化地圖');
+  console.log('mapContainer.value:', mapContainer.value);
+  console.log('import.meta.client:', import.meta.client);
+  
+  if (!mapContainer.value || !import.meta.client) {
+    console.log('地圖容器不存在或不在客戶端');
+    return;
+  }
+  
+  try {
+    // 確保 Leaflet 已載入
+    if (!L) {
+      console.log('載入 Leaflet...');
+      const leafletModule = await import('leaflet');
+      L = leafletModule.default || leafletModule;
+      console.log('Leaflet 載入成功:', L);
+      
+      // 載入 markercluster 插件
+      try {
+        await import('leaflet.markercluster');
+        console.log('MarkerCluster 插件載入成功');
+      } catch (error) {
+        console.warn('MarkerCluster 插件載入失敗:', error);
+      }
+      
+      // 修復 Leaflet 預設圖標問題
+      delete (L.Icon.Default.prototype as any)._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+      });
+    }
+  } catch (error) {
+    console.error('載入 Leaflet 時發生錯誤:', error);
+    return;
+  }
 
   // 創建地圖
+  console.log('初始化地圖，中心點:', props.center, '縮放等級:', props.zoom);
+  
   map.value = L.map(mapContainer.value, {
     center: [props.center.lat, props.center.lng],
     zoom: props.zoom,
     zoomControl: false, // 我們使用自定義控制按鈕
+    preferCanvas: true, // 提升性能
   });
 
-  // 添加圖層 - 使用 OpenStreetMap
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  // 添加圖層 - 使用 OpenStreetMap（最穩定）
+  const tileLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-  }).addTo(map.value);
+  });
+  
+  console.log('添加瓦片圖層');
+  tileLayer.addTo(map.value);
+  
+  // 監聽瓦片載入事件
+  tileLayer.on('loading', () => {
+    console.log('瓦片開始載入');
+  });
+  
+  tileLayer.on('load', () => {
+    console.log('瓦片載入完成');
+  });
+  
+  tileLayer.on('tileerror', (error: any) => {
+    console.error('瓦片載入錯誤:', error);
+  });
+  
+  // 添加載入完成事件
+  map.value.whenReady(() => {
+    console.log('地圖已完全載入');
+    // 強制刷新地圖大小
+    setTimeout(() => {
+      if (map.value) {
+        map.value.invalidateSize();
+        console.log('強制刷新地圖大小');
+      }
+      mapReady.value = true;
+      emit('mapReady', map.value);
+    }, 100);
+  });
 
   // 添加縮放控制到右下角
   L.control.zoom({
@@ -103,28 +163,41 @@ const initMap = () => {
   }).addTo(map.value);
 
   // 創建標記聚合群組
-  markerClusterGroup.value = L.markerClusterGroup({
-    chunkedLoading: true,
-    maxClusterRadius: 60,
-  });
-
-  map.value.addLayer(markerClusterGroup.value);
+  try {
+    if (L.markerClusterGroup) {
+      markerClusterGroup.value = L.markerClusterGroup({
+        chunkedLoading: true,
+        maxClusterRadius: 60,
+      });
+      map.value.addLayer(markerClusterGroup.value);
+    } else {
+      console.warn('MarkerClusterGroup 插件未正確載入，使用基本標記');
+    }
+  } catch (error) {
+    console.error('建立標記聚合群組失敗:', error);
+  }
 
   // 地圖事件監聽
   map.value.on('moveend', () => {
-    if (map.value) {
+    if (map.value && !isInternalUpdate.value) {
+      isInternalUpdate.value = true;
       const center = map.value.getCenter();
       emit('centerChanged', { lat: center.lat, lng: center.lng });
       emit('boundsChanged', map.value.getBounds());
+      // 使用 nextTick 確保更新完成後重置標誌
+      nextTick(() => {
+        isInternalUpdate.value = false;
+      });
     }
   });
 
   emit('mapReady', map.value);
+  mapReady.value = true;
 };
 
 // 創建活動標記
-const createActivityMarker = (activity: Activity): L.Marker | null => {
-  if (!activity.location?.latitude || !activity.location?.longitude) {
+const createActivityMarker = (activity: Activity): any | null => {
+  if (!activity.location?.latitude || !activity.location?.longitude || !L) {
     return null;
   }
 
@@ -191,40 +264,45 @@ const createActivityMarker = (activity: Activity): L.Marker | null => {
 
 // 更新地圖標記
 const updateMarkers = () => {
-  if (!map.value || !markerClusterGroup.value) return;
+  if (!map.value || !import.meta.client) return;
 
+  console.log('更新地圖標記，活動數量:', props.activities.length);
+  
   // 清除現有標記
-  markerClusterGroup.value.clearLayers();
+  if (markerClusterGroup.value) {
+    markerClusterGroup.value.clearLayers();
+  } else {
+    // 如果沒有聚合群組，直接從地圖移除標記
+    markers.value.forEach(marker => {
+      if (marker && map.value) {
+        map.value.removeLayer(marker);
+      }
+    });
+  }
   markers.value = [];
 
   // 添加新標記
   props.activities.forEach(activity => {
+    console.log('處理活動:', activity.name, activity.location);
     const marker = createActivityMarker(activity);
     if (marker) {
       markers.value.push(marker);
-      markerClusterGroup.value?.addLayer(marker);
+      if (markerClusterGroup.value) {
+        markerClusterGroup.value.addLayer(marker);
+      } else {
+        // 直接添加到地圖
+        marker.addTo(map.value);
+      }
     }
   });
+  
+  console.log('成功創建標記數量:', markers.value.length);
 };
 
-// 居中到使用者位置
-const centerOnUser = async () => {
-  locating.value = true;
-  try {
-    const position = await getCurrentPosition();
-    if (position && map.value) {
-      map.value.setView([position.lat, position.lng], 15);
-    }
-  } catch (error) {
-    ElMessage.warning('無法取得您的位置');
-  } finally {
-    locating.value = false;
-  }
-};
 
 // 適配所有標記
 const fitBounds = () => {
-  if (!map.value || markers.value.length === 0) return;
+  if (!map.value || markers.value.length === 0 || !import.meta.client || !L) return;
 
   const group = new L.FeatureGroup(markers.value);
   map.value.fitBounds(group.getBounds(), {
@@ -234,7 +312,7 @@ const fitBounds = () => {
 
 // 重新整理地圖
 const refreshMap = () => {
-  if (!map.value) return;
+  if (!map.value || !import.meta.client) return;
   
   map.value.invalidateSize();
   updateMarkers();
@@ -250,20 +328,39 @@ if (import.meta.client) {
   };
 }
 
+// 響應式狀態
+const isInternalUpdate = ref(false);
+
 // 監聽 props 變化
 watch(() => props.activities, updateMarkers, { deep: true });
-watch(() => props.center, (newCenter) => {
-  if (map.value) {
-    map.value.setView([newCenter.lat, newCenter.lng]);
+watch(() => props.center, (newCenter, oldCenter) => {
+  if (map.value && !isInternalUpdate.value) {
+    // 檢查是否真的需要更新（避免微小差異造成的循環）
+    if (!oldCenter || 
+        Math.abs(newCenter.lat - oldCenter.lat) > 0.0001 || 
+        Math.abs(newCenter.lng - oldCenter.lng) > 0.0001) {
+      map.value.setView([newCenter.lat, newCenter.lng]);
+    }
   }
 }, { deep: true });
 
 // 生命週期
 onMounted(() => {
-  nextTick(() => {
-    initMap();
-    updateMarkers();
-  });
+  // 僅在客戶端初始化地圖
+  if (import.meta.client) {
+    nextTick(async () => {
+      await initMap();
+      updateMarkers();
+      
+      // 添加額外的大小刷新
+      setTimeout(() => {
+        if (map.value) {
+          map.value.invalidateSize();
+          console.log('Mount 後刷新地圖大小');
+        }
+      }, 200);
+    });
+  }
 });
 
 onUnmounted(() => {
@@ -285,6 +382,48 @@ onUnmounted(() => {
   height: 100%;
   border-radius: 8px;
   overflow: hidden;
+  transition: opacity 0.3s ease;
+  background-color: #f0f0f0; /* 添加背景色以便看到容器 */
+  min-height: 400px; /* 確保有最小高度 */
+}
+
+/* 確保 Leaflet 容器正確設置 */
+.leaflet-map :deep(.leaflet-container) {
+  height: 100% !important;
+  width: 100% !important;
+}
+
+.map-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.map-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  z-index: 1000;
+  gap: 12px;
+  color: #666;
+  font-size: 14px;
+}
+
+.loading-icon {
+  font-size: 24px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .map-controls {
@@ -425,5 +564,57 @@ onUnmounted(() => {
   background-color: rgba(239, 68, 68, 0.8) !important;
   color: white !important;
   font-weight: 600 !important;
+}
+
+/* 使用者位置標記樣式 */
+.user-location-container {
+  background: none !important;
+  border: none !important;
+}
+
+.user-location-marker {
+  position: relative;
+  width: 20px;
+  height: 20px;
+}
+
+.marker-dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #3b82f6;
+  border: 2px solid white;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.pulse-ring {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: rgba(59, 130, 246, 0.4);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
+  }
 }
 </style>

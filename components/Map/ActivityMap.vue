@@ -58,7 +58,9 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed, watch } from 'vue';
 import type { Activity, MapCenter } from '~/types';
+import LeafletMap from '~/components/Map/LeafletMap.vue';
 
 interface Props {
   activities: Activity[];
@@ -71,8 +73,8 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  center: () => ({ lat: 23.8, lng: 121 }), // 台灣中心
-  zoom: 8,
+  center: () => ({ lat: 23.8103, lng: 120.9605 }), // 台灣中心（更精確）
+  zoom: 7,
   height: '500px',
   showCategoryFilter: true,
   showStats: true,
@@ -171,6 +173,7 @@ watch(() => props.initialCategories, (newCategories) => {
 .map-container {
   position: relative;
   width: 100%;
+  height: 100%;
 }
 
 .category-filter {

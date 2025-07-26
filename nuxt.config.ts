@@ -12,7 +12,10 @@ export default defineNuxtConfig({
   
   // CSS 配置
   css: [
-    '~/assets/css/main.css'
+    '~/assets/css/main.css',
+    'leaflet/dist/leaflet.css',
+    'leaflet.markercluster/dist/MarkerCluster.css',
+    'leaflet.markercluster/dist/MarkerCluster.Default.css'
   ],
   
   // 運行時配置

@@ -14,7 +14,9 @@
       "Bash(ls:*)",
       "Bash(cat:*)",
       "Bash(npm view:*)",
-      "Bash(npm update:*)"
+      "Bash(npm update:*)",
+      "Bash(touch:*)",
+      "Bash(sqlite3:*)"
     ],
     "deny": []
   }

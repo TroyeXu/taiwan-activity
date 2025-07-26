@@ -41,9 +41,34 @@
       </el-button>
     </div>
 
+    <!-- 排序區域 -->
+    <div v-if="showSorting && activities.length > 0" class="sorting-section mb-4">
+      <div class="flex items-center justify-between bg-white rounded-lg p-4 border shadow-sm">
+        <div class="text-sm text-gray-600">
+          找到 {{ total }} 個活動
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-gray-600">排序：</span>
+          <el-select
+            :model-value="currentSorting"
+            size="small"
+            style="width: 160px"
+            @change="(value: string) => handleSortingChange(value)"
+          >
+            <el-option
+              v-for="option in sortingOptions"
+              :key="option.value"
+              :label="option.label"
+              :value="option.value"
+            />
+          </el-select>
+        </div>
+      </div>
+    </div>
+
     <!-- 活動列表 -->
     <div
-      v-else
+      v-if="activities.length > 0"
       class="activity-grid"
       :class="{
         'grid-cols-1': viewMode === 'list',
@@ -98,8 +123,10 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { Grid, List } from '@element-plus/icons-vue';
 import type { Activity } from '~/types';
+import ActivityCardSkeleton from './ActivityCardSkeleton.vue';
 
 interface Props {
   activities: Activity[];
@@ -115,6 +142,9 @@ interface Props {
   showResetButton?: boolean;
   autoLoad?: boolean;
   viewMode?: 'grid' | 'list';
+  showSorting?: boolean;
+  currentSorting?: string;
+  sortingOptions?: Array<{value: string, label: string}>;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -129,7 +159,10 @@ const props = withDefaults(defineProps<Props>(), {
   showDistance: false,
   showResetButton: true,
   autoLoad: false,
-  viewMode: 'grid'
+  viewMode: 'grid',
+  showSorting: false,
+  currentSorting: 'relevance',
+  sortingOptions: () => []
 });
 
 const emit = defineEmits<{
@@ -137,8 +170,9 @@ const emit = defineEmits<{
   activityClick: [activity: Activity];
   favoriteToggle: [activity: Activity];
   viewModeChange: [mode: 'grid' | 'list'];
+  sortingChange: [sorting: string];
   reset: [];
-}>();
+}>;
 
 // Composables
 const { calculateDistance } = useGeolocation();
@@ -193,6 +227,10 @@ const loadMore = () => {
 
 const handleReset = () => {
   emit('reset');
+};
+
+const handleSortingChange = (sorting: string) => {
+  emit('sortingChange', sorting);
 };
 
 // 自動載入更多 (交集觀察器)

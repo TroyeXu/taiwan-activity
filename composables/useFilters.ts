@@ -7,6 +7,12 @@ export const useFilters = () => {
     categories: [],
     regions: [],
     cities: [],
+    tags: [],
+    priceRange: {
+      min: 0,
+      max: 5000,
+      includeFreeze: true
+    },
     dateRange: {
       type: 'quick',
       quickOption: 'this_week',
@@ -18,6 +24,8 @@ export const useFilters = () => {
     },
     timeOfDay: [],
     features: [],
+    accessibility: [],
+    groupSize: '',
     sorting: 'relevance'
   });
 
@@ -80,7 +88,8 @@ export const useFilters = () => {
     { value: 'relevance', label: '最相關' },
     { value: 'distance', label: '距離最近' },
     { value: 'popularity', label: '最受歡迎' },
-    { value: 'date', label: '時間最近' }
+    { value: 'date', label: '時間最近' },
+    { value: 'price', label: '價格最低' }
   ];
 
   // 設定分類篩選
@@ -236,6 +245,8 @@ export const useFilters = () => {
     let count = 0;
     if (filters.value.categories.length > 0) count++;
     if (filters.value.regions.length > 0 || filters.value.cities.length > 0) count++;
+    if (filters.value.tags.length > 0) count++;
+    if (filters.value.priceRange.min > 0 || filters.value.priceRange.max < 5000) count++;
     if (filters.value.dateRange.type === 'custom') count++;
     if (filters.value.timeOfDay.length > 0) count++;
     if (filters.value.features.length > 0) count++;
@@ -300,6 +311,17 @@ export const useFilters = () => {
 
     if (filters.value.features.length > 0) {
       params.features = filters.value.features;
+    }
+
+    if (filters.value.tags.length > 0) {
+      params.tags = filters.value.tags;
+    }
+
+    if (filters.value.priceRange.min > 0 || filters.value.priceRange.max < 5000) {
+      params.priceRange = {
+        min: filters.value.priceRange.min,
+        max: filters.value.priceRange.max
+      };
     }
 
     return params;

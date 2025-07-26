@@ -29,8 +29,18 @@ export interface Activity {
   location?: Location;
   time?: ActivityTime;
   categories?: Category[];
+  tags?: Tag[];
   source?: DataSource;
   validation?: ValidationInfo;
+  // 價格相關
+  price?: number;
+  priceType?: 'free' | 'paid' | 'donation';
+  currency?: string;
+  // 熱門度相關
+  viewCount?: number;
+  favoriteCount?: number;
+  clickCount?: number;
+  popularityScore?: number;
   // 新增媒體相關屬性
   media?: ActivityMedia;
   images?: ActivityImage[]; // 為了向後相容
@@ -57,6 +67,14 @@ export interface Category {
   slug: string;
   colorCode?: string;
   icon?: string;
+}
+
+export interface Tag {
+  id: string;
+  name: string;
+  slug: string;
+  category?: string;
+  usageCount?: number;
 }
 
 export interface ActivityTime {
@@ -137,6 +155,12 @@ export interface FilterState {
   categories: string[];
   regions: string[];
   cities: string[];
+  tags: string[];
+  priceRange: {
+    min: number;
+    max: number;
+    includeFreeze?: boolean;
+  };
   dateRange: {
     type: 'quick' | 'custom';
     quickOption?: string;
@@ -152,7 +176,9 @@ export interface FilterState {
   };
   timeOfDay: string[];
   features: string[];
-  sorting: 'relevance' | 'distance' | 'popularity' | 'date';
+  accessibility: string[];
+  groupSize: '' | 'small' | 'medium' | 'large' | 'xlarge';
+  sorting: 'relevance' | 'distance' | 'popularity' | 'date' | 'price';
 }
 
 // API 相關類型
@@ -184,12 +210,21 @@ export interface SearchFilters {
   categories?: string[];
   regions?: string[];
   cities?: string[];
+  tags?: string[];
+  priceRange?: {
+    min?: number;
+    max?: number;
+  };
   startDate?: string;
   endDate?: string;
   query?: string;
   location?: { lat: number; lng: number };
   radius?: number;
-  sort?: string;
+  sort?: 'relevance' | 'distance' | 'popularity' | 'date' | 'price';
+  sorting?: 'relevance' | 'distance' | 'popularity' | 'date' | 'price';
+  dateRange?: any;
+  features?: string[];
+  sorting?: string;
 }
 
 // 收藏活動類型

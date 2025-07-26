@@ -1,28 +1,90 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- 頁面標題 -->
-    <ElPageHeader @back="false" class="bg-white shadow-sm px-6 py-4">
-      <template #title>
-        <div class="flex items-center gap-3">
-          <ElIcon><LocationFilled /></ElIcon>
-          <h1 class="text-xl font-semibold text-gray-800">台灣觀光活動地圖</h1>
-        </div>
-      </template>
-      <template #extra>
-        <ElSpace>
+    <div class="bg-white shadow-sm">
+      <!-- 手機版標題 -->
+      <div class="md:hidden">
+        <!-- 定位按鈕 (只在未取得位置時顯示) -->
+        <div v-if="!hasLocation" class="flex justify-center py-2 bg-blue-50 border-b">
           <ElButton 
             type="primary" 
-            @click="showFilter = !showFilter"
-            :icon="showFilter ? 'Hide' : 'Filter'"
+            size="small"
+            @click="getCurrentLocation"
+            :loading="locationLoading"
           >
-            {{ showFilter ? '隱藏篩選' : '顯示篩選' }}
+            <template #icon><Location /></template>
+            取得目前位置
           </ElButton>
-          <ElButton @click="showFavorites = true" :icon="'Star'">
-            我的收藏
-          </ElButton>
-        </ElSpace>
-      </template>
-    </ElPageHeader>
+        </div>
+        
+        <!-- 標題區域 -->
+        <div class="text-center py-3 px-4">
+          <div class="flex flex-col items-center gap-1">
+            <ElIcon class="text-primary-600" size="24"><LocationFilled /></ElIcon>
+            <h1 class="text-xl font-bold text-gray-900 leading-tight">
+              台灣觀光活動地圖
+            </h1>
+          </div>
+        </div>
+        
+      </div>
+      
+      <!-- 桌面版標題 -->
+      <ElPageHeader @back="false" class="hidden md:block px-6 py-4">
+        <template #title>
+          <div class="flex items-center gap-3">
+            <ElIcon><LocationFilled /></ElIcon>
+            <h1 class="text-xl font-semibold text-gray-800">台灣觀光活動地圖</h1>
+          </div>
+        </template>
+        <template #extra>
+          <ElSpace>
+            <!-- 定位按鈕 (只在未取得位置時顯示) -->
+            <ElButton 
+              v-if="!hasLocation"
+              type="primary" 
+              @click="getCurrentLocation"
+              :loading="locationLoading"
+            >
+              <template #icon><Location /></template>
+              取得目前位置
+            </ElButton>
+            
+            <ElButton 
+              type="primary" 
+              @click="showFilter = !showFilter"
+            >
+              <template #icon>
+                <component :is="showFilter ? Hide : Filter" />
+              </template>
+              {{ showFilter ? '隱藏篩選' : '顯示篩選' }}
+            </ElButton>
+            <ElButton @click="showFavorites = true">
+              <template #icon><Star /></template>
+              我的收藏
+            </ElButton>
+            
+            <!-- 桌面版排序 -->
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-gray-600">排序：</span>
+              <ElSelect
+                v-model="currentSorting"
+                size="small"
+                style="width: 160px"
+                @change="handleSortingChange"
+              >
+                <ElOption
+                  v-for="option in sortingOptions"
+                  :key="option.value"
+                  :label="option.label"
+                  :value="option.value"
+                />
+              </ElSelect>
+            </div>
+          </ElSpace>
+        </template>
+      </ElPageHeader>
+    </div>
 
     <!-- 主要內容區域 -->
     <div class="flex h-[calc(100vh-80px)]">
@@ -30,7 +92,7 @@
       <ElAside 
         v-if="showFilter" 
         width="320px" 
-        class="bg-white border-r border-gray-200 overflow-y-auto"
+        class="hidden md:block bg-white border-r border-gray-200 overflow-y-auto"
       >
         <FilterPanel 
           v-model:filters="searchFilters"
@@ -61,27 +123,34 @@
           <!-- 地圖和列表切換 -->
           <div class="flex-1 relative">
             <!-- 檢視切換按鈕 -->
-            <div class="absolute top-4 right-4 z-10">
+            <div class="absolute top-4 right-4 z-20">
               <ElButtonGroup>
                 <ElButton 
                   :type="viewMode === 'map' ? 'primary' : 'default'"
                   @click="viewMode = 'map'"
-                  :icon="'Location'"
                 >
+                  <template #icon><Location /></template>
                   地圖
                 </ElButton>
                 <ElButton 
                   :type="viewMode === 'list' ? 'primary' : 'default'"
                   @click="viewMode = 'list'"
-                  :icon="'List'"
                 >
+                  <template #icon><List /></template>
                   列表
+                </ElButton>
+                <ElButton 
+                  :type="viewMode === 'calendar' ? 'primary' : 'default'"
+                  @click="viewMode = 'calendar'"
+                >
+                  <template #icon><Calendar /></template>
+                  日曆
                 </ElButton>
                 <ElButton 
                   :type="viewMode === 'split' ? 'primary' : 'default'"
                   @click="viewMode = 'split'"
-                  :icon="'Grid'"
                 >
+                  <template #icon><Grid /></template>
                   分割
                 </ElButton>
               </ElButtonGroup>
@@ -93,20 +162,21 @@
               :class="viewMode === 'split' ? 'w-1/2 h-full float-left' : 'w-full h-full'"
             >
               <ActivityMap
-                :activities="activities"
-                :loading="loading"
+                :activities="activities || []"
                 :center="mapCenter"
                 :zoom="mapZoom"
-                @marker-click="handleMarkerClick"
-                @map-move="handleMapMove"
+                :show-category-filter="false"
+                :show-stats="false"
+                @activity-click="handleMarkerClick"
+                @center-changed="(center) => handleMapMove(center)"
+                @map-ready="(map) => mapInstance = map"
               />
             </div>
 
             <!-- 活動列表檢視 -->
             <div 
-              v-show="viewMode === 'list' || viewMode === 'split'"
-              :class="viewMode === 'split' ? 'w-1/2 h-full float-right overflow-y-auto' : 'w-full h-full overflow-y-auto'"
-              class="bg-gray-50"
+              v-show="viewMode === 'list'"
+              class="w-full h-full overflow-y-auto bg-gray-50"
             >
               <div class="p-4">
                 <!-- 載入中狀態 -->
@@ -118,13 +188,16 @@
 
                 <!-- 搜尋結果 -->
                 <div v-else-if="activities.length > 0">
-                  <div class="mb-4 text-gray-600">
-                    找到 {{ totalActivities }} 個活動
-                  </div>
                   <ActivityList
                     :activities="activities"
+                    :total="totalActivities"
+                    :show-sorting="true"
+                    :current-sorting="currentSorting"
+                    :sorting-options="sortingOptions"
+                    :show-header="false"
                     @activity-click="handleActivityClick"
                     @load-more="loadMoreActivities"
+                    @sorting-change="handleSortingChange"
                     :has-more="hasMoreActivities"
                   />
                 </div>
@@ -133,10 +206,50 @@
                 <ElEmpty v-else description="沒有找到符合條件的活動" />
               </div>
             </div>
+
+            <!-- 日曆檢視 -->
+            <div 
+              v-show="viewMode === 'calendar'"
+              class="w-full h-full overflow-y-auto bg-gray-50"
+            >
+              <div class="p-4">
+                <!-- 載入中狀態 -->
+                <div v-if="loading" class="flex justify-center items-center h-64">
+                  <ElSkeleton :rows="3" animated />
+                </div>
+
+                <!-- 日曆視圖 -->
+                <div v-else>
+                  <ActivityCalendar
+                    :activities="activities || []"
+                    @month-select="handleMonthSelect"
+                    @activity-click="handleActivityClick"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </ElMain>
     </div>
+
+    <!-- 手機版篩選面板 -->
+    <ElDrawer
+      v-model="showMobileFilter"
+      direction="ltr"
+      size="100%"
+      :with-header="false"
+      :show-close="false"
+      class="md:hidden"
+    >
+      <FilterPanel 
+        :loading="loading"
+        :result-count="totalActivities"
+        @filters-change="handleFilterChange"
+        @close="showMobileFilter = false"
+        @apply="handleMobileFilterApply"
+      />
+    </ElDrawer>
 
     <!-- 收藏頁面抽屜 -->
     <ElDrawer
@@ -153,12 +266,44 @@
       v-model:visible="showActivityDetail"
       :activity-id="selectedActivityId"
     />
+    
+    <!-- 手機版 Footer -->
+    <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 z-50">
+      <div class="flex items-center justify-around">
+        <ElButton 
+          type="primary" 
+          @click="showMobileFilter = true"
+          class="flex-1 mr-2"
+        >
+          <template #icon><Filter /></template>
+          篩選
+        </ElButton>
+        <ElButton 
+          @click="showFavorites = true"
+          class="flex-1 ml-2"
+        >
+          <template #icon><Star /></template>
+          收藏
+        </ElButton>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { LocationFilled, Search } from '@element-plus/icons-vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { useDebounceFn, useThrottleFn } from '@vueuse/core';
+import { ElMessage } from 'element-plus';
+import { LocationFilled, Search, Hide, Filter, Star, Location, List, Grid, Calendar } from '@element-plus/icons-vue';
 import type { Activity, SearchFilters, MapCenter } from '~/types';
+
+// 導入缺失的組件
+import ActivityMap from '~/components/Map/ActivityMap.vue';
+import FavoritesList from '~/components/Activity/FavoritesList.vue';
+import ActivityList from '~/components/Activity/ActivityList.vue';
+import FilterPanel from '~/components/Filter/FilterPanel.vue';
+import ActivityDetailModal from '~/components/Activity/ActivityDetailModal.vue';
+import ActivityCalendar from '~/components/Activity/ActivityCalendar.vue';
 
 // 路由
 const route = useRoute();
@@ -176,8 +321,19 @@ const showFilter = ref(true);
 const showFavorites = ref(false);
 const showActivityDetail = ref(false);
 const selectedActivityId = ref<string>('');
-const viewMode = ref<'map' | 'list' | 'split'>('map');
+const viewMode = ref<'map' | 'list' | 'calendar' | 'split'>('map');
 const searchQuery = ref('');
+const mapInstance = ref<any>();
+const currentSorting = ref('relevance');
+
+// 排序選項
+const sortingOptions = [
+  { value: 'relevance', label: '相關性：最相關' },
+  { value: 'distance', label: '距離：近到遠' },
+  { value: 'popularity', label: '熱門度：高到低' },
+  { value: 'date', label: '日期：近到遠' },
+  { value: 'price', label: '價格：低到高' }
+];
 
 // 搜尋篩選
 const searchFilters = ref<SearchFilters>({
@@ -196,7 +352,7 @@ const mapCenter = ref<MapCenter>({
   lat: 23.8103,
   lng: 120.9605
 });
-const mapZoom = ref(8);
+const mapZoom = ref(7);
 
 // 使用 composables
 const {
@@ -208,27 +364,84 @@ const {
   loadMoreActivities,
   refreshActivities
 } = useActivities({
-  autoLoad: true,
+  autoLoad: false, // 不自動載入，讓地圖先顯示
   pageSize: 20
 });
 
-const { getUserLocation } = useGeolocation();
+const { getCurrentPosition, hasLocation, coordinates } = useGeolocation();
+
+// 定位功能
+const locationLoading = ref(false);
+const showMobileFilter = ref(false);
+
+const getCurrentLocation = async () => {
+  locationLoading.value = true;
+  try {
+    const location = await getCurrentPosition();
+    if (location) {
+      mapCenter.value = {
+        lat: location.lat,
+        lng: location.lng
+      };
+      mapZoom.value = 14;
+      
+      // 設定位置篩選
+      searchFilters.value.location = {
+        lat: location.lat,
+        lng: location.lng
+      };
+      
+      // 重新搜尋附近活動
+      await handleSearch();
+      
+      ElMessage.success('已取得您的位置並更新搜尋結果');
+    }
+  } catch (error) {
+    console.warn('無法取得使用者位置:', error);
+    ElMessage.warning('無法取得位置，請檢查定位權限');
+  } finally {
+    locationLoading.value = false;
+  }
+};
+
+// 監聽位置狀態變化，自動更新地圖中心
+watch(coordinates, (newCoords) => {
+  if (newCoords) {
+    mapCenter.value = {
+      lat: newCoords.lat,
+      lng: newCoords.lng
+    };
+    
+    // 更新篩選條件
+    searchFilters.value.location = {
+      lat: newCoords.lat,
+      lng: newCoords.lng
+    };
+  }
+}, { immediate: true });
 
 // 頁面載入時取得使用者位置
 onMounted(async () => {
+  // 先手動載入一些活動數據
   try {
-    const location = await getUserLocation();
+    await searchActivities({});
+  } catch (error) {
+    console.warn('載入初始活動失敗:', error);
+  }
+  
+  try {
+    const location = await getCurrentPosition();
     if (location) {
       mapCenter.value = {
-        lat: location.latitude,
-        lng: location.longitude
+        lat: location.lat,
+        lng: location.lng
       };
       mapZoom.value = 12;
       
       // 設定位置篩選
       searchFilters.value.location = {
-        lat: location.latitude,
-        lng: location.longitude
+        lat: location.lat,
+        lng: location.lng
       };
       
       // 重新搜尋附近活動
@@ -236,7 +449,12 @@ onMounted(async () => {
     }
   } catch (error) {
     console.warn('無法取得使用者位置:', error);
-    // 使用預設位置
+    // 使用預設位置，但仍然載入活動
+    try {
+      await searchActivities({});
+    } catch (searchError) {
+      console.warn('載入預設活動失敗:', searchError);
+    }
   }
 });
 
@@ -289,11 +507,49 @@ const handleActivityClick = (activity: Activity) => {
   showActivityDetail.value = true;
 };
 
-// 地圖移動處理
-const handleMapMove = (center: MapCenter, zoom: number) => {
-  mapCenter.value = center;
-  mapZoom.value = zoom;
+// 月份選擇處理
+const handleMonthSelect = (year: number, month: number) => {
+  console.log('選擇的月份:', year, month);
+  // 可以根據選擇的月份篩選活動
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 0);
+  searchFilters.value.startDate = startDate.toISOString().split('T')[0];
+  searchFilters.value.endDate = endDate.toISOString().split('T')[0];
+  handleSearch();
 };
+
+// 手機版篩選套用
+const handleMobileFilterApply = () => {
+  showMobileFilter.value = false;
+  handleFilterChange(searchFilters.value);
+};
+
+// 排序處理
+const handleSortingChange = (sorting: string) => {
+  currentSorting.value = sorting;
+  if (searchFilters.value.sorting !== undefined) {
+    searchFilters.value.sorting = sorting;
+  }
+  handleFilterChange(searchFilters.value);
+};
+
+// 地圖移動處理（使用 throttle 防止過於頻繁的更新）
+const handleMapMove = useThrottleFn((center: MapCenter, zoom?: number) => {
+  // 防止微小差異造成不必要的更新
+  const currentCenter = mapCenter.value;
+  const hasSignificantChange = 
+    Math.abs(center.lat - currentCenter.lat) > 0.0001 || 
+    Math.abs(center.lng - currentCenter.lng) > 0.0001;
+  
+  if (hasSignificantChange) {
+    mapCenter.value = center;
+  }
+  
+  if (zoom !== undefined && Math.abs(zoom - mapZoom.value) > 0.1) {
+    mapZoom.value = zoom;
+  }
+}, 100);
+
 
 // 響應式佈局
 const isMobile = ref(false);
@@ -303,17 +559,14 @@ onMounted(() => {
     isMobile.value = window.innerWidth < 768;
     if (isMobile.value) {
       showFilter.value = false;
-      viewMode.value = 'map';
     }
   };
   
   checkMobile();
   window.addEventListener('resize', checkMobile);
   
-  onUnmounted(() => {
-    window.removeEventListener('resize', checkMobile);
-  });
 });
+
 
 // 監聽查詢參數
 watch(() => route.query, (newQuery) => {
@@ -327,19 +580,5 @@ watch(() => route.query, (newQuery) => {
 </script>
 
 <style scoped>
-.float-left {
-  float: left;
-}
-
-.float-right {
-  float: right;
-}
-
-@media (max-width: 768px) {
-  .float-left,
-  .float-right {
-    float: none !important;
-    width: 100% !important;
-  }
-}
+/* 不再需要 float 相關樣式，因為已移除分割檢視 */
 </style>

@@ -1,172 +1,150 @@
-import type { Activity, SearchParams, ApiResponse, PaginationInfo } from '~/types';
+import { ref } from 'vue';
+import type { Activity, SearchFilters, MapCenter } from '~/types';
 
 interface UseActivitiesOptions {
-  immediate?: boolean;
-  defaultParams?: Partial<SearchParams>;
+  autoLoad?: boolean;
+  pageSize?: number;
+}
+
+interface SearchOptions {
+  query?: string;
+  filters?: SearchFilters;
+  location?: MapCenter;
+  radius?: number;
 }
 
 export const useActivities = (options: UseActivitiesOptions = {}) => {
-  const { immediate = false, defaultParams = {} } = options;
+  const { autoLoad = false, pageSize = 20 } = options;
 
   // 響應式狀態
   const activities = ref<Activity[]>([]);
   const loading = ref(false);
-  const error = ref<string | null>(null);
-  const pagination = ref<PaginationInfo | null>(null);
-  const total = ref(0);
+  const totalActivities = ref(0);
+  const hasMoreActivities = ref(false);
+  const currentPage = ref(1);
 
-  // 搜尋參數
-  const searchParams = ref<SearchParams>({
-    page: 1,
-    limit: 20,
-    ...defaultParams
-  });
-
-  // 取得活動列表
-  const fetchActivities = async (params: Partial<SearchParams> = {}) => {
-    if (loading.value) return;
-
+  // 載入活動資料
+  const loadActivities = async (page = 1, reset = false) => {
     loading.value = true;
-    error.value = null;
-
+    
     try {
-      const mergedParams = { ...searchParams.value, ...params };
-      
-      const response = await $fetch<ApiResponse<Activity[]>>('/api/activities', {
-        query: mergedParams
+      const response = await $fetch<{ success: boolean; data: Activity[]; pagination: any }>('/api/activities', {
+        query: {
+          page,
+          limit: pageSize,
+        }
       });
 
-      if (response.success) {
-        activities.value = response.data;
-        pagination.value = response.pagination || null;
-        total.value = response.pagination?.total || response.data.length;
+      if (reset || page === 1) {
+        activities.value = response.data || [];
       } else {
-        throw new Error(response.message || '載入活動失敗');
+        activities.value.push(...(response.data || []));
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '載入活動時發生錯誤';
-      error.value = errorMessage;
-      console.error('Error fetching activities:', err);
+
+      totalActivities.value = response.pagination?.total || response.data?.length || 0;
+      hasMoreActivities.value = (response.data?.length || 0) === pageSize;
+      currentPage.value = page;
+
+    } catch (error) {
+      console.error('載入活動失敗:', error);
+      // 設置空數組以防止地圖組件等待
+      activities.value = [];
+      totalActivities.value = 0;
+      hasMoreActivities.value = false;
     } finally {
       loading.value = false;
     }
   };
 
-  // 搜尋附近活動
-  const searchNearby = async (
-    coordinates: { lat: number; lng: number },
-    radius: number = 10
-  ) => {
-    return await fetchActivities({
-      location: coordinates,
-      radius,
-      page: 1
-    });
-  };
-
-  // 進階搜尋
-  const advancedSearch = async (filters: Partial<SearchParams>) => {
-    searchParams.value = { ...searchParams.value, ...filters, page: 1 };
-    return await fetchActivities();
-  };
-
-  // 載入更多 (分頁)
-  const loadMore = async () => {
-    if (!pagination.value || loading.value) return;
+  // 搜尋活動
+  const searchActivities = async (searchOptions: SearchOptions = {}) => {
+    loading.value = true;
     
-    const nextPage = pagination.value.page + 1;
-    if (nextPage > pagination.value.totalPages) return;
-
-    const currentActivities = [...activities.value];
-    
-    await fetchActivities({ page: nextPage });
-    
-    // 合併結果
-    activities.value = [...currentActivities, ...activities.value];
-  };
-
-  // 重置搜尋
-  const resetSearch = async () => {
-    searchParams.value = { page: 1, limit: 20, ...defaultParams };
-    await fetchActivities();
-  };
-
-  // 取得單一活動
-  const getActivityById = async (id: string): Promise<Activity | null> => {
-    // 先檢查已載入的活動
-    const existingActivity = activities.value.find(a => a.id === id);
-    if (existingActivity) {
-      return existingActivity;
-    }
-
-    // 從 API 取得
     try {
-      const response = await $fetch<ApiResponse<Activity>>(`/api/activities/${id}`);
-      return response.success ? response.data : null;
-    } catch (err) {
-      console.error('Error fetching activity by ID:', err);
-      return null;
+      // 先嘗試測試 API，如果失敗再嘗試真實 API
+      try {
+        const testResponse = await $fetch<{ success: boolean; data: Activity[] }>('/api/test');
+        if (testResponse.success && testResponse.data) {
+          activities.value = testResponse.data;
+          totalActivities.value = testResponse.data.length;
+          hasMoreActivities.value = false;
+          currentPage.value = 1;
+          return;
+        }
+      } catch (testError) {
+        console.log('測試 API 不可用，嘗試真實 API');
+      }
+
+      const queryParams: any = {
+        page: 1,
+        limit: pageSize,
+      };
+
+      if (searchOptions.query) {
+        queryParams.search = searchOptions.query;
+      }
+
+      if (searchOptions.filters?.categories?.length) {
+        queryParams.categories = searchOptions.filters.categories.join(',');
+      }
+
+      if (searchOptions.filters?.regions?.length) {
+        queryParams.regions = searchOptions.filters.regions.join(',');
+      }
+
+      if (searchOptions.location) {
+        queryParams.lat = searchOptions.location.lat;
+        queryParams.lng = searchOptions.location.lng;
+        queryParams.radius = searchOptions.radius || 10;
+      }
+
+      const response = await $fetch<{ success: boolean; data: Activity[]; pagination: any }>('/api/activities', {
+        query: queryParams
+      });
+
+      activities.value = response.data || [];
+      totalActivities.value = response.pagination?.total || response.data?.length || 0;
+      hasMoreActivities.value = (response.data?.length || 0) === pageSize;
+      currentPage.value = 1;
+
+    } catch (error) {
+      console.error('搜尋活動失敗:', error);
+      // 設置空數組以防止地圖組件等待
+      activities.value = [];
+      totalActivities.value = 0;
+      hasMoreActivities.value = false;
+    } finally {
+      loading.value = false;
     }
   };
 
-  // 重新整理
-  const refresh = async () => {
-    await fetchActivities();
+  // 載入更多活動
+  const loadMoreActivities = async () => {
+    if (!hasMoreActivities.value || loading.value) return;
+    
+    await loadActivities(currentPage.value + 1, false);
   };
 
-  // 計算屬性
-  const hasMore = computed(() => {
-    return pagination.value 
-      ? pagination.value.page < pagination.value.totalPages
-      : false;
-  });
+  // 重新整理活動
+  const refreshActivities = async () => {
+    await loadActivities(1, true);
+  };
 
-  const isEmpty = computed(() => {
-    return !loading.value && activities.value.length === 0;
-  });
-
-  const hasError = computed(() => {
-    return !!error.value;
-  });
-
-  // 監聽搜尋參數變化
-  watch(searchParams, (newParams, oldParams) => {
-    if (JSON.stringify(newParams) !== JSON.stringify(oldParams)) {
-      fetchActivities();
-    }
-  }, { deep: true });
-
-  // 立即執行
-  if (immediate) {
-    fetchActivities();
+  // 自動載入
+  if (autoLoad) {
+    onMounted(() => {
+      loadActivities();
+    });
   }
 
   return {
-    // 狀態
     activities: readonly(activities),
     loading: readonly(loading),
-    error: readonly(error),
-    pagination: readonly(pagination),
-    total: readonly(total),
-    totalActivities: total, // 別名
-    searchParams,
-
-    // 計算屬性
-    hasMore,
-    hasMoreActivities: hasMore, // 別名
-    isEmpty,
-    hasError,
-
-    // 方法
-    fetchActivities,
-    searchActivities: advancedSearch, // 別名
-    searchNearby,
-    advancedSearch,
-    loadMore,
-    loadMoreActivities: loadMore, // 別名
-    resetSearch,
-    getActivityById,
-    refresh,
-    refreshActivities: refresh // 別名
+    totalActivities: readonly(totalActivities),
+    hasMoreActivities: readonly(hasMoreActivities),
+    searchActivities,
+    loadMoreActivities,
+    refreshActivities,
+    loadActivities
   };
 };
