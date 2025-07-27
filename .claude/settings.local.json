@@ -16,7 +16,12 @@
       "Bash(npm view:*)",
       "Bash(npm update:*)",
       "Bash(touch:*)",
-      "Bash(sqlite3:*)"
+      "Bash(sqlite3:*)",
+      "Bash(grep:*)",
+      "Bash(mv:*)",
+      "Bash(rm:*)",
+      "Bash(git checkout:*)",
+      "Bash(perl:*)"
     ],
     "deny": []
   }

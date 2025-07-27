@@ -123,193 +123,47 @@
                 <ElOption label="品質分數" value="quality" />
               </ElSelect>
             </ElCol>
-            <ElCol :span="6">
-              <ElButtonGroup>
-                <ElButton
-                  :type="viewMode === 'grid' ? 'primary' : 'default'"
-                  @click="viewMode = 'grid'"
-                  :icon="Grid"
-                >
-                  格狀
-                </ElButton>
-                <ElButton
-                  :type="viewMode === 'list' ? 'primary' : 'default'"
-                  @click="viewMode = 'list'"
-                  :icon="List"
-                >
-                  列表
-                </ElButton>
-              </ElButtonGroup>
-            </ElCol>
           </ElRow>
         </ElCard>
 
-        <!-- 格狀檢視 -->
-        <ElRow v-if="viewMode === 'grid'" :gutter="24">
-          <ElCol
+        <!-- 精簡收藏列表 -->
+        <div class="space-y-2">
+          <div
             v-for="favorite in filteredFavorites"
             :key="favorite.id"
-            :lg="8"
-            :md="12"
-            :sm="24"
-            class="mb-6"
+            class="flex items-center justify-between p-4 bg-white rounded-lg border hover:shadow-md transition-shadow cursor-pointer"
+            @click="goToActivity(favorite)"
           >
-            <ElCard 
-              shadow="hover" 
-              class="h-full cursor-pointer transition-transform hover:scale-105"
-              @click="goToActivity(favorite.activity)"
-            >
-              <!-- 活動圖片 -->
-              <div class="relative mb-4 h-48 bg-gray-100 rounded-lg overflow-hidden">
-                <img
-                  v-if="favorite.activity.images && favorite.activity.images[0]"
-                  :src="favorite.activity.images[0].url"
-                  :alt="favorite.activity.name"
-                  class="w-full h-full object-cover"
-                />
-                <div v-else class="flex items-center justify-center h-full text-gray-400">
-                  <ElIcon size="48"><Picture /></ElIcon>
-                </div>
-                
-                <!-- 移除收藏按鈕 -->
-                <ElButton
-                  type="danger"
-                  circle
-                  size="small"
-                  class="absolute top-2 right-2"
-                  @click.stop="removeFavorite(favorite.id)"
-                >
-                  <ElIcon><Delete /></ElIcon>
-                </ElButton>
-              </div>
-
-              <!-- 活動資訊 -->
-              <div>
-                <h3 class="font-semibold text-lg mb-2 line-clamp-2">
-                  {{ favorite.activity.name }}
-                </h3>
-                
-                <p class="text-gray-600 text-sm mb-3 line-clamp-2">
-                  {{ favorite.activity.summary }}
-                </p>
-
-                <!-- 位置和時間 -->
-                <div class="space-y-2 text-sm text-gray-500">
-                  <div v-if="favorite.activity.location" class="flex items-center gap-1">
-                    <ElIcon><LocationFilled /></ElIcon>
-                    <span>{{ favorite.activity.location.city }}</span>
-                  </div>
-                  
-                  <div v-if="favorite.activity.time" class="flex items-center gap-1">
-                    <ElIcon><Calendar /></ElIcon>
-                    <span>{{ formatDate(favorite.activity.time.startDate) }}</span>
-                  </div>
-                </div>
-
-                <!-- 分類標籤 -->
-                <div class="mt-3 flex flex-wrap gap-1">
-                  <ElTag
-                    v-for="category in favorite.activity.categories?.slice(0, 2)"
-                    :key="category.id"
-                    size="small"
-                    :color="category.colorCode"
-                    class="text-white"
-                  >
-                    {{ category.name }}
-                  </ElTag>
-                </div>
-
-                <!-- 收藏時間 -->
-                <div class="mt-3 text-xs text-gray-400">
+            <!-- 活動資訊 -->
+            <div class="flex-1">
+              <h3 class="font-semibold text-lg text-gray-900 mb-1">
+                {{ favorite.activity.name }}
+              </h3>
+              <div class="flex items-center text-sm text-gray-500 space-x-4">
+                <span v-if="favorite.activity.location">
+                  <ElIcon class="mr-1"><LocationFilled /></ElIcon>
+                  {{ favorite.activity.location.city }}
+                </span>
+                <span v-if="favorite.activity.time">
+                  <ElIcon class="mr-1"><Calendar /></ElIcon>
+                  {{ formatDate(favorite.activity.time.startDate) }}
+                </span>
+                <span class="text-xs">
                   收藏於 {{ formatDate(favorite.createdAt) }}
-                </div>
+                </span>
               </div>
-            </ElCard>
-          </ElCol>
-        </ElRow>
+            </div>
 
-        <!-- 列表檢視 -->
-        <div v-else class="space-y-4">
-          <ElCard
-            v-for="favorite in filteredFavorites"
-            :key="favorite.id"
-            shadow="hover"
-            class="cursor-pointer"
-            @click="goToActivity(favorite.activity)"
-          >
-            <ElRow :gutter="16" align="middle">
-              <!-- 活動圖片 -->
-              <ElCol :span="4">
-                <div class="w-full h-20 bg-gray-100 rounded-lg overflow-hidden">
-                  <img
-                    v-if="favorite.activity.images && favorite.activity.images[0]"
-                    :src="favorite.activity.images[0].url"
-                    :alt="favorite.activity.name"
-                    class="w-full h-full object-cover"
-                  />
-                  <div v-else class="flex items-center justify-center h-full text-gray-400">
-                    <ElIcon><Picture /></ElIcon>
-                  </div>
-                </div>
-              </ElCol>
-
-              <!-- 活動資訊 -->
-              <ElCol :span="16">
-                <div>
-                  <h3 class="font-semibold text-lg mb-1">
-                    {{ favorite.activity.name }}
-                  </h3>
-                  
-                  <p class="text-gray-600 text-sm mb-2">
-                    {{ favorite.activity.summary }}
-                  </p>
-
-                  <ElSpace class="text-sm text-gray-500">
-                    <span v-if="favorite.activity.location">
-                      <ElIcon><LocationFilled /></ElIcon>
-                      {{ favorite.activity.location.city }}
-                    </span>
-                    <span v-if="favorite.activity.time">
-                      <ElIcon><Calendar /></ElIcon>
-                      {{ formatDate(favorite.activity.time.startDate) }}
-                    </span>
-                  </ElSpace>
-
-                  <!-- 分類標籤 -->
-                  <div class="mt-2">
-                    <ElSpace wrap>
-                      <ElTag
-                        v-for="category in favorite.activity.categories"
-                        :key="category.id"
-                        size="small"
-                        :color="category.colorCode"
-                        class="text-white"
-                      >
-                        {{ category.name }}
-                      </ElTag>
-                    </ElSpace>
-                  </div>
-                </div>
-              </ElCol>
-
-              <!-- 操作按鈕 -->
-              <ElCol :span="4" class="text-right">
-                <div class="space-y-2">
-                  <div class="text-xs text-gray-400">
-                    {{ formatDate(favorite.createdAt) }}
-                  </div>
-                  <ElButton
-                    type="danger"
-                    size="small"
-                    plain
-                    @click.stop="removeFavorite(favorite.id)"
-                  >
-                    移除收藏
-                  </ElButton>
-                </div>
-              </ElCol>
-            </ElRow>
-          </ElCard>
+            <!-- 操作按鈕 -->
+            <ElButton
+              type="danger"
+              size="small"
+              plain
+              @click.stop="removeFavorite(favorite.activityId)"
+            >
+              移除
+            </ElButton>
+          </div>
         </div>
       </div>
     </ElContainer>
@@ -335,10 +189,7 @@ import {
   StarFilled, 
   LocationFilled, 
   Calendar,
-  Picture,
-  Delete,
-  Grid,
-  List
+  Delete
 } from '@element-plus/icons-vue';
 import type { Activity, FavoriteActivity } from '~/types';
 
@@ -353,7 +204,6 @@ useHead({
 // 響應式狀態
 const loading = ref(false);
 const showClearDialog = ref(false);
-const viewMode = ref<'grid' | 'list'>('grid');
 const filterCategory = ref('');
 const filterRegion = ref('');
 const sortBy = ref('favorited_desc');
@@ -476,8 +326,8 @@ const applySorting = () => {
   // 排序已在計算屬性中處理
 };
 
-const goToActivity = (activity: Activity) => {
-  navigateTo(`/activity/${activity.id}`);
+const goToActivity = (row: FavoriteActivity) => {
+  navigateTo(`/activity/${row.activity.id}`);
 };
 
 const removeFavorite = async (favoriteId: string) => {

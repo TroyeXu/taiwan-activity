@@ -19,19 +19,19 @@
     <!-- 收藏列表 -->
     <div v-else class="space-y-3">
       <ElCard
-        v-for="favorite in favorites"
-        :key="favorite.id"
+        v-for="activity in favorites"
+        :key="activity.id"
         shadow="hover"
         class="cursor-pointer transition-all hover:shadow-md"
-        @click="handleActivityClick(favorite.activity)"
+        @click="handleActivityClick(activity)"
       >
         <div class="flex gap-3">
           <!-- 活動圖片 -->
           <div class="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
             <img
-              v-if="favorite.activity.images && favorite.activity.images[0]"
-              :src="favorite.activity.images[0].url"
-              :alt="favorite.activity.name"
+              v-if="activity.media?.images?.[0]"
+              :src="activity.media.images[0].url"
+              :alt="activity.name"
               class="w-full h-full object-cover"
             />
             <div v-else class="flex items-center justify-center h-full text-gray-400">
@@ -42,30 +42,30 @@
           <!-- 活動資訊 -->
           <div class="flex-1 min-w-0">
             <h3 class="font-medium text-sm line-clamp-2 mb-1">
-              {{ favorite.activity.name }}
+              {{ activity.name }}
             </h3>
             
             <p class="text-xs text-gray-600 line-clamp-2 mb-2">
-              {{ favorite.activity.summary }}
+              {{ activity.summary }}
             </p>
 
             <!-- 位置和時間 -->
             <div class="flex items-center gap-4 text-xs text-gray-500">
-              <span v-if="favorite.activity.location" class="flex items-center gap-1">
+              <span v-if="activity.location" class="flex items-center gap-1">
                 <ElIcon><LocationFilled /></ElIcon>
-                {{ favorite.activity.location.city }}
+                {{ activity.location.city }}
               </span>
               
-              <span v-if="favorite.activity.time" class="flex items-center gap-1">
+              <span v-if="activity.time" class="flex items-center gap-1">
                 <ElIcon><Calendar /></ElIcon>
-                {{ formatDate(favorite.activity.time.startDate) }}
+                {{ formatDate(activity.time.startDate) }}
               </span>
             </div>
 
             <!-- 分類標籤 -->
-            <div v-if="favorite.activity.categories && favorite.activity.categories.length > 0" class="mt-2">
+            <div v-if="activity.categories && activity.categories.length > 0" class="mt-2">
               <ElTag
-                v-for="category in favorite.activity.categories.slice(0, 2)"
+                v-for="category in activity.categories.slice(0, 2)"
                 :key="category.id"
                 size="small"
                 :color="category.colorCode"
@@ -83,13 +83,13 @@
               size="small"
               circle
               plain
-              @click.stop="removeFavorite(favorite.id)"
+              @click.stop="removeFavorite(activity.id)"
             >
               <ElIcon><Delete /></ElIcon>
             </ElButton>
             
             <div class="text-xs text-gray-400">
-              {{ formatDate(favorite.createdAt) }}
+              已收藏
             </div>
           </div>
         </div>
@@ -110,8 +110,10 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue';
+import { ElMessage } from 'element-plus';
 import { LocationFilled, Calendar, Picture, Delete } from '@element-plus/icons-vue';
-import type { Activity, FavoriteActivity } from '~/types';
+import type { Activity } from '~/types';
 
 // Emits
 const emit = defineEmits<{

@@ -1,16 +1,7 @@
 <template>
   <div class="map-container">
     <!-- 地圖 -->
-    <LeafletMap
-      :activities="filteredActivities"
-      :center="center"
-      :zoom="zoom"
-      :height="height"
-      @activity-click="handleActivityClick"
-      @map-ready="handleMapReady"
-      @bounds-changed="handleBoundsChanged"
-      @center-changed="handleCenterChanged"
-    />
+    <div id="activity-map" class="leaflet-map" style="height: 100%; width: 100%;"></div>
 
     <!-- 分類篩選器 -->
     <div v-if="showCategoryFilter" class="category-filter">
@@ -58,9 +49,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
 import type { Activity, MapCenter } from '~/types';
-import LeafletMap from '~/components/Map/LeafletMap.vue';
+
+// Leaflet 將在需要時動態載入
+let L: any = null;
 
 interface Props {
   activities: Activity[];
@@ -93,6 +85,8 @@ const emit = defineEmits<Emits>();
 
 // 響應式狀態
 const selectedCategories = ref<string[]>([...props.initialCategories]);
+const map = ref<any>();
+const markers = ref<any[]>([]);
 
 // 可用分類列表
 const availableCategories = computed(() => {
@@ -137,24 +131,95 @@ const filteredActivities = computed(() => {
   });
 });
 
+// 初始化地圖
+const initMap = async () => {
+  if (!import.meta.client) return;
+  
+  // 動態載入 Leaflet
+  const leafletModule = await import('leaflet');
+  L = leafletModule.default;
+  
+  // 手動載入 CSS
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+  document.head.appendChild(link);
+  
+  // 等待 CSS 載入
+  setTimeout(() => {
+    // 創建地圖
+    map.value = L.map('activity-map').setView([props.center.lat, props.center.lng], props.zoom);
+    
+    // 添加瓦片圖層
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map.value);
+    
+    // 添加活動標記
+    updateMarkers();
+    
+    // 發送地圖準備就緒事件
+    emit('mapReady', map.value);
+    
+    console.log('ActivityMap 已創建');
+  }, 500);
+};
+
+// 創建活動標記
+const createActivityMarker = (activity: Activity) => {
+  if (!activity.location?.latitude || !activity.location?.longitude || !L) {
+    return null;
+  }
+
+  const marker = L.marker([activity.location.latitude, activity.location.longitude]);
+  
+  // 創建彈出窗口內容
+  const popupContent = `
+    <div class="activity-popup">
+      <h3>${activity.name}</h3>
+      <p>${activity.summary || activity.description || ''}</p>
+      <div class="popup-info">
+        <div>📍 ${activity.location.address}</div>
+      </div>
+    </div>
+  `;
+
+  marker.bindPopup(popupContent);
+  
+  // 點擊事件
+  marker.on('click', () => {
+    emit('activityClick', activity);
+  });
+
+  return marker;
+};
+
+// 更新地圖標記
+const updateMarkers = () => {
+  if (!map.value || !L) return;
+
+  // 清除現有標記
+  markers.value.forEach(marker => {
+    if (marker && map.value) {
+      map.value.removeLayer(marker);
+    }
+  });
+  markers.value = [];
+
+  // 添加新標記
+  filteredActivities.value.forEach(activity => {
+    const marker = createActivityMarker(activity);
+    if (marker) {
+      markers.value.push(marker);
+      marker.addTo(map.value);
+    }
+  });
+};
+
 // 事件處理
-const handleActivityClick = (activity: Activity) => {
-  emit('activityClick', activity);
-};
-
-const handleMapReady = (map: any) => {
-  emit('mapReady', map);
-};
-
-const handleBoundsChanged = (bounds: any) => {
-  emit('boundsChanged', bounds);
-};
-
-const handleCenterChanged = (center: MapCenter) => {
-  emit('centerChanged', center);
-};
-
 const updateFilter = () => {
+  updateMarkers();
   emit('categoryFilterChanged', [...selectedCategories.value]);
 };
 
@@ -167,6 +232,27 @@ const clearCategoryFilter = () => {
 watch(() => props.initialCategories, (newCategories) => {
   selectedCategories.value = [...newCategories];
 }, { deep: true });
+
+watch(() => props.activities, () => {
+  updateMarkers();
+}, { deep: true });
+
+watch(filteredActivities, () => {
+  updateMarkers();
+}, { deep: true });
+
+// 生命週期
+onMounted(async () => {
+  if (import.meta.client) {
+    await initMap();
+  }
+});
+
+onUnmounted(() => {
+  if (map.value) {
+    map.value.remove();
+  }
+});
 </script>
 
 <style scoped>
@@ -174,6 +260,13 @@ watch(() => props.initialCategories, (newCategories) => {
   position: relative;
   width: 100%;
   height: 100%;
+}
+
+.leaflet-map {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .category-filter {

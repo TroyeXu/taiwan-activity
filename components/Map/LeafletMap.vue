@@ -8,33 +8,12 @@
     
     <div ref="mapContainer" class="leaflet-map" :class="{ 'map-hidden': !mapReady }"></div>
     
-    <!-- 地圖控制按鈕 -->
-    <div class="map-controls">
-      <ElButton 
-        circle 
-        type="default" 
-        @click="fitBounds"
-        title="顯示所有標記"
-      >
-        <ElIcon><FullScreen /></ElIcon>
-      </ElButton>
-      
-      <ElButton 
-        circle 
-        type="default" 
-        @click="refreshMap"
-        title="重新整理地圖"
-      >
-        <ElIcon><Refresh /></ElIcon>
-      </ElButton>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { ElMessage } from 'element-plus';
-import { FullScreen, Refresh, Loading } from '@element-plus/icons-vue';
+import { Loading } from '@element-plus/icons-vue';
 import type { Activity, MapCenter } from '~/types';
 
 // Leaflet 將在需要時動態載入
@@ -90,6 +69,12 @@ const initMap = async () => {
       L = leafletModule.default || leafletModule;
       console.log('Leaflet 載入成功:', L);
       
+      // 載入 Leaflet CSS
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+      
       // 載入 markercluster 插件
       try {
         await import('leaflet.markercluster');
@@ -111,6 +96,9 @@ const initMap = async () => {
     return;
   }
 
+  // 等待 CSS 載入，然後創建地圖
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
   // 創建地圖
   console.log('初始化地圖，中心點:', props.center, '縮放等級:', props.zoom);
   
@@ -300,23 +288,6 @@ const updateMarkers = () => {
 };
 
 
-// 適配所有標記
-const fitBounds = () => {
-  if (!map.value || markers.value.length === 0 || !import.meta.client || !L) return;
-
-  const group = new L.FeatureGroup(markers.value);
-  map.value.fitBounds(group.getBounds(), {
-    padding: [20, 20]
-  });
-};
-
-// 重新整理地圖
-const refreshMap = () => {
-  if (!map.value || !import.meta.client) return;
-  
-  map.value.invalidateSize();
-  updateMarkers();
-};
 
 // 全域函數供 popup 使用
 if (import.meta.client) {
@@ -426,19 +397,6 @@ onUnmounted(() => {
   to { transform: rotate(360deg); }
 }
 
-.map-controls {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.map-controls .el-button {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
 </style>
 
 <style>

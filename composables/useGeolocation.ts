@@ -1,4 +1,4 @@
-import { ref, computed, onMounted, readonly } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import type { MapCenter } from '~/types';
 
 interface GeolocationOptions {

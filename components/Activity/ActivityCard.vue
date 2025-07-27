@@ -1,145 +1,66 @@
 <template>
   <div
-    class="activity-card"
-    :class="{ 'compact': compact }"
+    class="activity-card bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-shadow cursor-pointer"
     @click="handleClick"
   >
-    <!-- 活動圖片 -->
-    <div v-if="!compact" class="relative aspect-video bg-gray-200 rounded-t-lg overflow-hidden">
-      <img
-        v-if="activity.media?.images?.[0]"
-        :src="activity.media.images[0].url"
-        :alt="activity.media.images[0].alt || activity.name"
-        class="w-full h-full object-cover"
-        loading="lazy"
-      />
-      <div v-else class="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary-100 to-primary-200">
-        <el-icon size="48" class="text-primary-400">
-          <Picture />
-        </el-icon>
-      </div>
-
-      <!-- 狀態標籤 -->
-      <div class="absolute top-3 left-3">
-        <el-tag
-          :type="getStatusTagType(activity.status)"
-          size="small"
-          class="shadow-sm"
-        >
-          {{ getStatusText(activity.status) }}
-        </el-tag>
-      </div>
-
-      <!-- 品質分數 -->
-      <div v-if="activity.qualityScore >= 90" class="absolute top-3 right-3">
-        <el-tag type="success" size="small" class="shadow-sm">
-          <el-icon class="mr-1"><StarFilled /></el-icon>
-          優質
-        </el-tag>
-      </div>
-
-      <!-- 收藏按鈕 -->
-      <div class="absolute bottom-3 right-3">
+    <!-- 緊湊活動內容 -->
+    <div class="p-3">
+      <!-- 標題行 -->
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="font-semibold text-base text-gray-900 flex-1 mr-2">
+          {{ activity.name }}
+        </h3>
+        
+        <!-- 收藏按鈕 -->
         <button
-          class="p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors focus-outline"
+          class="p-1 rounded-full hover:bg-gray-100 transition-colors focus-outline"
           @click.stop="toggleFavorite"
         >
           <el-icon
             size="18"
-            :class="{ 'text-red-500': isFavorited, 'text-gray-600': !isFavorited }"
+            :class="{ 'text-yellow-500': isFavorited, 'text-gray-400': !isFavorited }"
           >
             <Star v-if="!isFavorited" />
             <StarFilled v-else />
           </el-icon>
         </button>
       </div>
-    </div>
 
-    <!-- 活動內容 -->
-    <div class="card-body" :class="{ 'p-4': !compact, 'p-3': compact }">
-      <!-- 活動標題 -->
-      <h3 class="font-semibold text-gray-900 mb-2" :class="{ 'text-lg': !compact, 'text-base': compact }">
-        {{ activity.name }}
-      </h3>
-
-      <!-- 活動摘要 -->
-      <p v-if="activity.summary && !compact" class="text-sm text-gray-600 mb-3 text-truncate-2">
-        {{ activity.summary }}
-      </p>
-
-      <!-- 活動資訊 -->
-      <div class="space-y-2 mb-3">
-        <!-- 時間資訊 -->
-        <div v-if="activity.time" class="flex items-center text-sm text-gray-600">
-          <el-icon class="mr-2 text-green-500"><Clock /></el-icon>
-          <span>{{ formatActivityTime(activity.time) }}</span>
-        </div>
-
-        <!-- 地點資訊 -->
-        <div v-if="activity.location" class="flex items-start text-sm text-gray-600">
-          <el-icon class="mr-2 mt-0.5 text-red-500 flex-shrink-0"><Location /></el-icon>
-          <div class="flex-1 min-w-0">
-            <span class="truncate">{{ activity.location.address }}</span>
-            <span v-if="showDistance && distance" class="ml-2 text-primary-600 font-medium">
-              {{ formatDistance(distance) }}
-            </span>
-          </div>
+      <!-- 資訊行 -->
+      <div class="flex items-center justify-between mb-2">
+        <!-- 狀態和地點 -->
+        <div class="flex items-center space-x-3 text-sm text-gray-600">
+          <el-tag
+            :type="getStatusTagType(activity.status)"
+            size="small"
+          >
+            {{ getStatusText(activity.status) }}
+          </el-tag>
+          
+          <span v-if="activity.location" class="flex items-center">
+            <el-icon class="mr-1 text-gray-400"><Location /></el-icon>
+            {{ activity.location.city || activity.location.address }}
+          </span>
         </div>
       </div>
 
-      <!-- 活動分類 -->
-      <div v-if="activity.categories?.length" class="flex flex-wrap gap-1 mb-3">
-        <span
-          v-for="category in activity.categories.slice(0, compact ? 2 : 3)"
-          :key="category.id"
-          class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-          :style="{
-            backgroundColor: getCategoryColor(category.slug) + '20',
-            color: getCategoryColor(category.slug)
-          }"
-        >
-          {{ getCategoryIcon(category.slug) }} {{ category.name }}
-        </span>
-        <span
-          v-if="activity.categories.length > (compact ? 2 : 3)"
-          class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600"
-        >
-          +{{ activity.categories.length - (compact ? 2 : 3) }}
-        </span>
-      </div>
-
-      <!-- 行動按鈕 -->
-      <div v-if="!compact" class="flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-          <!-- 收藏按鈕（緊湊模式） -->
-          <button
-            class="p-1.5 rounded-full hover:bg-gray-100 transition-colors focus-outline"
-            @click.stop="toggleFavorite"
+      <!-- 底部行 -->
+      <div class="flex items-center justify-between">
+        <!-- 分類和時間 -->
+        <div class="flex items-center space-x-2 flex-1">
+          <span
+            v-if="activity.categories?.[0]"
+            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700"
           >
-            <el-icon
-              size="16"
-              :class="{ 'text-red-500': isFavorited, 'text-gray-400': !isFavorited }"
-            >
-              <Star v-if="!isFavorited" />
-              <StarFilled v-else />
-            </el-icon>
-          </button>
-
-          <!-- 分享按鈕 -->
-          <button
-            class="p-1.5 rounded-full hover:bg-gray-100 transition-colors focus-outline"
-            @click.stop="handleShare"
-          >
-            <el-icon size="16" class="text-gray-400 hover:text-gray-600">
-              <Share />
-            </el-icon>
-          </button>
+            {{ activity.categories[0].icon }} {{ activity.categories[0].name }}
+          </span>
+          
+          <span v-if="activity.time" class="text-xs text-gray-500 flex items-center">
+            <el-icon class="mr-1"><Clock /></el-icon>
+            {{ formatActivityTime(activity.time) }}
+          </span>
         </div>
 
-        <!-- 查看詳情按鈕 -->
-        <el-button type="primary" size="small" @click.stop="viewDetails">
-          查看詳情
-        </el-button>
       </div>
     </div>
 
@@ -154,22 +75,19 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+import { ElMessage } from 'element-plus';
 import { 
-  Picture, StarFilled, Star, Clock, Location, Share 
+  StarFilled, Star, Clock, Location 
 } from '@element-plus/icons-vue';
 import type { Activity } from '~/types';
 
 interface Props {
   activity: Activity;
-  showDistance?: boolean;
-  distance?: number;
-  compact?: boolean;
   loading?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  showDistance: false,
-  compact: false,
   loading: false
 });
 
@@ -180,8 +98,6 @@ const emit = defineEmits<{
 
 // Composables
 const { isFavorite, toggleFavorite: toggleFav } = useFavorites();
-const { getCategoryColor, getCategoryIcon } = useCategories();
-const { formatDistance } = useGeolocation();
 
 // 計算屬性
 const isFavorited = computed(() => isFavorite(props.activity.id));
@@ -245,11 +161,12 @@ const formatActivityTime = (time: any) => {
 
 // 事件處理
 const handleClick = () => {
-  emit('click', props.activity);
-};
-
-const viewDetails = () => {
-  navigateTo(`/activity/${props.activity.id}`);
+  console.log('ActivityCard handleClick 被觸發:', props.activity.name);
+  if (props.activity.url) {
+    window.open(props.activity.url, '_blank');
+  } else {
+    emit('click', props.activity);
+  }
 };
 
 const toggleFavorite = async () => {
@@ -261,69 +178,11 @@ const toggleFavorite = async () => {
   }
 };
 
-const handleShare = async () => {
-  const shareData = {
-    title: props.activity.name,
-    text: props.activity.summary || props.activity.name,
-    url: `${window.location.origin}/activity/${props.activity.id}`
-  };
-
-  try {
-    if (navigator.share && navigator.canShare(shareData)) {
-      await navigator.share(shareData);
-    } else {
-      // 降級到複製連結
-      await navigator.clipboard.writeText(shareData.url);
-      ElMessage.success('連結已複製到剪貼板');
-    }
-  } catch (error) {
-    console.error('分享失敗:', error);
-    ElMessage.error('分享失敗');
-  }
-};
 </script>
 
 <style scoped>
-.activity-card {
-  @apply bg-white rounded-lg shadow-card border border-gray-200 overflow-hidden cursor-pointer transition-all duration-200 relative;
-}
-
-.activity-card:hover {
-  @apply shadow-lg transform -translate-y-1;
-}
-
-.activity-card.compact {
-  @apply shadow-sm;
-}
-
-.activity-card.compact:hover {
-  @apply shadow-md transform-none;
-}
-
-.card-body {
-  @apply relative;
-}
-
-/* 圖片載入動畫 */
-.activity-card img {
-  @apply transition-opacity duration-300;
-}
-
-.activity-card img[loading] {
-  @apply opacity-0;
-}
-
-.activity-card img:not([loading]) {
-  @apply opacity-100;
-}
-
-/* 標籤動畫 */
-.el-tag {
-  @apply transition-all duration-200;
-}
-
-/* 按鈕 hover 效果 */
-.activity-card button {
-  @apply transition-all duration-200;
+/* 焦點樣式 */
+.focus-outline:focus {
+  @apply outline-none ring-2 ring-primary-500/50;
 }
 </style>

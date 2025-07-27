@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, readonly, onMounted } from 'vue';
 import type { Activity, SearchFilters, MapCenter } from '~/types';
 
 interface UseActivitiesOptions {

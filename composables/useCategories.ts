@@ -1,3 +1,4 @@
+import { ref, computed, onMounted } from 'vue';
 import type { Category, ApiResponse } from '~/types';
 import { CATEGORIES } from '~/types';
 

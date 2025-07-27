@@ -42,17 +42,7 @@
       <div class="hidden md:flex items-center justify-between mb-6">
         <h3 class="text-lg font-semibold text-gray-900">篩選條件</h3>
         <div class="flex items-center space-x-2">
-          <!-- 篩選計數 -->
-          <el-badge
-            v-if="activeFilterCount > 0"
-            :value="activeFilterCount"
-            type="primary"
-          >
-            <el-icon class="text-gray-500">
-              <Filter />
-            </el-icon>
-          </el-badge>
-          <el-icon v-else class="text-gray-500">
+          <el-icon class="text-gray-500">
             <Filter />
           </el-icon>
           
@@ -69,24 +59,27 @@
       </div>
 
       <!-- 快速篩選 (口風琴設計) -->
-      <div class="mb-6">
+      <div class="mb-3">
         <el-collapse v-model="quickFilterActiveNames" class="quick-filter-collapse">
           <el-collapse-item name="quick-filters">
             <template #title>
               <div class="filter-header quick-filter-header">
                 <el-icon><Filter /></el-icon>
                 <span class="ml-2">快速篩選</span>
-                <el-badge 
-                  v-if="quickFilter" 
-                  value="✓" 
-                  type="primary" 
-                  class="ml-auto mr-2"
-                />
               </div>
             </template>
             
             <div class="p-4">
-              <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <div class="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-3">
+                <el-button 
+                  :type="quickFilter === 'today' ? 'primary' : 'default'"
+                  size="small"
+                  @click="setQuickFilter('today')"
+                  class="quick-filter-btn ml-3"
+                >
+                  <el-icon><Calendar /></el-icon>
+                  今天
+                </el-button>
                 <el-button 
                   :type="quickFilter === 'near' ? 'primary' : 'default'"
                   size="small"
@@ -141,8 +134,6 @@
                   <el-icon><Moon /></el-icon>
                   夜間活動
                 </el-button>
-                
-                <!-- 未來可以增加更多快速篩選選項 -->
                 <el-button 
                   :type="quickFilter === 'outdoor' ? 'primary' : 'default'"
                   size="small"
@@ -176,228 +167,10 @@
         </el-collapse>
       </div>
 
-      <!-- 手機版直接顯示篩選 -->
-      <div class="md:hidden space-y-4">
-        <!-- 位置篩選 -->
-        <div class="filter-section">
-          <div class="flex items-center justify-between mb-3">
-            <h4 class="text-sm font-medium text-gray-700">位置</h4>
-            <el-badge 
-              v-if="hasLocationFilter" 
-              value="✓" 
-              type="primary"
-            />
-          </div>
-          <div class="space-y-3">
-            <!-- 位置類型選擇 -->
-            <el-radio-group
-              v-model="filters.location.type"
-              size="small"
-              @change="handleLocationTypeChange"
-            >
-              <el-radio value="current">使用目前位置</el-radio>
-              <el-radio value="custom">選擇縣市</el-radio>
-            </el-radio-group>
-
-            <!-- 目前位置狀態 -->
-            <div
-              v-if="filters.location.type === 'current'"
-              class="bg-blue-50 p-3 rounded-md"
-            >
-              <div v-if="coordinates" class="text-sm">
-                <p class="text-blue-700 font-medium">📍 已定位</p>
-                <p class="text-blue-600 text-xs mt-1">
-                  {{ address || '目前位置' }}
-                </p>
-              </div>
-              <div v-else class="text-sm">
-                <el-button
-                  type="primary"
-                  size="small"
-                  :loading="locationLoading"
-                  @click="handleGetCurrentLocation"
-                >
-                  <el-icon class="mr-1"><Location /></el-icon>
-                  取得位置
-                </el-button>
-              </div>
-            </div>
-
-            <!-- 縣市選擇 -->
-            <div v-else>
-              <el-select
-                v-model="selectedCity"
-                placeholder="選擇縣市"
-                filterable
-                clearable
-                @change="handleCityChange"
-                style="width: 100%"
-              >
-                <el-option
-                  v-for="city in cityOptions"
-                  :key="city.value"
-                  :label="city.label"
-                  :value="city.value"
-                />
-              </el-select>
-            </div>
-
-            <!-- 距離範圍 -->
-            <div v-if="filters.location.type === 'current'" class="space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-700">搜尋範圍</span>
-                <span class="text-sm font-medium text-primary-600">{{ filters.location.radius }} km</span>
-              </div>
-              <el-slider
-                v-model="filters.location.radius"
-                :min="1"
-                :max="30"
-                :marks="{ 2: '2km', 10: '10km', 30: '30km' }"
-                @change="handleRadiusChange"
-              />
-            </div>
-          </div>
-        </div>
-
-        <!-- 活動類型篩選 -->
-        <div class="filter-section">
-          <div class="flex items-center justify-between mb-3">
-            <h4 class="text-sm font-medium text-gray-700">活動類型</h4>
-            <el-badge 
-              v-if="filters.categories.length > 0" 
-              :value="filters.categories.length" 
-              type="primary"
-            />
-          </div>
-          
-          <div class="space-y-3">
-            <!-- 分類選項 -->
-            <div class="grid grid-cols-2 gap-2">
-              <label
-                v-for="category in categoryOptions.slice(0, 6)"
-                :key="category.id"
-                class="flex items-center p-2 rounded-md hover:bg-gray-50 cursor-pointer transition-colors text-xs"
-              >
-                <el-checkbox
-                  :model-value="filters.categories.includes(category.id)"
-                  @change="(checked: boolean) => handleCategoryToggle(category.id, checked)"
-                  size="small"
-                />
-                <span
-                  class="w-4 h-4 rounded-full mr-2 ml-1 flex items-center justify-center text-xs"
-                  :style="{ backgroundColor: category.color, color: 'white' }"
-                >
-                  {{ category.icon }}
-                </span>
-                <span class="text-xs text-gray-700">{{ category.name }}</span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <!-- 時間篩選 -->
-        <div class="filter-section">
-          <div class="flex items-center justify-between mb-3">
-            <h4 class="text-sm font-medium text-gray-700">活動時間</h4>
-            <el-badge 
-              v-if="hasDateFilter" 
-              value="✓" 
-              type="primary"
-            />
-          </div>
-          
-          <div class="space-y-3">
-            <!-- 快速時間選項 -->
-            <el-select
-              v-model="filters.dateRange.quickOption"
-              placeholder="選擇時間範圍"
-              style="width: 100%"
-              @change="handleQuickTimeChange"
-            >
-              <el-option
-                v-for="option in quickTimeOptions"
-                :key="option.value"
-                :label="option.label"
-                :value="option.value"
-              />
-            </el-select>
-            
-            <!-- 活動時段 -->
-            <div>
-              <label class="block text-xs font-medium text-gray-600 mb-2">活動時段</label>
-              <div class="grid grid-cols-2 gap-2">
-                <label
-                  v-for="timeSlot in timeOfDayOptions"
-                  :key="timeSlot.value"
-                  class="flex items-center text-xs cursor-pointer p-2 hover:bg-gray-50 rounded"
-                >
-                  <el-checkbox
-                    :model-value="filters.timeOfDay.includes(timeSlot.value)"
-                    @change="(checked: boolean) => handleTimeSlotToggle(timeSlot.value, checked)"
-                    size="small"
-                  />
-                  <span class="ml-2">{{ timeSlot.label }}</span>
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 費用篩選 -->
-        <div class="filter-section">
-          <div class="flex items-center justify-between mb-3">
-            <h4 class="text-sm font-medium text-gray-700">費用</h4>
-            <el-badge 
-              v-if="hasPriceFilter" 
-              value="✓" 
-              type="primary"
-            />
-          </div>
-          
-          <div>
-            <el-radio-group
-              v-model="priceType"
-              @change="handlePriceTypeChange"
-              class="grid grid-cols-2 gap-2"
-            >
-              <el-radio value="all" class="text-sm">不限</el-radio>
-              <el-radio value="free" class="text-sm">免費</el-radio>
-              <el-radio value="paid" class="text-sm">收費</el-radio>
-            </el-radio-group>
-          </div>
-        </div>
-
-        <!-- 熱門標籤 -->
-        <div class="filter-section">
-          <div class="flex items-center justify-between mb-3">
-            <h4 class="text-sm font-medium text-gray-700">熱門標籤</h4>
-            <el-badge 
-              v-if="filters.tags.length > 0" 
-              :value="filters.tags.length" 
-              type="primary"
-            />
-          </div>
-          
-          <div class="flex flex-wrap gap-2">
-            <el-tag
-              v-for="tag in popularTags.slice(0, 6)"
-              :key="tag.id"
-              :type="filters.tags.includes(tag.id) ? 'primary' : 'info'"
-              :effect="filters.tags.includes(tag.id) ? 'dark' : 'plain'"
-              class="cursor-pointer text-xs"
-              size="small"
-              @click="handleTagToggle(tag.id)"
-            >
-              {{ tag.name }}
-            </el-tag>
-          </div>
-        </div>
-      </div>
-
-      <!-- 桌面版摺疊篩選 -->
-      <div class="hidden md:block">
-        <el-collapse v-model="activeNames" class="filter-collapse">
-          <!-- 桌面版位置篩選 -->
+      <!-- 手機版口風琴篩選 -->
+      <div class="md:hidden">
+        <el-collapse v-model="mobileActiveNames" class="mobile-filter-collapse">
+          <!-- 位置篩選 -->
           <el-collapse-item name="location">
             <template #title>
               <div class="filter-header">
@@ -413,39 +186,58 @@
             </template>
             
             <div class="p-4 space-y-4">
-              <el-radio-group
-                v-model="filters.location.type"
-                size="small"
-                @change="handleLocationTypeChange"
-              >
-                <el-radio value="current">使用目前位置</el-radio>
-                <el-radio value="custom">選擇縣市</el-radio>
-              </el-radio-group>
-              
-              <div
-                v-if="filters.location.type === 'current'"
-                class="bg-blue-50 p-3 rounded-md"
-              >
-                <div v-if="coordinates" class="text-sm">
-                  <p class="text-blue-700 font-medium">📍 已定位</p>
-                  <p class="text-blue-600 text-xs mt-1">
-                    {{ address || '目前位置' }}
-                  </p>
-                </div>
-                <div v-else class="text-sm">
-                  <el-button
-                    type="primary"
-                    size="small"
-                    :loading="locationLoading"
-                    @click="handleGetCurrentLocation"
-                  >
-                    <el-icon class="mr-1"><Location /></el-icon>
-                    取得位置
-                  </el-button>
+              <!-- 距離顯示設定 -->
+              <div>
+                <h5 class="text-sm font-medium text-gray-700 mb-2">距離顯示</h5>
+                <p class="text-xs text-gray-500 mb-3">開啟後將顯示您與各活動的距離</p>
+                
+                <div class="bg-blue-50 p-3 rounded-md">
+                  <div v-if="coordinates" class="text-sm">
+                    <p class="text-blue-700 font-medium">📍 定位成功</p>
+                    <div class="mt-2">
+                      <el-switch
+                        v-model="showDistance"
+                        @change="handleDistanceToggle"
+                        active-text="顯示距離"
+                        inactive-text="隱藏距離"
+                        size="small"
+                      />
+                    </div>
+                  </div>
+                  <div v-else class="text-sm space-y-2">
+                    <div v-if="locationError" class="text-red-600 text-xs bg-red-50 p-2 rounded">
+                      {{ locationError }}
+                    </div>
+                    <p v-else class="text-gray-600 text-xs">點擊下方按鈕開始定位</p>
+                    
+                    <el-button
+                      type="primary"
+                      size="small"
+                      :loading="locationLoading"
+                      @click="handleGetCurrentLocation"
+                      class="w-full"
+                    >
+                      <el-icon class="mr-1"><Location /></el-icon>
+                      {{ locationLoading ? '定位中...' : (locationError ? '重新定位' : '開始定位') }}
+                    </el-button>
+                    
+                    <div v-if="locationError" class="text-xs text-gray-500">
+                      <p class="font-medium">如果定位失敗，請嘗試：</p>
+                      <ul class="list-disc list-inside mt-1 space-y-1">
+                        <li>確認瀏覽器允許此網站使用定位服務</li>
+                        <li>檢查設備的定位服務是否開啟</li>
+                        <li>嘗試重新整理頁面</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               </div>
-              
-              <div v-else>
+
+              <!-- 地區篩選 -->
+              <div>
+                <h5 class="text-sm font-medium text-gray-700 mb-2">地區篩選</h5>
+                <p class="text-xs text-gray-500 mb-3">選擇特定縣市來篩選活動</p>
+                
                 <el-select
                   v-model="selectedCity"
                   placeholder="選擇縣市"
@@ -453,6 +245,7 @@
                   clearable
                   @change="handleCityChange"
                   style="width: 100%"
+                  size="small"
                 >
                   <el-option
                     v-for="city in cityOptions"
@@ -462,24 +255,46 @@
                   />
                 </el-select>
               </div>
-              
-              <div v-if="filters.location.type === 'current'" class="space-y-2">
-                <div class="flex items-center justify-between">
-                  <span class="text-sm text-gray-700">搜尋範圍</span>
-                  <span class="text-sm font-medium text-primary-600">{{ filters.location.radius }} km</span>
+
+              <!-- 距離範圍篩選 -->
+              <div v-if="coordinates">
+                <h5 class="text-sm font-medium text-gray-700 mb-2">附近活動篩選</h5>
+                <p class="text-xs text-gray-500 mb-3">只顯示您附近指定距離內的活動</p>
+                
+                <div class="space-y-3">
+                  <!-- 啟用/停用距離篩選 -->
+                  <el-switch
+                    v-model="enableDistanceFilter"
+                    @change="handleDistanceFilterToggle"
+                    active-text="開啟附近篩選"
+                    inactive-text="關閉附近篩選"
+                    size="small"
+                    class="w-full"
+                  />
+                  
+                  <!-- 距離範圍設定 (只在啟用時顯示) -->
+                  <div v-if="enableDistanceFilter" class="space-y-2">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm text-gray-600">搜尋範圍</span>
+                      <span class="text-sm font-medium text-primary-600">{{ distanceRadius }} km 內</span>
+                    </div>
+                    <el-slider
+                      v-model="distanceRadius"
+                      :min="1"
+                      :max="30"
+                      :marks="{ 5: '5km', 15: '15km', 30: '30km' }"
+                      @change="handleDistanceRadiusChange"
+                    />
+                    <p class="text-xs text-gray-500">
+                      將只顯示距離您 {{ distanceRadius }} 公里內的活動
+                    </p>
+                  </div>
                 </div>
-                <el-slider
-                  v-model="filters.location.radius"
-                  :min="1"
-                  :max="30"
-                  :marks="{ 2: '2km', 10: '10km', 30: '30km' }"
-                  @change="handleRadiusChange"
-                />
               </div>
             </div>
           </el-collapse-item>
-          
-          <!-- 桌面版活動類型 -->
+
+          <!-- 活動類型篩選 -->
           <el-collapse-item name="categories">
             <template #title>
               <div class="filter-header">
@@ -495,29 +310,32 @@
             </template>
             
             <div class="p-4">
-              <div class="grid grid-cols-1 gap-2">
+              <!-- 分類選項 -->
+              <div class="grid grid-cols-2 gap-3">
                 <label
                   v-for="category in categoryOptions"
                   :key="category.id"
-                  class="flex items-center p-2 rounded-md hover:bg-gray-50 cursor-pointer transition-colors"
+                  class="flex items-center p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors border border-gray-200"
+                  :class="{ 'bg-blue-50 border-blue-300': filters.categories.includes(category.id) }"
                 >
                   <el-checkbox
                     :model-value="filters.categories.includes(category.id)"
                     @change="(checked: boolean) => handleCategoryToggle(category.id, checked)"
+                    size="small"
                   />
                   <span
-                    class="w-6 h-6 rounded-full mr-3 ml-2 flex items-center justify-center text-sm"
+                    class="w-5 h-5 rounded-full mr-2 ml-2 flex items-center justify-center text-sm"
                     :style="{ backgroundColor: category.color, color: 'white' }"
                   >
                     {{ category.icon }}
                   </span>
-                  <span class="text-sm text-gray-700">{{ category.name }}</span>
+                  <span class="text-sm text-gray-700 font-medium">{{ category.name }}</span>
                 </label>
               </div>
             </div>
           </el-collapse-item>
-          
-          <!-- 桌面版時間篩選 -->
+
+          <!-- 時間篩選 -->
           <el-collapse-item name="time">
             <template #title>
               <div class="filter-header">
@@ -533,40 +351,62 @@
             </template>
             
             <div class="p-4 space-y-4">
-              <el-select
-                v-model="filters.dateRange.quickOption"
-                placeholder="選擇時間範圍"
-                style="width: 100%"
-                @change="handleQuickTimeChange"
-              >
-                <el-option
-                  v-for="option in quickTimeOptions"
-                  :key="option.value"
-                  :label="option.label"
-                  :value="option.value"
-                />
-              </el-select>
-              
+              <!-- 快速時間選項 -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">活動時段</label>
+                <label class="block text-sm font-medium text-gray-700 mb-2">快速選擇</label>
                 <div class="grid grid-cols-2 gap-2">
-                  <label
-                    v-for="timeSlot in timeOfDayOptions"
-                    :key="timeSlot.value"
-                    class="flex items-center text-sm cursor-pointer p-2 hover:bg-gray-50 rounded"
+                  <el-button
+                    v-for="option in quickTimeButtons"
+                    :key="option.value"
+                    :type="filters.dateRange.quickOption === option.value ? 'primary' : 'default'"
+                    size="small"
+                    @click="handleQuickTimeSelect(option.value)"
+                    class="text-xs"
                   >
-                    <el-checkbox
-                      :model-value="filters.timeOfDay.includes(timeSlot.value)"
-                      @change="(checked: boolean) => handleTimeSlotToggle(timeSlot.value, checked)"
-                    />
-                    <span class="ml-2">{{ timeSlot.label }}</span>
-                  </label>
+                    {{ option.label }}
+                  </el-button>
                 </div>
               </div>
+
+              <!-- 月份選擇器 -->
+              <div v-if="showMonthSelector">
+                <label class="block text-sm font-medium text-gray-700 mb-2">選擇月份</label>
+                <div class="grid grid-cols-3 gap-2">
+                  <div
+                    v-for="(month, index) in monthOptions"
+                    :key="index"
+                    class="month-selector-item"
+                    :class="{
+                      'selected': selectedMonths.includes(index),
+                      'has-activities': month.activityCount > 0
+                    }"
+                    @click="toggleMonth(index)"
+                  >
+                    <div class="month-name">{{ month.name }}</div>
+                    <div class="activity-count">{{ month.activityCount }}個</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 自訂日期範圍 -->
+              <div v-if="showCustomDateRange">
+                <label class="block text-sm font-medium text-gray-700 mb-2">自訂日期</label>
+                <el-date-picker
+                  v-model="customDateRange"
+                  type="daterange"
+                  range-separator="至"
+                  start-placeholder="開始日期"
+                  end-placeholder="結束日期"
+                  @change="handleCustomDateChange"
+                  size="small"
+                  style="width: 100%"
+                />
+              </div>
+              
             </div>
           </el-collapse-item>
-          
-          <!-- 桌面版費用篩選 -->
+
+          <!-- 費用篩選 -->
           <el-collapse-item name="price">
             <template #title>
               <div class="filter-header">
@@ -578,6 +418,282 @@
                   type="primary" 
                   class="ml-auto mr-2"
                 />
+              </div>
+            </template>
+            
+            <div class="p-4">
+              <el-radio-group
+                v-model="priceType"
+                @change="handlePriceTypeChange"
+                class="grid grid-cols-3 gap-2"
+              >
+                <el-radio value="all" class="text-sm">不限</el-radio>
+                <el-radio value="free" class="text-sm">免費</el-radio>
+                <el-radio value="paid" class="text-sm">收費</el-radio>
+              </el-radio-group>
+            </div>
+          </el-collapse-item>
+
+          <!-- 熱門標籤 -->
+          <el-collapse-item name="tags">
+            <template #title>
+              <div class="filter-header">
+                <el-icon><Star /></el-icon>
+                <span class="ml-2">熱門標籤</span>
+                <el-badge 
+                  v-if="filters.tags.length > 0" 
+                  :value="filters.tags.length" 
+                  type="primary" 
+                  class="ml-auto mr-2"
+                />
+              </div>
+            </template>
+            
+            <div class="p-4">
+              <div class="flex flex-wrap gap-2">
+                <el-tag
+                  v-for="tag in popularTags.slice(0, 6)"
+                  :key="tag.id"
+                  :type="filters.tags.includes(tag.id) ? 'primary' : 'info'"
+                  :effect="filters.tags.includes(tag.id) ? 'dark' : 'plain'"
+                  class="cursor-pointer text-xs"
+                  size="small"
+                  @click="handleTagToggle(tag.id)"
+                >
+                  {{ tag.name }}
+                </el-tag>
+              </div>
+            </div>
+          </el-collapse-item>
+        </el-collapse>
+      </div>
+
+      <!-- 桌面版摺疊篩選 -->
+      <div class="hidden md:block">
+        <el-collapse v-model="activeNames" class="filter-collapse">
+          <!-- 桌面版位置篩選 -->
+          <el-collapse-item name="location">
+            <template #title>
+              <div class="filter-header">
+                <el-icon><Location /></el-icon>
+                <span class="ml-2">位置與距離</span>
+              </div>
+            </template>
+            
+            <div class="p-4 space-y-4">
+              <!-- 距離顯示設定 -->
+              <div>
+                <h5 class="text-sm font-medium text-gray-700 mb-2">距離顯示</h5>
+                <p class="text-xs text-gray-500 mb-3">開啟後將顯示您與各活動的距離</p>
+                
+                <div class="bg-blue-50 p-3 rounded-md">
+                  <div v-if="coordinates" class="text-sm">
+                    <p class="text-blue-700 font-medium">📍 定位成功</p>
+                    <div class="mt-2">
+                      <el-switch
+                        v-model="showDistance"
+                        @change="handleDistanceToggle"
+                        active-text="顯示距離"
+                        inactive-text="隱藏距離"
+                        size="small"
+                      />
+                    </div>
+                  </div>
+                  <div v-else class="text-sm space-y-2">
+                    <div v-if="locationError" class="text-red-600 text-xs bg-red-50 p-2 rounded">
+                      {{ locationError }}
+                    </div>
+                    <p v-else class="text-gray-600 text-xs">點擊下方按鈕開始定位</p>
+                    
+                    <el-button
+                      type="primary"
+                      size="small"
+                      :loading="locationLoading"
+                      @click="handleGetCurrentLocation"
+                      class="w-full"
+                    >
+                      <el-icon class="mr-1"><Location /></el-icon>
+                      {{ locationLoading ? '定位中...' : (locationError ? '重新定位' : '開始定位') }}
+                    </el-button>
+                    
+                    <div v-if="locationError" class="text-xs text-gray-500">
+                      <p class="font-medium">如果定位失敗，請嘗試：</p>
+                      <ul class="list-disc list-inside mt-1 space-y-1">
+                        <li>確認瀏覽器允許此網站使用定位服務</li>
+                        <li>檢查設備的定位服務是否開啟</li>
+                        <li>嘗試重新整理頁面</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 地區篩選 -->
+              <div>
+                <h5 class="text-sm font-medium text-gray-700 mb-2">地區篩選</h5>
+                <p class="text-xs text-gray-500 mb-3">選擇特定縣市來篩選活動</p>
+                
+                <el-select
+                  v-model="selectedCity"
+                  placeholder="選擇縣市"
+                  filterable
+                  clearable
+                  @change="handleCityChange"
+                  style="width: 100%"
+                  size="small"
+                >
+                  <el-option
+                    v-for="city in cityOptions"
+                    :key="city.value"
+                    :label="city.label"
+                    :value="city.value"
+                  />
+                </el-select>
+              </div>
+
+              <!-- 距離範圍篩選 -->
+              <div v-if="coordinates">
+                <h5 class="text-sm font-medium text-gray-700 mb-2">附近活動篩選</h5>
+                <p class="text-xs text-gray-500 mb-3">只顯示您附近指定距離內的活動</p>
+                
+                <div class="space-y-3">
+                  <!-- 啟用/停用距離篩選 -->
+                  <el-switch
+                    v-model="enableDistanceFilter"
+                    @change="handleDistanceFilterToggle"
+                    active-text="開啟附近篩選"
+                    inactive-text="關閉附近篩選"
+                    size="small"
+                    class="w-full"
+                  />
+                  
+                  <!-- 距離範圍設定 (只在啟用時顯示) -->
+                  <div v-if="enableDistanceFilter" class="space-y-2">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm text-gray-600">搜尋範圍</span>
+                      <span class="text-sm font-medium text-primary-600">{{ distanceRadius }} km 內</span>
+                    </div>
+                    <el-slider
+                      v-model="distanceRadius"
+                      :min="1"
+                      :max="30"
+                      :marks="{ 5: '5km', 15: '15km', 30: '30km' }"
+                      @change="handleDistanceRadiusChange"
+                    />
+                    <p class="text-xs text-gray-500">
+                      將只顯示距離您 {{ distanceRadius }} 公里內的活動
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-collapse-item>
+          
+          <!-- 桌面版活動類型 -->
+          <el-collapse-item name="categories">
+            <template #title>
+              <div class="filter-header">
+                <el-icon><Collection /></el-icon>
+                <span class="ml-2">活動類型</span>
+              </div>
+            </template>
+            
+            <div class="p-4">
+              <div class="grid grid-cols-2 gap-3">
+                <label
+                  v-for="category in categoryOptions"
+                  :key="category.id"
+                  class="flex items-center p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors border border-gray-200"
+                  :class="{ 'bg-blue-50 border-blue-300': filters.categories.includes(category.id) }"
+                >
+                  <el-checkbox
+                    :model-value="filters.categories.includes(category.id)"
+                    @change="(checked: boolean) => handleCategoryToggle(category.id, checked)"
+                    size="small"
+                  />
+                  <span
+                    class="w-5 h-5 rounded-full mr-2 ml-2 flex items-center justify-center text-sm"
+                    :style="{ backgroundColor: category.color, color: 'white' }"
+                  >
+                    {{ category.icon }}
+                  </span>
+                  <span class="text-sm text-gray-700 font-medium">{{ category.name }}</span>
+                </label>
+              </div>
+            </div>
+          </el-collapse-item>
+          
+          <!-- 桌面版時間篩選 -->
+          <el-collapse-item name="time">
+            <template #title>
+              <div class="filter-header">
+                <el-icon><Calendar /></el-icon>
+                <span class="ml-2">活動時間</span>
+              </div>
+            </template>
+            
+            <div class="p-4 space-y-4">
+              <!-- 快速時間選擇 -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">快速選擇</label>
+                <div class="grid grid-cols-2 gap-2">
+                  <el-button
+                    v-for="option in quickTimeButtons"
+                    :key="option.value"
+                    :type="filters.dateRange.quickOption === option.value ? 'primary' : 'default'"
+                    size="small"
+                    @click="handleQuickTimeSelect(option.value)"
+                    class="text-xs"
+                  >
+                    {{ option.label }}
+                  </el-button>
+                </div>
+              </div>
+
+              <!-- 月份選擇器 -->
+              <div v-if="showMonthSelector">
+                <label class="block text-sm font-medium text-gray-700 mb-2">選擇月份</label>
+                <div class="grid grid-cols-3 gap-2">
+                  <div
+                    v-for="(month, index) in monthOptions"
+                    :key="index"
+                    class="month-selector-item"
+                    :class="{
+                      'selected': selectedMonths.includes(index),
+                      'has-activities': month.activityCount > 0
+                    }"
+                    @click="toggleMonth(index)"
+                  >
+                    <div class="month-name">{{ month.name }}</div>
+                    <div class="activity-count">{{ month.activityCount }}個</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 自訂日期範圍 -->
+              <div v-if="showCustomDateRange">
+                <label class="block text-sm font-medium text-gray-700 mb-2">自訂日期</label>
+                <el-date-picker
+                  v-model="customDateRange"
+                  type="daterange"
+                  range-separator="至"
+                  start-placeholder="開始日期"
+                  end-placeholder="結束日期"
+                  @change="handleCustomDateChange"
+                  size="small"
+                  style="width: 100%"
+                />
+              </div>
+              
+            </div>
+          </el-collapse-item>
+          
+          <!-- 桌面版費用篩選 -->
+          <el-collapse-item name="price">
+            <template #title>
+              <div class="filter-header">
+                <el-icon><Wallet /></el-icon>
+                <span class="ml-2">費用</span>
               </div>
             </template>
             
@@ -667,13 +783,47 @@ const locationSuggestions = ref<any[]>([]);
 const locationLoading = ref(false);
 const geocodeLoading = ref(false);
 const activeNames = ref(['location']);
-const quickFilterActiveNames = ref(['quick-filters']); // 預設展開快速篩選
+const quickFilterActiveNames = ref([]); // 快速篩選預設收合
+const mobileActiveNames = ref(['location', 'categories', 'time', 'price', 'tags']); // 手機版預設全部展開
 const showMoreTags = ref(false);
 const priceRangeValue = ref([0, 5000]);
 const quickFilter = ref('');
-const selectedCity = ref('');
+const selectedCity = ref<string>('');
 const selectedDistrict = ref('');
 const priceType = ref('all');
+const showMonthSelector = ref(false);
+const showCustomDateRange = ref(false);
+const selectedMonths = ref<number[]>([]);
+const showDistance = ref(false);
+const distanceRadius = ref(10);
+const enableDistanceFilter = ref(false);
+const locationError = ref<string>('');
+
+// 快速時間按鈕選項
+const quickTimeButtons = [
+  { value: 'today', label: '今天' },
+  { value: 'tomorrow', label: '明天' },
+  { value: 'weekend', label: '本週末' },
+  { value: 'next-week', label: '下週' },
+  { value: 'this-month', label: '本月' },
+  { value: 'next-month', label: '下月' },
+  { value: 'months', label: '選擇月份' },
+  { value: 'custom', label: '自訂日期' }
+];
+
+// 月份選項
+const monthOptions = computed(() => {
+  const months = [];
+  const currentYear = new Date().getFullYear();
+  for (let i = 0; i < 12; i++) {
+    const monthName = new Date(currentYear, i).toLocaleDateString('zh-TW', { month: 'short' });
+    months.push({
+      name: monthName,
+      activityCount: Math.floor(Math.random() * 50) // 這裡應該是實際的活動數量
+    });
+  }
+  return months;
+});
 
 // 地區選項
 const cityOptions = [
@@ -751,6 +901,30 @@ const moreTags = computed(() =>
     .slice(6)
 );
 
+// 計算屬性 - 決定是否顯示活動時段篩選
+const showTimeSlotFilter = computed(() => {
+  const quickOption = filters.value.dateRange.quickOption;
+  
+  // 短期日期範圍才顯示時段篩選
+  const shortTermOptions = ['today', 'tomorrow', 'weekend', 'next-week'];
+  
+  if (shortTermOptions.includes(quickOption)) {
+    return true;
+  }
+  
+  // 如果選擇自訂日期，檢查日期範圍
+  if (quickOption === 'custom' && filters.value.dateRange.startDate && filters.value.dateRange.endDate) {
+    const start = new Date(filters.value.dateRange.startDate);
+    const end = new Date(filters.value.dateRange.endDate);
+    const diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24));
+    
+    // 7天以內才顯示時段篩選
+    return diffDays <= 7;
+  }
+  
+  return false;
+});
+
 // 計算屬性 - 篩選狀態檢查
 const hasLocationFilter = computed(() => 
   filters.value.location.coordinates !== null || selectedCity.value !== ''
@@ -787,18 +961,79 @@ const handleLocationTypeChange = async (type: 'current' | 'custom') => {
 // 取得目前位置
 const handleGetCurrentLocation = async () => {
   locationLoading.value = true;
+  locationError.value = ''; // 清除之前的錯誤
   
   try {
-    const success = await useCurrentLocation();
-    if (success && coordinates.value) {
-      ElMessage.success('位置已更新');
-      emitFiltersChange();
-    } else {
-      ElMessage.error('無法取得位置，請檢查瀏覽器權限設定');
+    // 檢查瀏覽器是否支援地理位置API
+    if (!navigator.geolocation) {
+      const errorMsg = '您的瀏覽器不支援地理定位功能';
+      locationError.value = errorMsg;
+      ElMessage.error(errorMsg);
+      return;
     }
-  } catch (error) {
+
+    // 使用 Promise 包裝 geolocation API
+    const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          console.log('定位成功:', position);
+          resolve(position);
+        },
+        (error) => {
+          console.error('定位錯誤:', error);
+          let errorMessage = '定位失敗';
+          
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = '定位權限被拒絕，請在瀏覽器設定中允許此網站使用定位服務';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = '無法取得位置資訊，請檢查您的網路連線或GPS設定';
+              break;
+            case error.TIMEOUT:
+              errorMessage = '定位請求逾時，請稍後再試';
+              break;
+            default:
+              errorMessage = `定位錯誤：${error.message}`;
+              break;
+          }
+          
+          reject(new Error(errorMessage));
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 15000, // 增加超時時間
+          maximumAge: 30000 // 減少快取時間以獲得更新的位置
+        }
+      );
+    });
+
+    // 更新座標
+    coordinates.value = {
+      lat: position.coords.latitude,
+      lng: position.coords.longitude
+    };
+
+    // 嘗試進行反向地理編碼
+    try {
+      const addressResult = await geocodeAddress(`${position.coords.latitude},${position.coords.longitude}`);
+      if (addressResult) {
+        address.value = addressResult;
+      }
+    } catch (geocodeError) {
+      console.warn('反向地理編碼失敗:', geocodeError);
+      address.value = '目前位置';
+    }
+
+    // 清除錯誤狀態
+    locationError.value = '';
+    ElMessage.success('位置取得成功');
+    emitFiltersChange();
+    
+  } catch (error: any) {
     console.error('取得位置失敗:', error);
-    ElMessage.error('取得位置失敗');
+    locationError.value = error.message || '無法取得位置，請檢查瀏覽器權限設定';
+    ElMessage.error(error.message || '無法取得位置，請檢查瀏覽器權限設定');
   } finally {
     locationLoading.value = false;
   }
@@ -986,6 +1221,10 @@ const setQuickFilter = (type: string) => {
     resetFilters();
     
     switch (type) {
+      case 'today':
+        filters.value.dateRange.type = 'quick';
+        filters.value.dateRange.quickOption = 'today';
+        break;
       case 'near':
         filters.value.location.type = 'current';
         filters.value.location.radius = 5;
@@ -1026,19 +1265,78 @@ const setQuickFilter = (type: string) => {
   }
 };
 
+// 處理距離顯示切換
+const handleDistanceToggle = (show: boolean) => {
+  showDistance.value = show;
+  emitFiltersChange();
+};
+
+// 處理距離範圍變更
+const handleDistanceRadiusChange = (radius: number) => {
+  distanceRadius.value = radius;
+  if (enableDistanceFilter.value) {
+    emitFiltersChange();
+  }
+};
+
+// 處理距離篩選切換
+const handleDistanceFilterToggle = (enabled: boolean) => {
+  enableDistanceFilter.value = enabled;
+  emitFiltersChange();
+};
+
 // 處理縣市變更
 const handleCityChange = (city: string) => {
+  selectedCity.value = city;
   selectedDistrict.value = '';
-  // 更新位置篩選
-  if (city) {
-    filters.value.location.type = 'custom';
-    // 這裡可以加入地理編碼邏輯
-  }
+  // 更新地區篩選
+  filters.value.regions = city ? [city] : [];
   emitFiltersChange();
 };
 
 const handleDistrictChange = (district: string) => {
   // 更新位置篩選
+  emitFiltersChange();
+};
+
+// 處理快速時間選擇
+const handleQuickTimeSelect = (value: string) => {
+  filters.value.dateRange.quickOption = value;
+  
+  // 重置其他時間選項
+  showMonthSelector.value = false;
+  showCustomDateRange.value = false;
+  selectedMonths.value = [];
+  
+  if (value === 'months') {
+    showMonthSelector.value = true;
+  } else if (value === 'custom') {
+    showCustomDateRange.value = true;
+  }
+  
+  emitFiltersChange();
+};
+
+// 處理月份切換
+const toggleMonth = (monthIndex: number) => {
+  const index = selectedMonths.value.indexOf(monthIndex);
+  if (index > -1) {
+    selectedMonths.value.splice(index, 1);
+  } else {
+    selectedMonths.value.push(monthIndex);
+  }
+  emitFiltersChange();
+};
+
+// 處理自訂日期變更
+const handleCustomDateChange = (dates: [Date, Date] | null) => {
+  if (dates) {
+    filters.value.dateRange.startDate = dates[0];
+    filters.value.dateRange.endDate = dates[1];
+  } else {
+    filters.value.dateRange.startDate = undefined;
+    filters.value.dateRange.endDate = undefined;
+  }
   emitFiltersChange();
 };
 
@@ -1120,7 +1418,7 @@ onMounted(() => {
 }
 
 .quick-filter-collapse :deep(.el-collapse-item__header) {
-  @apply bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg px-4 py-3 mb-2 border border-blue-200;
+  @apply bg-gray-50 rounded-lg px-4 py-3 mb-2 border border-gray-200;
 }
 
 .quick-filter-collapse :deep(.el-collapse-item__content) {
@@ -1132,11 +1430,50 @@ onMounted(() => {
 }
 
 .quick-filter-header span {
-  @apply text-blue-800 font-medium;
+  @apply text-gray-700 font-medium;
 }
 
 .quick-filter-btn {
-  @apply text-xs;
+  @apply text-xs w-full justify-center;
+}
+
+/* 手機版口風琴樣式 */
+.mobile-filter-collapse {
+  @apply border-0;
+}
+
+.mobile-filter-collapse :deep(.el-collapse-item__header) {
+  @apply bg-gray-50 rounded-lg px-4 py-3 mb-2;
+}
+
+.mobile-filter-collapse :deep(.el-collapse-item__content) {
+  @apply p-0;
+}
+
+/* 月份選擇器樣式 */
+.month-selector-item {
+  @apply p-3 border border-gray-200 rounded-lg cursor-pointer transition-all duration-200;
+  @apply hover:border-blue-300 hover:bg-blue-50;
+}
+
+.month-selector-item.selected {
+  @apply bg-blue-100 border-blue-400 text-blue-800;
+}
+
+.month-selector-item.has-activities {
+  @apply font-medium;
+}
+
+.month-name {
+  @apply text-sm font-medium text-center;
+}
+
+.activity-count {
+  @apply text-xs text-gray-600 text-center mt-1;
+}
+
+.month-selector-item.selected .activity-count {
+  @apply text-blue-600;
 }
 
 /* 載入動畫 */

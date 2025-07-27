@@ -1,8 +1,10 @@
-import type { Activity, UserFavorite, ApiResponse } from '~/types';
+import { ref, computed, readonly, onMounted } from 'vue';
+import { ElMessage } from 'element-plus';
+import type { Activity, UserFavorite, ApiResponse, FavoriteActivity } from '~/types';
 
 export const useFavorites = () => {
   // 響應式狀態
-  const favorites = ref<Activity[]>([]);
+  const favorites = ref<FavoriteActivity[]>([]);
   const favoriteIds = ref<Set<string>>(new Set());
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -22,59 +24,63 @@ export const useFavorites = () => {
     }
   };
 
-  // 儲存收藏到 localStorage
+  // 儲存收藏到 localStorage（完整版本）
   const saveFavoritesToStorage = () => {
     if (import.meta.client) {
       try {
+        // 儲存完整的收藏資料
+        const favoritesData = favorites.value;
+        console.log('準備儲存到 localStorage 的完整收藏資料:', favoritesData.length, '個');
+        localStorage.setItem('tourism-favorites-full', JSON.stringify(favoritesData));
+        
+        // 同時儲存 ID 列表（向後兼容）
         const ids = Array.from(favoriteIds.value);
         localStorage.setItem('tourism-favorites', JSON.stringify(ids));
+        
+        console.log('已儲存完整收藏資料到 localStorage');
       } catch (err) {
         console.warn('儲存本地收藏失敗:', err);
       }
     }
   };
 
-  // 載入收藏列表
+  // 載入收藏列表（純 localStorage 版本）
   const loadFavorites = async () => {
     loading.value = true;
     error.value = null;
 
     try {
-      // TODO: 如果有登入使用者，從 API 載入
-      // const response = await $fetch<ApiResponse<Activity[]>>('/api/user/favorites');
+      console.log('開始載入收藏（純 localStorage 模式）...');
       
-      // 暫時從 localStorage 載入收藏 ID，然後取得活動詳情
-      loadFavoritesFromStorage();
-      
-      if (favoriteIds.value.size > 0) {
-        const favoriteActivities: Activity[] = [];
-        
-        // 逐一取得收藏活動的詳細資訊
-        for (const id of favoriteIds.value) {
-          try {
-            const response = await $fetch<ApiResponse<Activity>>(`/api/activities/${id}`);
-            if (response.success && response.data) {
-              favoriteActivities.push(response.data);
-            } else {
-              // 如果活動不存在，從收藏中移除
-              favoriteIds.value.delete(id);
-            }
-          } catch (err) {
-            console.warn(`載入收藏活動 ${id} 失敗:`, err);
-            favoriteIds.value.delete(id);
+      // 從 localStorage 載入完整的收藏資料
+      if (import.meta.client) {
+        try {
+          const storedFavorites = localStorage.getItem('tourism-favorites-full');
+          if (storedFavorites) {
+            const parsedFavorites = JSON.parse(storedFavorites) as FavoriteActivity[];
+            favorites.value = parsedFavorites;
+            
+            // 同步更新 favoriteIds
+            favoriteIds.value = new Set(parsedFavorites.map(fav => fav.activityId));
+            
+            console.log(`成功載入 ${parsedFavorites.length} 個收藏活動`);
+          } else {
+            favorites.value = [];
+            favoriteIds.value = new Set();
+            console.log('沒有收藏的活動');
           }
+        } catch (err) {
+          console.warn('載入本地收藏失敗:', err);
+          favorites.value = [];
+          favoriteIds.value = new Set();
         }
-        
-        favorites.value = favoriteActivities;
-        saveFavoritesToStorage();
-      } else {
-        favorites.value = [];
       }
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '載入收藏失敗';
       error.value = errorMessage;
       console.error('載入收藏失敗:', err);
+      ElMessage.error(errorMessage);
     } finally {
       loading.value = false;
     }
@@ -82,7 +88,11 @@ export const useFavorites = () => {
 
   // 新增到收藏
   const addToFavorites = async (activity: Activity) => {
+    console.log('準備加入收藏:', activity.name, activity.id);
+    
     if (favoriteIds.value.has(activity.id)) {
+      console.log('活動已在收藏中:', activity.id);
+      ElMessage.info('此活動已在收藏中');
       return; // 已經在收藏中
     }
 
@@ -90,22 +100,31 @@ export const useFavorites = () => {
     error.value = null;
 
     try {
-      // TODO: 如果有登入使用者，向 API 新增收藏
-      // await $fetch('/api/user/favorites', {
-      //   method: 'POST',
-      //   body: { activityId: activity.id }
-      // });
-
+      console.log('開始加入收藏流程...');
+      
       // 本地處理
       favoriteIds.value.add(activity.id);
+      console.log('已加入到 favoriteIds:', Array.from(favoriteIds.value));
       
       // 檢查活動是否已在列表中
-      const existingIndex = favorites.value.findIndex(fav => fav.id === activity.id);
+      const existingIndex = favorites.value.findIndex(fav => fav.activityId === activity.id);
+      console.log('檢查是否已存在於 favorites 列表中:', existingIndex);
+      
       if (existingIndex === -1) {
-        favorites.value.push(activity);
+        const favoriteActivity: FavoriteActivity = {
+          id: `fav_${activity.id}_${Date.now()}`,
+          activityId: activity.id,
+          userId: null,
+          activity: activity,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        favorites.value.push(favoriteActivity);
+        console.log('已加入到 favorites 列表，目前總數:', favorites.value.length);
       }
 
       saveFavoritesToStorage();
+      console.log('已儲存到 localStorage');
 
       // 顯示成功訊息
       ElMessage.success('已加入收藏');
@@ -122,7 +141,10 @@ export const useFavorites = () => {
 
   // 從收藏移除
   const removeFromFavorites = async (activityId: string) => {
+    console.log('準備移除收藏:', activityId);
+    
     if (!favoriteIds.value.has(activityId)) {
+      console.log('活動不在收藏中:', activityId);
       return; // 不在收藏中
     }
 
@@ -130,15 +152,11 @@ export const useFavorites = () => {
     error.value = null;
 
     try {
-      // TODO: 如果有登入使用者，向 API 移除收藏
-      // await $fetch(`/api/user/favorites/${activityId}`, {
-      //   method: 'DELETE'
-      // });
-
       // 本地處理
       favoriteIds.value.delete(activityId);
-      favorites.value = favorites.value.filter(fav => fav.id !== activityId);
+      favorites.value = favorites.value.filter(fav => fav.activityId !== activityId);
 
+      console.log('已移除收藏，剩餘收藏數量:', favorites.value.length);
       saveFavoritesToStorage();
 
       // 顯示成功訊息
@@ -174,14 +192,14 @@ export const useFavorites = () => {
     error.value = null;
 
     try {
-      // TODO: 如果有登入使用者，向 API 清空收藏
-      // await $fetch('/api/user/favorites', { method: 'DELETE' });
-
+      console.log('準備清空所有收藏');
+      
       // 本地處理
       favoriteIds.value.clear();
       favorites.value = [];
       saveFavoritesToStorage();
 
+      console.log('已清空所有收藏');
       ElMessage.success('已清空所有收藏');
       
     } catch (err) {
@@ -262,10 +280,10 @@ export const useFavorites = () => {
   const hasFavorites = computed(() => favoritesCount.value > 0);
   const isEmpty = computed(() => !loading.value && favoritesCount.value === 0);
 
-  // 初始化
-  onMounted(() => {
-    loadFavorites();
-  });
+  // 初始化（只在客戶端載入）
+  if (import.meta.client) {
+    loadFavoritesFromStorage();
+  }
 
   return {
     // 狀態
