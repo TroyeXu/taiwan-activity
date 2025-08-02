@@ -1,6 +1,7 @@
 import { ClaudeValidationService } from '~/server/utils/claude-validation';
 import { db } from '~/db';
-import { activities, validationLogs } from '~/db/schema';
+import { activities, validationLogs, locations, categories, activityCategories } from '~/db/schema';
+import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import type { ApiResponse } from '~/types';
 
@@ -43,7 +44,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
 
         // 如果啟用自動處理且驗證通過，直接儲存活動
         if (autoProcess && validationResult.isValid && validationResult.validatedData) {
-          const activityId = await this.saveValidatedActivity(validationResult.validatedData);
+          const activityId = await saveValidatedActivity(validationResult.validatedData);
           validationResult.activityId = activityId;
         }
 
@@ -80,8 +81,8 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
       total: results.length,
       valid: results.filter(r => r.isValid).length,
       invalid: results.filter(r => !r.isValid).length,
-      averageQuality: results.reduce((sum, r) => sum + r.qualityScore, 0) / results.length,
-      processed: results.filter(r => r.activityId).length
+      averageQuality: results.reduce((sum, r) => sum + (r.qualityScore || 0), 0) / results.length,
+      processed: results.filter(r => 'activityId' in r && r.activityId).length
     };
 
     return {
@@ -120,7 +121,6 @@ async function saveValidatedActivity(validatedData: any): Promise<string> {
       qualityScore: validatedData.qualityScore || 70,
       createdAt: new Date(),
       updatedAt: new Date(),
-      version: 1
     });
 
     // 插入地點資料
@@ -185,6 +185,7 @@ async function saveValidatedActivity(validatedData: any): Promise<string> {
 
         // 建立關聯
         await db.insert(activityCategories).values({
+          id: nanoid(),
           activityId,
           categoryId
         });

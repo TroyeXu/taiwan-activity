@@ -357,17 +357,3 @@ ${JSON.stringify(data, null, 2)}
 }
 
 // 驗證結果類型
-export interface ValidationResult {
-  id: string;
-  originalData: any;
-  validatedData: Partial<Activity> | null;
-  isValid: boolean;
-  qualityScore: number;
-  issues: ValidationIssue[];
-  suggestions: Array<{
-    field: string;
-    suggestion: string;
-    reason: string;
-  }>;
-  timestamp: string;
-}

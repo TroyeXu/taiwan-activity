@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid';
-import type { NewActivity, NewLocation, NewActivityTime, NewDataSource } from '../schema';
+import type { NewActivity, NewLocation, NewActivityTime, NewDataSource, NewActivityCategory } from '../schema';
 
 // 擴展的假活動資料 - 更多台灣觀光活動
 export const extendedActivities = () => {
@@ -810,8 +810,8 @@ function getRandomEndTime(): string {
 }
 
 // 活動分類對應 - 擴展版
-export const getExtendedActivityCategoriesRelations = (activities: NewActivity[], categories: any[]) => {
-  const relations = [];
+export const getExtendedActivityCategoriesRelations = (activities: NewActivity[], categories: any[]): NewActivityCategory[] => {
+  const relations: NewActivityCategory[] = [];
   
   // 更詳細的分類映射
   const categoryMap: { [key: string]: string[] } = {

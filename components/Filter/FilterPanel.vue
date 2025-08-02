@@ -320,7 +320,7 @@
                 >
                   <el-checkbox
                     :model-value="filters.categories.includes(category.id)"
-                    @change="(checked: boolean) => handleCategoryToggle(category.id, checked)"
+                    @change="(checked: boolean | string | number) => handleCategoryToggle(category.id, checked)"
                     size="small"
                   />
                   <span
@@ -608,7 +608,7 @@
                 >
                   <el-checkbox
                     :model-value="filters.categories.includes(category.id)"
-                    @change="(checked: boolean) => handleCategoryToggle(category.id, checked)"
+                    @change="(checked: boolean | string | number) => handleCategoryToggle(category.id, checked)"
                     size="small"
                   />
                   <span
@@ -778,7 +778,7 @@ const {
 
 // 響應式狀態
 const customLocationInput = ref('');
-const customDateRange = ref<[Date, Date] | null>(null);
+const customDateRange = ref<any>(null);
 const locationSuggestions = ref<any[]>([]);
 const locationLoading = ref(false);
 const geocodeLoading = ref(false);
@@ -908,7 +908,7 @@ const showTimeSlotFilter = computed(() => {
   // 短期日期範圍才顯示時段篩選
   const shortTermOptions = ['today', 'tomorrow', 'weekend', 'next-week'];
   
-  if (shortTermOptions.includes(quickOption)) {
+  if (quickOption && shortTermOptions.includes(quickOption)) {
     return true;
   }
   
@@ -964,67 +964,19 @@ const handleGetCurrentLocation = async () => {
   locationError.value = ''; // 清除之前的錯誤
   
   try {
-    // 檢查瀏覽器是否支援地理位置API
-    if (!navigator.geolocation) {
-      const errorMsg = '您的瀏覽器不支援地理定位功能';
-      locationError.value = errorMsg;
-      ElMessage.error(errorMsg);
+    // 使用 useGeolocation 組合式函數取得位置
+    const result = await getCurrentPosition();
+    
+    if (!result) {
+      // getCurrentPosition 已經處理了錯誤設定，這裡只需要設定 UI 狀態
+      locationError.value = '無法取得位置資訊';
+      ElMessage.error('定位失敗，請確認瀏覽器權限設定');
       return;
     }
 
-    // 使用 Promise 包裝 geolocation API
-    const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          console.log('定位成功:', position);
-          resolve(position);
-        },
-        (error) => {
-          console.error('定位錯誤:', error);
-          let errorMessage = '定位失敗';
-          
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage = '定位權限被拒絕，請在瀏覽器設定中允許此網站使用定位服務';
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage = '無法取得位置資訊，請檢查您的網路連線或GPS設定';
-              break;
-            case error.TIMEOUT:
-              errorMessage = '定位請求逾時，請稍後再試';
-              break;
-            default:
-              errorMessage = `定位錯誤：${error.message}`;
-              break;
-          }
-          
-          reject(new Error(errorMessage));
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 15000, // 增加超時時間
-          maximumAge: 30000 // 減少快取時間以獲得更新的位置
-        }
-      );
-    });
-
-    // 更新座標
-    coordinates.value = {
-      lat: position.coords.latitude,
-      lng: position.coords.longitude
-    };
-
-    // 嘗試進行反向地理編碼
-    try {
-      const addressResult = await geocodeAddress(`${position.coords.latitude},${position.coords.longitude}`);
-      if (addressResult) {
-        address.value = addressResult;
-      }
-    } catch (geocodeError) {
-      console.warn('反向地理編碼失敗:', geocodeError);
-      address.value = '目前位置';
-    }
-
+    // 成功取得位置，coordinates 和 address 已經由 composable 更新
+    console.log('定位成功:', result);
+    
     // 清除錯誤狀態
     locationError.value = '';
     ElMessage.success('位置取得成功');
@@ -1086,7 +1038,7 @@ const handleRadiusChange = () => {
 };
 
 // 處理分類切換
-const handleCategoryToggle = (categoryId: string, checked: boolean) => {
+const handleCategoryToggle = (categoryId: string, checked: boolean | string | number) => {
   toggleCategory(categoryId);
   emitFiltersChange();
 };
@@ -1142,7 +1094,7 @@ const handleTimeSlotToggle = (timeSlot: string, checked: boolean) => {
 
 
 // 處理價格類型變更
-const handlePriceTypeChange = (type: string) => {
+const handlePriceTypeChange = (type: string | number | boolean | undefined) => {
   switch (type) {
     case 'free':
       filters.value.priceRange.min = 0;
@@ -1266,22 +1218,22 @@ const setQuickFilter = (type: string) => {
 };
 
 // 處理距離顯示切換
-const handleDistanceToggle = (show: boolean) => {
-  showDistance.value = show;
+const handleDistanceToggle = (show: string | number | boolean) => {
+  showDistance.value = Boolean(show);
   emitFiltersChange();
 };
 
 // 處理距離範圍變更
-const handleDistanceRadiusChange = (radius: number) => {
-  distanceRadius.value = radius;
+const handleDistanceRadiusChange = (radius: number | number[]) => {
+  distanceRadius.value = Array.isArray(radius) ? radius[0] : radius;
   if (enableDistanceFilter.value) {
     emitFiltersChange();
   }
 };
 
 // 處理距離篩選切換
-const handleDistanceFilterToggle = (enabled: boolean) => {
-  enableDistanceFilter.value = enabled;
+const handleDistanceFilterToggle = (enabled: string | number | boolean) => {
+  enableDistanceFilter.value = Boolean(enabled);
   emitFiltersChange();
 };
 

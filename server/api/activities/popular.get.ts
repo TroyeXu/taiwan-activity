@@ -52,7 +52,7 @@ export default defineEventHandler(async (event) => {
     const results = await Promise.all(
       popularActivities.map(async (row) => {
         // 載入分類
-        const activityCategories = await db
+        const activityCategoriesResult = await db
           .select({ category: categories })
           .from(categories)
           .innerJoin(activityCategories, eq(categories.id, activityCategories.categoryId))
@@ -71,7 +71,7 @@ export default defineEventHandler(async (event) => {
           ...row.activity,
           location: row.location,
           time: row.time,
-          categories: activityCategories.map(ac => ac.category),
+          categories: activityCategoriesResult.map(ac => ac.category),
           stats: {
             viewCount: row.activity.viewCount || 0,
             favoriteCount: row.activity.favoriteCount || 0,

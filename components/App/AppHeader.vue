@@ -198,8 +198,8 @@ const getCurrentLocation = async () => {
       router.push({
         path: '/',
         query: {
-          lat: location.latitude.toString(),
-          lng: location.longitude.toString(),
+          lat: location.lat.toString(),
+          lng: location.lng.toString(),
           locate: 'true'
         }
       });

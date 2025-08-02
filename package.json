@@ -33,7 +33,7 @@
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",
     "nanoid": "^5.0.4",
-    "nuxt": "^4.0.1",
+    "nuxt": "^3.14.0",
     "pinia": "^2.1.7",
     "vue": "^3.4.0",
     "vue-leaflet": "^0.1.0",

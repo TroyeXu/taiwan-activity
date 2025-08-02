@@ -142,7 +142,7 @@
               class="w-full h-full"
             >
               <ActivityMap
-                :activities="activities || []"
+                :activities="(activities as any) || []"
                 :center="mapCenter"
                 :zoom="mapZoom"
                 :show-category-filter="false"
@@ -193,8 +193,8 @@
                     <ActivityCard
                       v-for="activity in activities"
                       :key="activity.id"
-                      :activity="activity"
-                      @click="handleActivityClick(activity)"
+                      :activity="activity as any"
+                      @click="handleActivityClick(activity as any)"
                       class="cursor-pointer hover:shadow-lg transition-shadow"
                     />
                   </div>
@@ -462,7 +462,7 @@ const clearSearch = () => {
 };
 
 // 篩選變更處理
-const handleFilterChange = (filters: SearchFilters) => {
+const handleFilterChange = (filters: any) => {
   searchFilters.value = { ...filters };
   handleSearch();
 };
@@ -508,7 +508,7 @@ const handleMobileFilterApply = () => {
 const handleSortingChange = (sorting: string) => {
   currentSorting.value = sorting;
   if (searchFilters.value.sorting !== undefined) {
-    searchFilters.value.sorting = sorting;
+    searchFilters.value.sorting = sorting as any;
   }
   handleFilterChange(searchFilters.value);
 };

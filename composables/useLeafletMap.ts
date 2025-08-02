@@ -113,7 +113,7 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
     }
 
     const L = await import('leaflet');
-    const position = [activity.location.latitude, activity.location.longitude];
+    const position: [number, number] = [activity.location.latitude, activity.location.longitude];
 
     // 取得分類圖標
     const category = activity.categories?.[0];

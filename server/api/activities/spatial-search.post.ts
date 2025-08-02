@@ -1,6 +1,6 @@
 import { db } from '~/db';
 import { sql } from 'drizzle-orm';
-import { monitorQuery } from '~/server/utils/database-optimization';
+// import { monitorQuery } from '~/server/utils/database-optimization';
 import type { ApiResponse, Activity } from '~/types';
 
 interface SpatialSearchParams {
@@ -42,6 +42,9 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
       page = 1,
       limit = 50
     } = body;
+
+    // Ensure filters is defined
+    const safeFilters = filters || {};
 
     // 驗證參數
     if (!center?.lat || !center?.lng) {
@@ -87,19 +90,13 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
         limit,
         total: results.total,
         totalPages: Math.ceil(results.total / limit)
-      },
-      meta: {
-        searchCenter: center,
-        searchRadius: radius,
-        executionTime,
-        hasMore: results.total > page * limit
       }
     };
 
   } catch (error) {
     console.error('空間搜尋失敗:', error);
 
-    if (error.statusCode) {
+    if (error instanceof Error && 'statusCode' in error) {
       throw error;
     }
 
@@ -110,9 +107,9 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
   }
 });
 
-@monitorQuery('spatial-search')
 async function performSpatialSearch(params: SpatialSearchParams) {
   const { center, radius, bounds, filters, sorting, page, limit } = params;
+  const safeFilters = filters || {};
   
   try {
     // 構建基礎 SQL 查詢
@@ -202,41 +199,41 @@ async function performSpatialSearch(params: SpatialSearchParams) {
     }
 
     // 品質篩選
-    if (filters.minQuality) {
+    if (safeFilters.minQuality) {
       query += ` AND a.quality_score >= ?`;
-      queryParams.push(filters.minQuality);
+      queryParams.push(safeFilters.minQuality);
     }
 
     // 分類篩選
-    if (filters.categories?.length) {
-      const placeholders = filters.categories.map(() => '?').join(',');
+    if (safeFilters.categories?.length) {
+      const placeholders = safeFilters.categories.map(() => '?').join(',');
       query += ` AND c.slug IN (${placeholders})`;
-      queryParams.push(...filters.categories);
+      queryParams.push(...safeFilters.categories);
     }
 
     // 地區篩選
-    if (filters.regions?.length) {
-      const placeholders = filters.regions.map(() => '?').join(',');
+    if (safeFilters.regions?.length) {
+      const placeholders = safeFilters.regions.map(() => '?').join(',');
       query += ` AND l.region IN (${placeholders})`;
-      queryParams.push(...filters.regions);
+      queryParams.push(...safeFilters.regions);
     }
 
     // 城市篩選
-    if (filters.cities?.length) {
-      const placeholders = filters.cities.map(() => '?').join(',');
+    if (safeFilters.cities?.length) {
+      const placeholders = safeFilters.cities.map(() => '?').join(',');
       query += ` AND l.city IN (${placeholders})`;
-      queryParams.push(...filters.cities);
+      queryParams.push(...safeFilters.cities);
     }
 
     // 時間篩選
-    if (filters.dateRange) {
+    if (safeFilters.dateRange) {
       query += ` AND (
         (t.start_date <= ? AND (t.end_date >= ? OR t.end_date IS NULL))
         OR (t.start_date >= ? AND t.start_date <= ?)
       )`;
       queryParams.push(
-        filters.dateRange.end, filters.dateRange.start,
-        filters.dateRange.start, filters.dateRange.end
+        safeFilters.dateRange.end, safeFilters.dateRange.start,
+        safeFilters.dateRange.start, safeFilters.dateRange.end
       );
     }
 
@@ -268,16 +265,23 @@ async function performSpatialSearch(params: SpatialSearchParams) {
     }
 
     // 分頁
-    const offset = (page - 1) * limit;
+    const safePage = page || 1;
+    const safeLimit = limit || 50;
+    const offset = (safePage - 1) * safeLimit;
     query += ` LIMIT ? OFFSET ?`;
-    queryParams.push(limit, offset);
+    queryParams.push(safeLimit, offset);
 
     console.log('Executing spatial query with params:', { 
-      center, radius, bounds, filters, sorting, page, limit 
+      center, radius, bounds, filters: safeFilters, sorting, page: safePage, limit: safeLimit 
     });
 
-    // 執行查詢
-    const result = await db.execute(sql.raw(query, queryParams));
+    // 執行查詢  
+    // Note: This is a workaround for Drizzle sql.raw parameter issues
+    let finalQuery = query;
+    queryParams.forEach((param, index) => {
+      finalQuery = finalQuery.replace('?', typeof param === 'string' ? `'${param}'` : param.toString());
+    });
+    const result = await db.all(sql.raw(finalQuery));
     
     // 同時執行計數查詢 (不含 LIMIT/OFFSET)
     const countQuery = query
@@ -286,11 +290,15 @@ async function performSpatialSearch(params: SpatialSearchParams) {
       .replace(/LIMIT[\s\S]*$/, '');
     
     const countParams = queryParams.slice(0, -2); // 移除 LIMIT 和 OFFSET
-    const countResult = await db.execute(sql.raw(countQuery, countParams));
-    const total = countResult.rows[0]?.total as number || 0;
+    let finalCountQuery = countQuery;
+    countParams.forEach((param, index) => {
+      finalCountQuery = finalCountQuery.replace('?', typeof param === 'string' ? `'${param}'` : param.toString());
+    });
+    const countResult = await db.get(sql.raw(finalCountQuery));
+    const total = (countResult as any)?.total as number || 0;
 
     // 格式化結果
-    const activities: Activity[] = result.rows.map(row => ({
+    const activities: Activity[] = (result as any[]).map(row => ({
       id: row.id as string,
       name: row.name as string,
       description: row.description as string || undefined,

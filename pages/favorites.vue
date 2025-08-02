@@ -62,17 +62,16 @@
               />
             </ElCol>
             <ElCol :span="8">
-              <ElStatistic
-                title="最近收藏"
-                :value="recentFavoriteDate"
-                formatter="formatRecentDate"
-              />
+              <div>
+                <p class="text-sm text-gray-500 mb-1">最近收藏</p>
+                <p class="text-lg font-bold">{{ recentFavoriteDate }}</p>
+              </div>
             </ElCol>
             <ElCol :span="8">
-              <ElStatistic
-                title="最愛分類"
-                :value="topCategory"
-              />
+              <div>
+                <p class="text-sm text-gray-500 mb-1">最愛分類</p>
+                <p class="text-lg font-bold">{{ topCategory || '無' }}</p>
+              </div>
             </ElCol>
           </ElRow>
         </ElCard>
@@ -309,8 +308,8 @@ onMounted(() => {
 });
 
 // 格式化函數
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('zh-TW', {
+const formatDate = (date: string | Date) => {
+  return new Date(date).toLocaleDateString('zh-TW', {
     year: 'numeric',
     month: 'short',
     day: 'numeric'
@@ -326,7 +325,7 @@ const applySorting = () => {
   // 排序已在計算屬性中處理
 };
 
-const goToActivity = (row: FavoriteActivity) => {
+const goToActivity = (row: any) => {
   navigateTo(`/activity/${row.activity.id}`);
 };
 

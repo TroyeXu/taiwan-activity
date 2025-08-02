@@ -62,10 +62,10 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
 
     // 分類篩選
     if (filters.categories && filters.categories.length > 0) {
-      queryBuilder = queryBuilder.having(
+      queryBuilder = (queryBuilder as any).having(
         or(
           ...filters.categories.map(cat => 
-            like(sql`GROUP_CONCAT(${categories.slug})`, `%${cat}%`)
+            sql`GROUP_CONCAT(${categories.slug}) LIKE '%${cat}%'`
           )
         )
       );
@@ -173,7 +173,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
 
     // 應用所有條件
     if (conditions.length > 0) {
-      queryBuilder = queryBuilder.where(and(...conditions));
+      queryBuilder = (queryBuilder as any).where(and(...conditions));
     }
 
     // 排序
@@ -181,28 +181,28 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
     switch (sorting) {
       case 'distance':
         if (location) {
-          queryBuilder = queryBuilder.orderBy(sql`distance`);
+          queryBuilder = (queryBuilder as any).orderBy(sql`distance`);
         } else {
-          queryBuilder = queryBuilder.orderBy(desc(activities.createdAt));
+          queryBuilder = (queryBuilder as any).orderBy(desc(activities.createdAt));
         }
         break;
       case 'popularity':
-        queryBuilder = queryBuilder.orderBy(desc(activities.qualityScore));
+        queryBuilder = (queryBuilder as any).orderBy(desc(activities.qualityScore));
         break;
       case 'date':
-        queryBuilder = queryBuilder.orderBy(asc(activityTimes.startDate));
+        queryBuilder = (queryBuilder as any).orderBy(asc(activityTimes.startDate));
         break;
       default:
         // 相關性排序
         if (searchQuery) {
           // 如果有搜尋關鍵字，按相關性排序
-          queryBuilder = queryBuilder.orderBy(
+          queryBuilder = (queryBuilder as any).orderBy(
             desc(activities.qualityScore),
             desc(activities.createdAt)
           );
         } else {
           // 否則按品質分數和創建時間排序
-          queryBuilder = queryBuilder.orderBy(
+          queryBuilder = (queryBuilder as any).orderBy(
             desc(activities.qualityScore),
             desc(activities.createdAt)
           );
@@ -211,7 +211,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
 
     // 分頁
     const offset = (page - 1) * limit;
-    queryBuilder = queryBuilder.limit(limit).offset(offset);
+    queryBuilder = (queryBuilder as any).limit(limit).offset(offset);
 
     // 執行查詢
     const results = await queryBuilder;

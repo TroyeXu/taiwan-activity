@@ -16,8 +16,8 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
             description: '這是一個測試活動',
             status: 'active' as any,
             qualityScore: 100,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
             location: {
               id: '1',
               activityId: '1',
@@ -64,6 +64,21 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
       radius = 10
     } = query;
 
+    // 建立基礎條件
+    const whereConditions = [eq(activities.status, 'active')];
+    
+    // 地區篩選
+    if (regions) {
+      const regionList = Array.isArray(regions) ? regions : [regions];
+      whereConditions.push(inArray(locations.region, regionList));
+    }
+
+    // 城市篩選
+    if (cities) {
+      const cityList = Array.isArray(cities) ? cities : [cities];
+      whereConditions.push(inArray(locations.city, cityList));
+    }
+
     // 建立基礎查詢
     let queryBuilder = db
       .select({
@@ -80,42 +95,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
       .leftJoin(activityTimes, eq(activities.id, activityTimes.activityId))
       .leftJoin(activityCategories, eq(activities.id, activityCategories.activityId))
       .leftJoin(categories, eq(activityCategories.categoryId, categories.id))
-      .where(eq(activities.status, 'active'))
       .groupBy(activities.id, locations.id, activityTimes.id);
-
-    // 分類篩選
-    if (categoryFilter) {
-      const categoryList = Array.isArray(categoryFilter) ? categoryFilter : [categoryFilter];
-      queryBuilder = queryBuilder.having(
-        or(
-          ...categoryList.map(cat => 
-            like(sql`GROUP_CONCAT(${categories.slug})`, `%${cat}%`)
-          )
-        )
-      );
-    }
-
-    // 地區篩選
-    if (regions) {
-      const regionList = Array.isArray(regions) ? regions : [regions];
-      queryBuilder = queryBuilder.where(
-        and(
-          eq(activities.status, 'active'),
-          inArray(locations.region, regionList)
-        )
-      );
-    }
-
-    // 城市篩選
-    if (cities) {
-      const cityList = Array.isArray(cities) ? cities : [cities];
-      queryBuilder = queryBuilder.where(
-        and(
-          eq(activities.status, 'active'),
-          inArray(locations.city, cityList)
-        )
-      );
-    }
 
     // 時間篩選
     if (startDate || endDate || timeFilter) {
@@ -196,12 +176,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
       }
 
       if (dateConditions.length > 0) {
-        queryBuilder = queryBuilder.where(
-          and(
-            eq(activities.status, 'active'),
-            ...dateConditions
-          )
-        );
+        whereConditions.push(...dateConditions);
       }
     }
 
@@ -212,55 +187,34 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
       const radiusNum = parseFloat(radius as string) * 1000; // 轉換為公尺
 
       // 使用 Haversine 公式計算距離
-      queryBuilder = queryBuilder.where(
-        and(
-          eq(activities.status, 'active'),
-          sql`(
-            6371000 * acos(
-              cos(radians(${latNum})) * 
-              cos(radians(${locations.latitude})) * 
-              cos(radians(${locations.longitude}) - radians(${lngNum})) + 
-              sin(radians(${latNum})) * 
-              sin(radians(${locations.latitude}))
-            )
-          ) <= ${radiusNum}`
-        )
+      whereConditions.push(
+        sql`(
+          6371000 * acos(
+            cos(radians(${latNum})) * 
+            cos(radians(${locations.latitude})) * 
+            cos(radians(${locations.longitude}) - radians(${lngNum})) + 
+            sin(radians(${latNum})) * 
+            sin(radians(${locations.latitude}))
+          )
+        ) <= ${radiusNum}`
       );
     }
 
-    // 排序
-    switch (sorting) {
-      case 'distance':
-        if (lat && lng) {
-          const latNum = parseFloat(lat as string);
-          const lngNum = parseFloat(lng as string);
-          queryBuilder = queryBuilder.orderBy(
-            sql`(
-              6371000 * acos(
-                cos(radians(${latNum})) * 
-                cos(radians(${locations.latitude})) * 
-                cos(radians(${locations.longitude}) - radians(${lngNum})) + 
-                sin(radians(${latNum})) * 
-                sin(radians(${locations.latitude}))
-              )
-            )`
-          );
-        } else {
-          queryBuilder = queryBuilder.orderBy(desc(activities.createdAt));
-        }
-        break;
-      case 'popularity':
-        queryBuilder = queryBuilder.orderBy(desc(activities.qualityScore));
-        break;
-      case 'date':
-        queryBuilder = queryBuilder.orderBy(asc(activityTimes.startDate));
-        break;
-      default:
-        // 相關性排序 (品質分數 + 創建時間)
-        queryBuilder = queryBuilder.orderBy(
-          desc(activities.qualityScore),
-          desc(activities.createdAt)
-        );
+    // 應用所有 WHERE 條件
+    if (whereConditions.length > 0) {
+      queryBuilder = (queryBuilder as any).where(and(...whereConditions));
+    }
+
+    // 分類篩選 (使用 HAVING)
+    if (categoryFilter) {
+      const categoryList = Array.isArray(categoryFilter) ? categoryFilter : [categoryFilter];
+      queryBuilder = (queryBuilder as any).having(
+        or(
+          ...categoryList.map(cat => 
+            sql`GROUP_CONCAT(${categories.slug}) LIKE '%${cat}%'`
+          )
+        )
+      );
     }
 
     // 分頁
@@ -268,7 +222,55 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
     const limitNum = parseInt(limit as string, 10) || 20;
     const offset = (pageNum - 1) * limitNum;
 
-    queryBuilder = queryBuilder.limit(limitNum).offset(offset);
+    // 應用排序和分頁
+    switch (sorting) {
+      case 'distance':
+        if (lat && lng) {
+          const latNum = parseFloat(lat as string);
+          const lngNum = parseFloat(lng as string);
+          queryBuilder = (queryBuilder as any)
+            .orderBy(
+              sql`(
+                6371000 * acos(
+                  cos(radians(${latNum})) * 
+                  cos(radians(${locations.latitude})) * 
+                  cos(radians(${locations.longitude}) - radians(${lngNum})) + 
+                  sin(radians(${latNum})) * 
+                  sin(radians(${locations.latitude}))
+                )
+              )`
+            )
+            .limit(limitNum)
+            .offset(offset);
+        } else {
+          queryBuilder = (queryBuilder as any)
+            .orderBy(desc(activities.createdAt))
+            .limit(limitNum)
+            .offset(offset);
+        }
+        break;
+      case 'popularity':
+        queryBuilder = (queryBuilder as any)
+          .orderBy(desc(activities.qualityScore))
+          .limit(limitNum)
+          .offset(offset);
+        break;
+      case 'date':
+        queryBuilder = (queryBuilder as any)
+          .orderBy(asc(activityTimes.startDate))
+          .limit(limitNum)
+          .offset(offset);
+        break;
+      default:
+        // 相關性排序 (品質分數 + 創建時間)
+        queryBuilder = (queryBuilder as any)
+          .orderBy(
+            desc(activities.qualityScore),
+            desc(activities.createdAt)
+          )
+          .limit(limitNum)
+          .offset(offset);
+    }
 
     // 執行查詢
     let results;
@@ -286,8 +288,8 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
             description: '這是一個測試活動',
             status: 'active' as any,
             qualityScore: 100,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
             location: {
               id: '1',
               activityId: '1',

@@ -163,8 +163,8 @@ export const useCategories = () => {
   // 熱門分類 (暫時使用預設順序)
   const popularCategories = computed(() => {
     const popularOrder = ['nature', 'art_culture', 'traditional', 'cuisine', 'romantic'];
-    const popular = [];
-    const others = [];
+    const popular: Category[] = [];
+    const others: Category[] = [];
 
     categories.value.forEach(category => {
       const index = popularOrder.indexOf(category.slug);

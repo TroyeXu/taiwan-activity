@@ -217,13 +217,13 @@ export const useFavorites = () => {
     try {
       const exportData = {
         exportDate: new Date().toISOString(),
-        favorites: favorites.value.map(activity => ({
-          id: activity.id,
-          name: activity.name,
-          description: activity.description,
-          location: activity.location,
-          time: activity.time,
-          categories: activity.categories
+        favorites: favorites.value.map(favorite => ({
+          id: favorite.activity.id,
+          name: favorite.activity.name,
+          description: favorite.activity.description,
+          location: favorite.activity.location,
+          time: favorite.activity.time,
+          categories: favorite.activity.categories
         }))
       };
 
@@ -249,8 +249,8 @@ export const useFavorites = () => {
   const getFavoritesByCategory = computed(() => {
     const categoryCounts: Record<string, number> = {};
     
-    favorites.value.forEach(activity => {
-      activity.categories?.forEach(category => {
+    favorites.value.forEach(favorite => {
+      favorite.activity.categories?.forEach((category: any) => {
         categoryCounts[category.name] = (categoryCounts[category.name] || 0) + 1;
       });
     });
@@ -263,8 +263,8 @@ export const useFavorites = () => {
   const getFavoritesByRegion = computed(() => {
     const regionCounts: Record<string, number> = {};
     
-    favorites.value.forEach(activity => {
-      const region = activity.location?.region;
+    favorites.value.forEach(favorite => {
+      const region = favorite.activity.location?.region;
       if (region) {
         regionCounts[region] = (regionCounts[region] || 0) + 1;
       }

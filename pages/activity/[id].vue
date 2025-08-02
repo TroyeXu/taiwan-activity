@@ -143,7 +143,7 @@
                 <div class="h-64 bg-gray-100 rounded-lg">
                   <ActivityMap
                     :activities="[activity]"
-                    :center="{ lat: activity.location.latitude, lng: activity.location.longitude }"
+                    :center="{ lat: activity.location.latitude || 0, lng: activity.location.longitude || 0 }"
                     :zoom="15"
                     :show-controls="false"
                     class="h-full"
@@ -189,16 +189,16 @@
                   </div>
                   
                   <p class="text-xs text-gray-500 mb-2">
-                    驗證時間: {{ formatDate(activity.validation.verificationDate) }}
+                    驗證時間: {{ activity.validation.verificationDate ? formatDate(activity.validation.verificationDate) : '未知' }}
                   </p>
 
                   <!-- 驗證問題 -->
                   <div v-if="activity.validation.issues && activity.validation.issues.length > 0">
                     <h5 class="text-sm font-medium mb-1">發現問題:</h5>
                     <ul class="text-sm text-gray-600 space-y-1">
-                      <li v-for="issue in activity.validation.issues" :key="issue" class="flex items-start gap-2">
+                      <li v-for="(issue, index) in activity.validation.issues" :key="`${issue.field}-${index}`" class="flex items-start gap-2">
                         <ElIcon class="mt-0.5 text-orange-500"><Warning /></ElIcon>
-                        {{ issue }}
+                        {{ issue.message }}
                       </li>
                     </ul>
                   </div>
@@ -346,15 +346,15 @@ const formatDescription = (description: string) => {
   return description.replace(/\n/g, '<br>');
 };
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('zh-TW', {
+const formatDate = (date: string | Date) => {
+  return new Date(date).toLocaleDateString('zh-TW', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
   });
 };
 
-const formatDateRange = (startDate: string, endDate?: string) => {
+const formatDateRange = (startDate: string, endDate?: string | null) => {
   const start = formatDate(startDate);
   if (!endDate || endDate === startDate) {
     return start;
@@ -362,7 +362,7 @@ const formatDateRange = (startDate: string, endDate?: string) => {
   return `${start} - ${formatDate(endDate)}`;
 };
 
-const formatTimeRange = (startTime?: string, endTime?: string) => {
+const formatTimeRange = (startTime?: string | null, endTime?: string | null) => {
   if (!startTime && !endTime) return '';
   if (startTime && endTime) {
     return `${startTime} - ${endTime}`;

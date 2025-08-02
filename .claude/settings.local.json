@@ -21,7 +21,11 @@
       "Bash(mv:*)",
       "Bash(rm:*)",
       "Bash(git checkout:*)",
-      "Bash(perl:*)"
+      "Bash(perl:*)",
+      "Bash(node:*)",
+      "Bash(npm ls:*)",
+      "Bash(git rm:*)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }

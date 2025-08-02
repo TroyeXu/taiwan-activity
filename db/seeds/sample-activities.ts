@@ -364,11 +364,11 @@ export const sampleActivities = () => {
 };
 
 // 活動分類關聯
-export const getActivityCategoriesRelations = (activities: NewActivity[], categories: any[]) => {
-  const relations = [];
+export const getActivityCategoriesRelations = (activities: NewActivity[], categories: any[]): NewActivityCategory[] => {
+  const relations: NewActivityCategory[] = [];
   
   // 為每個活動分配合適的分類
-  const categoryMap = {
+  const categoryMap: { [key: string]: string[] } = {
     '2025 台北燈節': ['traditional'],
     '阿里山櫻花季': ['nature', 'romantic'],
     '墾丁音樂季': ['art_culture'],
@@ -383,7 +383,7 @@ export const getActivityCategoriesRelations = (activities: NewActivity[], catego
 
   activities.forEach(activity => {
     const categoryNames = categoryMap[activity.name] || ['nature'];
-    categoryNames.forEach(categorySlug => {
+    categoryNames.forEach((categorySlug: string) => {
       const category = categories.find(c => c.slug === categorySlug);
       if (category) {
         relations.push({

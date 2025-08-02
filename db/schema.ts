@@ -245,3 +245,5 @@ export type Tag = typeof tags.$inferSelect;
 export type NewTag = typeof tags.$inferInsert;
 export type ActivityTag = typeof activityTags.$inferSelect;
 export type NewActivityTag = typeof activityTags.$inferInsert;
+export type ActivityCategory = typeof activityCategories.$inferSelect;
+export type NewActivityCategory = typeof activityCategories.$inferInsert;

@@ -116,7 +116,7 @@ export const useFilters = () => {
     if (index > -1) {
       filters.value.regions.splice(index, 1);
       // 移除該地區的所有城市
-      const regionCities = REGIONS[regionId]?.cities || [];
+      const regionCities = REGIONS[regionId as keyof typeof REGIONS]?.cities || [];
       filters.value.cities = filters.value.cities.filter(
         city => !regionCities.includes(city)
       );

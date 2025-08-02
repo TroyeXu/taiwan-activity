@@ -23,15 +23,15 @@
         :key="activity.id"
         shadow="hover"
         class="cursor-pointer transition-all hover:shadow-md"
-        @click="handleActivityClick(activity)"
+        @click="handleActivityClick(activity.activity)"
       >
         <div class="flex gap-3">
           <!-- 活動圖片 -->
           <div class="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
             <img
-              v-if="activity.media?.images?.[0]"
-              :src="activity.media.images[0].url"
-              :alt="activity.name"
+              v-if="activity.activity.media?.images?.[0]"
+              :src="activity.activity.media.images[0].url"
+              :alt="activity.activity.name"
               class="w-full h-full object-cover"
             />
             <div v-else class="flex items-center justify-center h-full text-gray-400">
@@ -42,30 +42,30 @@
           <!-- 活動資訊 -->
           <div class="flex-1 min-w-0">
             <h3 class="font-medium text-sm line-clamp-2 mb-1">
-              {{ activity.name }}
+              {{ activity.activity.name }}
             </h3>
             
             <p class="text-xs text-gray-600 line-clamp-2 mb-2">
-              {{ activity.summary }}
+              {{ activity.activity.summary }}
             </p>
 
             <!-- 位置和時間 -->
             <div class="flex items-center gap-4 text-xs text-gray-500">
-              <span v-if="activity.location" class="flex items-center gap-1">
+              <span v-if="activity.activity.location" class="flex items-center gap-1">
                 <ElIcon><LocationFilled /></ElIcon>
-                {{ activity.location.city }}
+                {{ activity.activity.location.city }}
               </span>
               
-              <span v-if="activity.time" class="flex items-center gap-1">
+              <span v-if="activity.activity.time" class="flex items-center gap-1">
                 <ElIcon><Calendar /></ElIcon>
-                {{ formatDate(activity.time.startDate) }}
+                {{ formatDate(activity.activity.time.startDate) }}
               </span>
             </div>
 
             <!-- 分類標籤 -->
-            <div v-if="activity.categories && activity.categories.length > 0" class="mt-2">
+            <div v-if="activity.activity.categories && activity.activity.categories.length > 0" class="mt-2">
               <ElTag
-                v-for="category in activity.categories.slice(0, 2)"
+                v-for="category in activity.activity.categories.slice(0, 2)"
                 :key="category.id"
                 size="small"
                 :color="category.colorCode"
@@ -117,7 +117,7 @@ import type { Activity } from '~/types';
 
 // Emits
 const emit = defineEmits<{
-  'activity-click': [activity: Activity];
+  'activity-click': [activity: any];
 }>();
 
 // 路由
@@ -145,7 +145,7 @@ const formatDate = (dateString: string) => {
 };
 
 // 處理活動點擊
-const handleActivityClick = (activity: Activity) => {
+const handleActivityClick = (activity: any) => {
   emit('activity-click', activity);
 };
 

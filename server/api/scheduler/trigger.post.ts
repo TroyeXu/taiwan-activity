@@ -61,7 +61,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
     console.error('觸發任務失敗:', error);
 
     // 如果是已知錯誤，直接拋出
-    if (error.statusCode) {
+    if (error && typeof error === 'object' && 'statusCode' in error) {
       throw error;
     }
 

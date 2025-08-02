@@ -50,7 +50,7 @@ export class DatabaseOptimizationService {
     try {
       // 只記錄慢查詢或取樣記錄
       if (executionTime > this.slowQueryThreshold || Math.random() < 0.01) {
-        await db.execute(sql`
+        await db.run(sql`
           INSERT INTO query_performance (
             id, query_type, execution_time_ms, parameters, 
             executed_at, user_agent, ip_address
@@ -110,14 +110,14 @@ export class DatabaseOptimizationService {
     try {
       // 1. 清理舊的查詢效能記錄 (保留 30 天)
       const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-      const cleanupResult = await db.execute(sql`
+      const cleanupResult = await db.run(sql`
         DELETE FROM query_performance 
         WHERE executed_at < ${thirtyDaysAgo}
       `);
       results.cleanupOldLogs = cleanupResult.changes || 0;
 
       // 2. 分析表格統計以優化查詢計劃
-      await db.execute(sql`ANALYZE`);
+      await db.run(sql`ANALYZE`);
       results.analyze = true;
 
       // 3. 重建索引 (如果需要)
@@ -130,7 +130,7 @@ export class DatabaseOptimizationService {
       
       // 只有當資料庫大於 100MB 且有明顯碎片時才執行 VACUUM
       if (totalSize > 100 * 1024) {
-        await db.execute(sql`VACUUM`);
+        await db.run(sql`VACUUM`);
         results.vacuum = true;
       }
 
@@ -148,7 +148,7 @@ export class DatabaseOptimizationService {
    */
   async getSlowQueryReport(limit = 50): Promise<QueryPerformance[]> {
     try {
-      const result = await db.execute(sql`
+      const result = await db.all(sql`
         SELECT 
           id, query_type, execution_time_ms, parameters,
           executed_at, user_agent, ip_address
@@ -158,7 +158,7 @@ export class DatabaseOptimizationService {
         LIMIT ${limit}
       `);
 
-      return result.rows.map(row => ({
+      return result.map((row: any) => ({
         id: row.id as string,
         queryType: row.query_type as string,
         executionTimeMs: row.execution_time_ms as number,
@@ -241,16 +241,16 @@ export class DatabaseOptimizationService {
   async optimizeSpatialIndexes(): Promise<boolean> {
     try {
       // 檢查 SpatiaLite 是否可用
-      const spatialiteCheck = await db.execute(sql`
+      const spatialiteCheck = await db.get(sql`
         SELECT load_extension('mod_spatialite')
       `);
 
       // 重建空間索引
-      await db.execute(sql`
+      await db.run(sql`
         SELECT DisableSpatialIndex('locations', 'geom')
       `);
       
-      await db.execute(sql`
+      await db.run(sql`
         SELECT CreateSpatialIndex('locations', 'geom')
       `);
 
@@ -273,25 +273,25 @@ export class DatabaseOptimizationService {
   }> {
     try {
       // SQLite 快取統計
-      const pragmaResult = await db.execute(sql`PRAGMA cache_size`);
-      const cacheSize = pragmaResult.rows[0]?.[0] as number || 0;
+      const pragmaResult = await db.get(sql`PRAGMA cache_size`);
+      const cacheSize = (pragmaResult as any)?.cache_size as number || 0;
 
       // 從查詢記錄分析快取命中率
-      const recentQueries = await db.execute(sql`
+      const recentQueries = await db.all(sql`
         SELECT query_type, COUNT(*) as count, AVG(execution_time_ms) as avg_time
         FROM query_performance 
         WHERE executed_at > ${Date.now() - 3600000}
         GROUP BY query_type
       `);
 
-      const totalQueries = recentQueries.rows.reduce(
-        (sum, row) => sum + (row.count as number), 0
+      const totalQueries: number = recentQueries.reduce(
+        (sum: number, row: any) => sum + (row.count as number), 0
       );
 
       // 簡化的快取命中率計算 (基於查詢時間)
-      const fastQueries = recentQueries.rows.filter(
-        row => (row.avg_time as number) < 100
-      ).reduce((sum, row) => sum + (row.count as number), 0);
+      const fastQueries: number = recentQueries.filter(
+        (row: any) => (row.avg_time as number) < 100
+      ).reduce((sum: number, row: any) => sum + (row.count as number), 0);
 
       const hitRate = totalQueries > 0 ? fastQueries / totalQueries : 0;
 
@@ -319,19 +319,19 @@ export class DatabaseOptimizationService {
     const stats = [];
     for (const table of tables) {
       try {
-        const countResult = await db.execute(sql`
+        const countResult = await db.get(sql`
           SELECT COUNT(*) as count FROM ${sql.identifier(table)}
         `);
         
-        const sizeResult = await db.execute(sql`
+        const sizeResult = await db.get(sql`
           SELECT page_count * page_size as size 
           FROM pragma_page_count('${sql.identifier(table)}'), pragma_page_size
         `);
 
         stats.push({
           tableName: table,
-          rowCount: countResult.rows[0]?.count as number || 0,
-          sizeKB: Math.round(((sizeResult.rows[0]?.size as number) || 0) / 1024)
+          rowCount: (countResult as any)?.count as number || 0,
+          sizeKB: Math.round(((sizeResult as any)?.size as number || 0) / 1024)
         });
       } catch (error) {
         console.warn(`Failed to get stats for table ${table}:`, error);
@@ -343,14 +343,14 @@ export class DatabaseOptimizationService {
 
   private async getIndexStats() {
     try {
-      const result = await db.execute(sql`
+      const result = await db.all(sql`
         SELECT name, tbl_name, sql 
         FROM sqlite_master 
         WHERE type = 'index' AND name NOT LIKE 'sqlite_%'
         ORDER BY tbl_name, name
       `);
 
-      return result.rows.map(row => ({
+      return result.map((row: any) => ({
         tableName: row.tbl_name as string,
         indexName: row.name as string,
         isUsed: true, // SQLite 沒有直接的索引使用統計
@@ -364,7 +364,7 @@ export class DatabaseOptimizationService {
 
   private async getPerformanceStats() {
     try {
-      const result = await db.execute(sql`
+      const result = await db.all(sql`
         SELECT 
           COUNT(*) as query_count,
           AVG(execution_time_ms) as avg_time,
@@ -377,8 +377,8 @@ export class DatabaseOptimizationService {
 
       return {
         slowQueries,
-        averageQueryTime: Math.round(result.rows[0]?.avg_time as number || 0),
-        queryCount: result.rows[0]?.query_count as number || 0
+        averageQueryTime: Math.round((result as any)[0]?.avg_time as number || 0),
+        queryCount: (result as any)[0]?.query_count as number || 0
       };
     } catch (error) {
       console.error('Failed to get performance stats:', error);
@@ -415,7 +415,7 @@ export class DatabaseOptimizationService {
   private async reindexIfNeeded() {
     try {
       // 檢查是否需要重建索引 (簡化版本)
-      await db.execute(sql`REINDEX`);
+      await db.run(sql`REINDEX`);
     } catch (error) {
       console.warn('Reindex operation failed:', error);
     }
@@ -448,7 +448,7 @@ export function monitorQuery(queryType: string) {
       } catch (error) {
         const executionTime = Date.now() - startTime;
         optimizer.logQueryPerformance(
-          `${queryType}_error`, executionTime, { args, error: error.message }
+          `${queryType}_error`, executionTime, { args, error: (error as Error).message }
         ).catch(err => console.warn('Failed to log error performance:', err));
         
         throw error;

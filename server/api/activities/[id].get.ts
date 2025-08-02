@@ -126,7 +126,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity>> 
   } catch (error) {
     console.error('取得活動詳情失敗:', error);
 
-    if (error.statusCode) {
+    if ((error as any).statusCode) {
       throw error;
     }
 

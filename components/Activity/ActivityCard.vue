@@ -103,15 +103,15 @@ const { isFavorite, toggleFavorite: toggleFav } = useFavorites();
 const isFavorited = computed(() => isFavorite(props.activity.id));
 
 // 活動狀態映射
-const getStatusTagType = (status: string) => {
-  const statusMap = {
+const getStatusTagType = (status: string): 'success' | 'warning' | 'info' | 'danger' | 'primary' => {
+  const statusMap: Record<string, 'success' | 'warning' | 'info' | 'danger' | 'primary'> = {
     active: 'success',
     upcoming: 'warning',
     ended: 'info',
     cancelled: 'danger',
     pending: 'info'
   };
-  return statusMap[status as keyof typeof statusMap] || 'info';
+  return statusMap[status] || 'info';
 };
 
 const getStatusText = (status: string) => {

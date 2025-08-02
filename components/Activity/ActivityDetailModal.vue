@@ -144,7 +144,7 @@
       </div>
 
       <!-- 小地圖 -->
-      <div v-if="activity.location" class="h-48 bg-gray-100 rounded-lg">
+      <div v-if="activity.location && activity.location.latitude != null && activity.location.longitude != null" class="h-48 bg-gray-100 rounded-lg">
         <ActivityMap
           :activities="[activity]"
           :center="{ lat: activity.location.latitude, lng: activity.location.longitude }"
@@ -310,7 +310,9 @@ const shareActivity = async () => {
 };
 
 // 格式化函數
-const formatDateRange = (startDate: string, endDate?: string) => {
+const formatDateRange = (startDate: string | null | undefined, endDate?: string | null | undefined) => {
+  if (!startDate) return '';
+  
   const start = new Date(startDate).toLocaleDateString('zh-TW', {
     month: 'short',
     day: 'numeric'
@@ -328,7 +330,7 @@ const formatDateRange = (startDate: string, endDate?: string) => {
   return `${start} - ${end}`;
 };
 
-const formatTimeRange = (startTime?: string, endTime?: string) => {
+const formatTimeRange = (startTime?: string | null, endTime?: string | null) => {
   if (!startTime && !endTime) return '';
   if (startTime && endTime) {
     return `${startTime} - ${endTime}`;

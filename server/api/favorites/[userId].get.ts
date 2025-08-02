@@ -1,98 +1,86 @@
 import { db } from '~/db';
-import { activities, locations, categories, activityCategories, activityTimes } from '~/db/schema';
-import { eq, and, sql, desc } from 'drizzle-orm';
+import { userFavorites, activities, locations, activityTimes, categories, activityCategories } from '~/db/schema';
+import { eq, desc, sql } from 'drizzle-orm';
 import type { ApiResponse, Activity } from '~/types';
 
 export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>> => {
   try {
+    const userId = getRouterParam(event, 'userId');
     const query = getQuery(event);
-    const { lat, lng, radius = 10, limit = 50 } = query;
-
-    if (!lat || !lng) {
+    
+    if (!userId) {
       throw createError({
         statusCode: 400,
-        statusMessage: '缺少位置參數 (lat, lng)'
+        statusMessage: '缺少使用者 ID'
       });
     }
 
-    const latitude = parseFloat(lat as string);
-    const longitude = parseFloat(lng as string);
-    const radiusKm = parseFloat(radius as string);
-    const limitNum = parseInt(limit as string, 10);
+    const page = parseInt(query.page as string) || 1;
+    const limit = parseInt(query.limit as string) || 20;
+    const offset = (page - 1) * limit;
 
-    if (isNaN(latitude) || isNaN(longitude) || isNaN(radiusKm)) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: '位置參數格式錯誤'
-      });
-    }
-
-    // 查詢附近的活動
-    const results = await db
+    // 查詢使用者收藏的活動
+    const favorites = await db
       .select({
         activity: activities,
         location: locations,
         time: activityTimes,
+        savedAt: userFavorites.savedAt,
         categoryNames: sql<string>`GROUP_CONCAT(${categories.name})`.as('category_names'),
         categorySlugs: sql<string>`GROUP_CONCAT(${categories.slug})`.as('category_slugs'),
-        categoryIcons: sql<string>`GROUP_CONCAT(${categories.icon})`.as('category_icons'),
         categoryColors: sql<string>`GROUP_CONCAT(${categories.colorCode})`.as('category_colors'),
-        distance: sql<number>`
-          6371 * acos(
-            cos(radians(${latitude})) * 
-            cos(radians(${locations.latitude})) * 
-            cos(radians(${locations.longitude}) - radians(${longitude})) + 
-            sin(radians(${latitude})) * 
-            sin(radians(${locations.latitude}))
-          )
-        `.as('distance')
+        categoryIcons: sql<string>`GROUP_CONCAT(${categories.icon})`.as('category_icons')
       })
-      .from(activities)
-      .innerJoin(locations, eq(activities.id, locations.activityId))
+      .from(userFavorites)
+      .innerJoin(activities, eq(userFavorites.activityId, activities.id))
+      .leftJoin(locations, eq(activities.id, locations.activityId))
       .leftJoin(activityTimes, eq(activities.id, activityTimes.activityId))
       .leftJoin(activityCategories, eq(activities.id, activityCategories.activityId))
       .leftJoin(categories, eq(activityCategories.categoryId, categories.id))
-      .where(
-        and(
-          eq(activities.status, 'active'),
-          // 使用地理距離篩選
-          sql`(
-            6371 * acos(
-              cos(radians(${latitude})) * 
-              cos(radians(${locations.latitude})) * 
-              cos(radians(${locations.longitude}) - radians(${longitude})) + 
-              sin(radians(${latitude})) * 
-              sin(radians(${locations.latitude}))
-            )
-          ) <= ${radiusKm}`
-        )
-      )
-      .groupBy(activities.id, locations.id, activityTimes.id)
-      .orderBy(sql`distance`)
-      .limit(limitNum);
+      .where(eq(userFavorites.userId, userId))
+      .groupBy(activities.id, userFavorites.savedAt)
+      .orderBy(desc(userFavorites.savedAt))
+      .limit(limit)
+      .offset(offset);
+
+    // 取得總數
+    const totalResult = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(userFavorites)
+      .innerJoin(activities, eq(userFavorites.activityId, activities.id))
+      .where(eq(userFavorites.userId, userId));
+
+    const total = totalResult[0]?.count || 0;
 
     // 格式化結果
-    const formattedResults: Activity[] = results.map(row => ({
+    const formattedFavorites: Activity[] = favorites.map(row => ({
       id: row.activity.id,
       name: row.activity.name,
       description: row.activity.description || undefined,
       summary: row.activity.summary || undefined,
       status: row.activity.status as any,
       qualityScore: row.activity.qualityScore,
+      popularityScore: row.activity.popularityScore || 0,
+      price: row.activity.price || 0,
+      priceType: row.activity.priceType as any,
+      currency: row.activity.currency || 'TWD',
+      viewCount: row.activity.viewCount || 0,
+      favoriteCount: row.activity.favoriteCount || 0,
+      clickCount: row.activity.clickCount || 0,
       createdAt: row.activity.createdAt,
       updatedAt: row.activity.updatedAt,
-      location: {
+      location: row.location ? {
         id: row.location.id,
         activityId: row.location.activityId,
         address: row.location.address,
-        district: row.location.district,
+        district: row.location.district || undefined,
         city: row.location.city,
         region: row.location.region as any,
-        latitude: row.location.latitude,
-        longitude: row.location.longitude,
-        venue: row.location.venue,
+        latitude: row.location.latitude ?? undefined,
+        longitude: row.location.longitude ?? undefined,
+        venue: row.location.venue || undefined,
         landmarks: row.location.landmarks ? JSON.parse(row.location.landmarks) : []
-      },
+      } : undefined,
       time: row.time ? {
         id: row.time.id,
         activityId: row.time.activityId,
@@ -112,25 +100,31 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
           colorCode: row.categoryColors?.split(',')[index]?.trim() || '',
           icon: row.categoryIcons?.split(',')[index]?.trim() || ''
         })).filter(cat => cat.name) : [],
-      distance: Math.round(row.distance * 1000) // 轉換為公尺並四捨五入
+      // 額外的收藏資訊
+      savedAt: row.savedAt
     }));
 
     return {
       success: true,
-      data: formattedResults,
-      message: `找到 ${formattedResults.length} 個附近的活動`
+      data: formattedFavorites,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
     };
 
   } catch (error) {
-    console.error('取得附近活動失敗:', error);
+    console.error('Get user favorites failed:', error);
 
-    if (error instanceof Error && 'statusCode' in error) {
+    if (error && typeof error === 'object' && 'statusCode' in error) {
       throw error;
     }
 
     throw createError({
       statusCode: 500,
-      statusMessage: '取得附近活動失敗'
+      statusMessage: '取得收藏清單失敗'
     });
   }
 });

@@ -67,7 +67,7 @@ async function setupDatabase() {
       }
 
     } catch (error) {
-      console.warn('⚠️ SpatiaLite 擴展設定失敗:', error.message);
+      console.warn('⚠️ SpatiaLite 擴展設定失敗:', (error as Error).message);
     }
 
     // 執行 Drizzle 遷移
@@ -83,17 +83,17 @@ async function setupDatabase() {
     }
 
     // 測試基本查詢
-    const testQuery = sqlite.prepare('SELECT sqlite_version()').get();
+    const testQuery = sqlite.prepare('SELECT sqlite_version()').get() as any;
     console.log(`📊 SQLite 版本: ${testQuery['sqlite_version()']}`);
 
     // 檢查表格是否存在
     const tables = sqlite.prepare(`
       SELECT name FROM sqlite_master 
       WHERE type='table' AND name NOT LIKE 'sqlite_%'
-    `).all();
+    `).all() as any[];
     
     if (tables.length > 0) {
-      console.log('📋 現有表格:', tables.map(t => t.name).join(', '));
+      console.log('📋 現有表格:', tables.map((t: any) => t.name).join(', '));
     } else {
       console.log('ℹ️ 尚未建立資料表');
     }

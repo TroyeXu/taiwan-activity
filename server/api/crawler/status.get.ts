@@ -38,7 +38,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
       ];
 
       const crawlerInfo = availableSpiders.map(spiderName => {
-        const status = allStatus[spiderName];
+        const status = allStatus ? (allStatus as any)[spiderName] : null;
         return {
           name: spiderName,
           status: status ? status.status : 'idle',
@@ -52,13 +52,13 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
         success: true,
         data: {
           crawlers: crawlerInfo,
-          running: Object.keys(allStatus).filter(name => 
-            allStatus[name].status === 'started'
-          ),
+          running: allStatus ? Object.keys(allStatus).filter(name => 
+            (allStatus as any)[name].status === 'started'
+          ) : [],
           summary: {
             total: availableSpiders.length,
-            running: Object.values(allStatus).filter(s => s.status === 'started').length,
-            idle: availableSpiders.length - Object.keys(allStatus).length
+            running: allStatus ? Object.values(allStatus).filter((s: any) => s.status === 'started').length : 0,
+            idle: availableSpiders.length - (allStatus ? Object.keys(allStatus).length : 0)
           }
         }
       };
@@ -75,7 +75,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
 });
 
 function getCrawlerDescription(spider: string): string {
-  const descriptions = {
+  const descriptions: { [key: string]: string } = {
     'tourism_bureau': '台灣觀光局官方活動資料',
     'local_government': '地方政府活動公告',
     'event_platforms': '活動平台與售票網站',

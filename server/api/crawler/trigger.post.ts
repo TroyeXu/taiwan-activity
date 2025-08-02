@@ -70,7 +70,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<CrawlerResu
           const result = runningCrawlers.get(spider);
           if (result) {
             result.status = 'failed';
-            result.error = error.message;
+            result.error = error instanceof Error ? error.message : String(error);
             result.endTime = new Date().toISOString();
             result.duration = Date.now() - new Date(result.startTime).getTime();
           }
@@ -102,7 +102,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<CrawlerResu
 
     } catch (error) {
       result.status = 'failed';
-      result.error = error.message;
+      result.error = error instanceof Error ? error.message : String(error);
       result.endTime = new Date().toISOString();
       result.duration = Date.now() - new Date(result.startTime).getTime();
       
@@ -110,14 +110,14 @@ export default defineEventHandler(async (event): Promise<ApiResponse<CrawlerResu
       
       throw createError({
         statusCode: 500,
-        statusMessage: `爬蟲執行失敗: ${error.message}`
+        statusMessage: `爬蟲執行失敗: ${error instanceof Error ? error.message : String(error)}`
       });
     }
 
   } catch (error) {
     console.error('Crawler trigger failed:', error);
 
-    if (error.statusCode) {
+    if (error instanceof Error && 'statusCode' in error) {
       throw error;
     }
 
@@ -155,7 +155,7 @@ async function executeCrawler(spider: string, args: Record<string, any> = {}) {
 
   } catch (error) {
     console.error(`Crawler execution failed:`, error);
-    throw new Error(`爬蟲執行失敗: ${error.message}`);
+    throw new Error(`爬蟲執行失敗: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
@@ -183,7 +183,7 @@ async function executeCrawlerAsync(
 
   } catch (error) {
     result.status = 'failed';
-    result.error = error.message;
+    result.error = error instanceof Error ? error.message : String(error);
     result.endTime = new Date().toISOString();
     result.duration = Date.now() - new Date(result.startTime).getTime();
 
@@ -229,8 +229,8 @@ function parseScrapyStats(output: string): any {
     const timeMatch = output.match(/finished.*in\s+([\d.]+)\s*seconds?/i);
 
     return {
-      item_scraped_count: itemsMatch ? parseInt(itemsMatch[1]) : 0,
-      elapsed_time_seconds: timeMatch ? parseFloat(timeMatch[1]) : 0,
+      item_scraped_count: itemsMatch && itemsMatch[1] ? parseInt(itemsMatch[1]) : 0,
+      elapsed_time_seconds: timeMatch && timeMatch[1] ? parseFloat(timeMatch[1]) : 0,
       raw_output: output
     };
 
@@ -286,6 +286,6 @@ export async function stopCrawler(spider: string) {
     
     return result;
   } catch (error) {
-    throw new Error(`停止爬蟲失敗: ${error.message}`);
+    throw new Error(`停止爬蟲失敗: ${error instanceof Error ? error.message : String(error)}`);
   }
 }

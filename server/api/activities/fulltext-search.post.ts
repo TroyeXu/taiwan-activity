@@ -1,7 +1,15 @@
-import { db } from '~/db';
+import { db, sqlite3 } from '~/db';
 import { sql } from 'drizzle-orm';
-import { monitorQuery } from '~/server/utils/database-optimization';
+// import { monitorQuery } from '~/server/utils/database-optimization';
 import type { ApiResponse, Activity } from '~/types';
+
+function getClientIP(event: any): string | null {
+  const forwarded = getHeader(event, 'x-forwarded-for');
+  if (forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+  return getHeader(event, 'x-real-ip') || null;
+}
 
 interface FullTextSearchParams {
   query: string;
@@ -104,7 +112,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
   } catch (error) {
     console.error('全文搜尋失敗:', error);
 
-    if (error.statusCode) {
+    if (error instanceof Error && 'statusCode' in error) {
       throw error;
     }
 
@@ -115,7 +123,6 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
   }
 });
 
-@monitorQuery('fulltext-search')
 async function performFullTextSearch(params: FullTextSearchParams): Promise<SearchResult> {
   const { query, location, radius, filters, sorting, page, limit, highlight } = params;
 
@@ -223,22 +230,24 @@ async function performFTSSearch(
     }
 
     // 排序
-    baseQuery += buildOrderByClause(sorting, !!location);
+    baseQuery += buildOrderByClause(sorting || 'relevance', !!location);
 
     // 執行計數查詢
     const countQuery = baseQuery
       .replace(/SELECT[\s\S]*?FROM/, 'SELECT COUNT(DISTINCT a.id) as total FROM')
       .replace(/ORDER BY[\s\S]*$/, '');
     
-    const countResult = await db.execute(sql.raw(countQuery, queryParams));
-    const total = countResult.rows[0]?.total as number || 0;
+    const countStmt = sqlite3.prepare(countQuery);
+    const countResult = countStmt.all(...queryParams);
+    const total = (countResult as any)[0]?.total as number || 0;
 
     // 執行分頁查詢
     baseQuery += ` LIMIT ? OFFSET ?`;
-    queryParams.push(limit, (page - 1) * limit);
+    queryParams.push(limit || 20, ((page || 1) - 1) * (limit || 20));
 
-    const result = await db.execute(sql.raw(baseQuery, queryParams));
-    const activities = formatSearchResults(result.rows, highlight ? searchTerms : []);
+    const stmt = sqlite3.prepare(baseQuery);
+    const result = stmt.all(...queryParams);
+    const activities = formatSearchResults(result as any, highlight ? searchTerms : []);
 
     return {
       activities,
@@ -342,18 +351,20 @@ async function performLikeSearch(
       .replace(/SELECT[\s\S]*?FROM/, 'SELECT COUNT(DISTINCT a.id) as total FROM')
       .replace(/ORDER BY[\s\S]*$/, '');
     
-    const countResult = await db.execute(sql.raw(countQuery, queryParams));
-    const total = countResult.rows[0]?.total as number || 0;
+    const countStmt = sqlite3.prepare(countQuery);
+    const countResult = countStmt.all(...queryParams);
+    const total = (countResult as any)[0]?.total as number || 0;
 
     // 排序
-    baseQuery += buildOrderByClause(sorting, !!location, true);
+    baseQuery += buildOrderByClause(sorting || 'relevance', !!location, true);
 
     // 分頁
     baseQuery += ` LIMIT ? OFFSET ?`;
-    queryParams.push(limit, (page - 1) * limit);
+    queryParams.push(limit || 20, ((page || 1) - 1) * (limit || 20));
 
-    const result = await db.execute(sql.raw(baseQuery, queryParams));
-    const activities = formatSearchResults(result.rows, highlight ? searchTerms : []);
+    const stmt = sqlite3.prepare(baseQuery);
+    const result = stmt.all(...queryParams);
+    const activities = formatSearchResults(result as any, highlight ? searchTerms : []);
 
     return {
       activities,
@@ -540,7 +551,7 @@ function applyHighlight(activity: Activity, terms: string[]): Activity {
 
 async function checkFTSAvailability(): Promise<boolean> {
   try {
-    await db.execute(sql`SELECT * FROM activities_fts LIMIT 1`);
+    await db.all(sql`SELECT * FROM activities_fts LIMIT 1`);
     return true;
   } catch (error) {
     return false;
@@ -550,7 +561,7 @@ async function checkFTSAvailability(): Promise<boolean> {
 async function generateSearchSuggestions(query: string): Promise<string[]> {
   try {
     // 簡單的建議生成 - 尋找相似的活動名稱或分類
-    const result = await db.execute(sql`
+    const result = await db.all(sql`
       SELECT DISTINCT name 
       FROM activities 
       WHERE name LIKE ${'%' + query + '%'} 
@@ -558,18 +569,18 @@ async function generateSearchSuggestions(query: string): Promise<string[]> {
       LIMIT 5
     `);
 
-    const suggestions = result.rows.map(row => row.name as string);
+    const suggestions = (result as any).map((row: any) => row.name as string);
 
     // 如果沒有活動名稱建議，嘗試分類建議
     if (suggestions.length === 0) {
-      const categoryResult = await db.execute(sql`
+      const categoryResult = await db.all(sql`
         SELECT DISTINCT name 
         FROM categories 
         WHERE name LIKE ${'%' + query + '%'}
         LIMIT 3
       `);
       
-      suggestions.push(...categoryResult.rows.map(row => row.name as string));
+      suggestions.push(...(categoryResult as any).map((row: any) => row.name as string));
     }
 
     return suggestions;
@@ -590,22 +601,16 @@ async function logSearchQuery(
     const userAgent = getHeader(event, 'user-agent') || '';
     const ipAddress = getClientIP(event) || '';
 
-    await db.execute(sql`
+    const searchId = 'search_' + Date.now() + '_' + Math.random().toString(36).substring(2);
+    await db.run(sql`
       INSERT INTO search_logs (
         id, query, filters, result_count, searched_at, 
         user_agent, ip_address
       ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?
+        ${searchId}, ${query}, ${JSON.stringify(filters)}, ${resultCount},
+        ${Date.now()}, ${userAgent}, ${ipAddress}
       )
-    `, [
-      'search_' + Date.now() + '_' + Math.random().toString(36).substring(2),
-      query,
-      JSON.stringify(filters),
-      resultCount,
-      Date.now(),
-      userAgent,
-      ipAddress
-    ]);
+    `);
   } catch (error) {
     console.warn('Failed to log search query:', error);
   }

@@ -1,7 +1,8 @@
 import { ClaudeValidationService } from '~/server/utils/claude-validation';
 import { db } from '~/db';
-import { activities, validationLogs } from '~/db/schema';
-import { eq, isNull, or, lt } from 'drizzle-orm';
+import { activities, validationLogs, locations, activityTimes, categories, activityCategories } from '~/db/schema';
+import { eq, isNull, or, lt, sql } from 'drizzle-orm';
+import { nanoid } from 'nanoid';
 import type { ApiResponse } from '~/types';
 
 export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
@@ -53,7 +54,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
         
         // 記錄驗證結果
         await db.insert(validationLogs).values({
-          id: validationResult.id,
+          id: validationResult.id || 'val_' + Date.now(),
           activityId: activity.id,
           originalData: JSON.stringify(activityData),
           validatedData: validationResult.validatedData ? 
@@ -76,7 +77,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
         // 如果啟用自動處理且品質達標，更新狀態
         if (autoProcess && 
             validationResult.isValid && 
-            validationResult.qualityScore >= qualityThreshold) {
+            (validationResult.qualityScore || 0) >= qualityThreshold) {
           
           await db.update(activities)
             .set({ 
@@ -93,8 +94,8 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
           name: activity.name,
           isValid: validationResult.isValid,
           qualityScore: validationResult.qualityScore,
-          issueCount: validationResult.issues.length,
-          processed: autoProcess && validationResult.qualityScore >= qualityThreshold
+          issueCount: validationResult.issues?.length || 0,
+          processed: autoProcess && (validationResult.qualityScore || 0) >= qualityThreshold
         });
 
         if (validationResult.isValid) validated++;
@@ -114,7 +115,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
           qualityScore: 0,
           issueCount: 1,
           processed: false,
-          error: error.message
+          error: error instanceof Error ? error.message : String(error)
         });
         processed++;
       }
@@ -126,7 +127,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
       processed,
       validated,
       saved,
-      averageQuality: results.reduce((sum, r) => sum + r.qualityScore, 0) / results.length,
+      averageQuality: results.reduce((sum, r) => sum + (r.qualityScore || 0), 0) / results.length,
       qualityThreshold,
       source
     };

@@ -7,6 +7,7 @@ import type { SearchFilters } from '~/types';
 interface AdvancedSearchRequest extends SearchFilters {
   page?: number;
   limit?: number;
+  sort?: string;
 }
 
 export default defineEventHandler(async (event) => {
@@ -70,6 +71,14 @@ export default defineEventHandler(async (event) => {
     // 狀態篩選（只顯示進行中的活動）
     conditions.push(eq(activities.status, 'active'));
 
+    // 地區和城市篩選
+    if (regions && regions.length > 0) {
+      conditions.push(inArray(locations.region, regions));
+    }
+    if (cities && cities.length > 0) {
+      conditions.push(inArray(locations.city, cities));
+    }
+
     // 基礎查詢
     let baseQuery = db
       .select({
@@ -92,17 +101,9 @@ export default defineEventHandler(async (event) => {
       .leftJoin(activityTimes, eq(activities.id, activityTimes.activityId))
       .where(conditions.length > 0 ? and(...conditions) : undefined);
 
-    // 地區和城市篩選
-    if (regions && regions.length > 0) {
-      baseQuery = baseQuery.where(inArray(locations.region, regions));
-    }
-    if (cities && cities.length > 0) {
-      baseQuery = baseQuery.where(inArray(locations.city, cities));
-    }
-
-    // 距離篩選
+    // 距離篩選 - 需要用 having 因為 distance 是計算欄位
     if (location && radius) {
-      baseQuery = baseQuery.having(
+      baseQuery = (baseQuery as any).having(
         sql`distance <= ${radius}`
       );
     }
@@ -204,14 +205,14 @@ export default defineEventHandler(async (event) => {
     const finalActivities = await Promise.all(
       paginatedResults.map(async (result) => {
         // 載入分類
-        const activityCategories = await db
+        const categoryData = await db
           .select({ category: categories })
           .from(categories)
           .innerJoin(activityCategories, eq(categories.id, activityCategories.categoryId))
           .where(eq(activityCategories.activityId, result.activity.id));
 
         // 載入標籤
-        const activityTags = await db
+        const tagData = await db
           .select({ tag: tags })
           .from(tags)
           .innerJoin(activityTags, eq(tags.id, activityTags.tagId))
@@ -229,8 +230,8 @@ export default defineEventHandler(async (event) => {
           ...result.activity,
           location: result.location,
           time: result.time,
-          categories: activityCategories.map(ac => ac.category),
-          tags: activityTags.map(at => at.tag),
+          categories: categoryData.map(ac => ac.category),
+          tags: tagData.map(at => at.tag),
           distance: result.distance
         };
       })

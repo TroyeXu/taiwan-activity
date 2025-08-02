@@ -1,5 +1,6 @@
 // 媒體相關類型
 export interface ActivityImage {
+  id?: string;
   url: string;
   alt?: string;
   caption?: string;
@@ -9,11 +10,11 @@ export interface ActivityImage {
 
 export interface ActivityMedia {
   images?: ActivityImage[];
-  videos?: Array<{
+  videos?: {
     url: string;
     title?: string;
     thumbnail?: string;
-  }>;
+  }[];
 }
 
 // 核心類型定義
@@ -46,18 +47,20 @@ export interface Activity {
   images?: ActivityImage[]; // 為了向後相容
   // 新增搜尋結果相關屬性
   distance?: number;
+  // 新增 URL 屬性
+  url?: string;
 }
 
 export interface Location {
   id: string;
   activityId: string;
   address: string;
-  district?: string; // 統一使用 undefined 而非 null
+  district?: string | null; // 支援 null 和 undefined
   city: string;
   region: Region;
-  latitude?: number;
-  longitude?: number;
-  venue?: string;
+  latitude?: number | null; // 支援 null 和 undefined
+  longitude?: number | null; // 支援 null 和 undefined
+  venue?: string | null;
   landmarks?: string[];
 }
 
@@ -81,9 +84,9 @@ export interface ActivityTime {
   id: string;
   activityId: string;
   startDate: string;
-  endDate?: string;
-  startTime?: string;
-  endTime?: string;
+  endDate?: string | null; // 支援 null 和 undefined
+  startTime?: string | null; // 支援 null 和 undefined
+  endTime?: string | null; // 支援 null 和 undefined
   timezone: string;
   isRecurring: boolean;
   recurrenceRule?: RecurrenceRule;
@@ -187,6 +190,7 @@ export interface ApiResponse<T> {
   data: T;
   message?: string;
   pagination?: PaginationInfo;
+  meta?: any;
 }
 
 export interface PaginationInfo {
@@ -220,19 +224,23 @@ export interface SearchFilters {
   query?: string;
   location?: { lat: number; lng: number };
   radius?: number;
-  sort?: 'relevance' | 'distance' | 'popularity' | 'date' | 'price';
   sorting?: 'relevance' | 'distance' | 'popularity' | 'date' | 'price';
-  dateRange?: any;
+  dateRange?: {
+    start: string;
+    end: string;
+  };
   features?: string[];
-  sorting?: string;
+  minQuality?: number;
 }
 
 // 收藏活動類型
 export interface FavoriteActivity {
   id: string;
-  userId: string;
+  userId: string | null;
+  activityId: string;
   activity: Activity;
-  createdAt: Date;
+  createdAt: Date | string;
+  updatedAt?: Date | string;
 }
 
 // 使用 Activities composable 選項
@@ -312,9 +320,21 @@ export interface AppError {
 }
 
 export interface ValidationResult {
+  id?: string;
   isValid: boolean;
-  errors: ValidationIssue[];
-  warnings: ValidationIssue[];
+  errors?: ValidationIssue[];
+  warnings?: ValidationIssue[];
+  issues?: ValidationIssue[];
+  suggestions?: Array<{
+    field: string;
+    suggestion: string;
+    reason: string;
+  }> | string[];
+  qualityScore?: number;
+  originalData?: any;
+  validatedData?: any;
+  activityId?: string;
+  timestamp?: string;
 }
 
 // 常數

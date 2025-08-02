@@ -30,6 +30,9 @@ try {
 // 建立 Drizzle 實例
 export const db = drizzle(sqlite, { schema });
 
+// 匯出原生 SQLite 實例供需要原生查詢的場景使用
+export const sqlite3 = sqlite;
+
 // 執行遷移
 export async function runMigrations() {
   try {
