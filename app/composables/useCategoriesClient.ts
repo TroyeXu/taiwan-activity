@@ -26,14 +26,14 @@ export const useCategoriesClient = () => {
       // 從 SQLite 載入分類
       const results = await getCategories();
 
-      categories.value = results.map((row) => ({
-        id: row.id,
-        name: row.name,
-        slug: row.slug,
+      categories.value = results.map((row: any) => ({
+        id: String(row.id),
+        name: String(row.name),
+        slug: String(row.slug),
         colorCode:
           row.colorCode || CATEGORIES[row.slug as keyof typeof CATEGORIES]?.color || '#3b82f6',
         icon: row.icon || CATEGORIES[row.slug as keyof typeof CATEGORIES]?.icon || '📍',
-      }));
+      })) as Category[];
 
       // 如果沒有資料，使用預設分類
       if (categories.value.length === 0) {

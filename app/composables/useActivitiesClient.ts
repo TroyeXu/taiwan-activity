@@ -1,5 +1,5 @@
 import { ref, readonly, onMounted } from 'vue';
-import type { Activity, SearchFilters, MapCenter } from '~/types';
+import type { Activity, SearchFilters, MapCenter, ActivityStatus, Region } from '~/types';
 import { useSqlite } from './useSqlite';
 
 interface UseActivitiesOptions {
@@ -62,10 +62,10 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
       name: row.name,
       description: row.description || undefined,
       summary: row.summary || undefined,
-      status: row.status || 'active',
+      status: (row.status as ActivityStatus) || 'active',
       qualityScore: row.qualityScore || 0,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
+      createdAt: new Date(row.createdAt),
+      updatedAt: new Date(row.updatedAt),
       location:
         row.latitude && row.longitude
           ? {
@@ -74,7 +74,7 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
               address: row.address,
               district: row.district || undefined,
               city: row.city,
-              region: row.region || 'north',
+              region: (row.region as Region) || 'north',
               latitude: row.latitude,
               longitude: row.longitude,
               venue: row.venue || undefined,
@@ -137,7 +137,7 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
         offset,
       });
 
-      const formattedResults = results.map(formatActivity);
+      const formattedResults = results.map((row: any) => formatActivity(row as ActivityRow));
 
       if (reset || page === 1) {
         activities.value = formattedResults;
@@ -209,7 +209,7 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
       }
 
       const results = await getActivities(queryOptions);
-      const formattedResults = results.map(formatActivity);
+      const formattedResults = results.map((row: any) => formatActivity(row as ActivityRow));
 
       // 如果有位置篩選，計算距離並排序
       if (searchOptions.location && searchOptions.radius) {

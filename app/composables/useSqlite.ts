@@ -60,7 +60,7 @@ export const useSqlite = () => {
       const stmt = database.prepare(sql);
       const results: Record<string, unknown>[] = [];
 
-      stmt.bind(params);
+      stmt.bind(params as any);
 
       while (stmt.step()) {
         const row = stmt.getAsObject();

@@ -364,11 +364,7 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
 
   // 全域函數 (供彈出視窗使用)
   if (process.client) {
-    interface ExtendedWindow extends Window {
-      viewActivityDetails: (activityId: string) => void;
-    }
-
-    (window as ExtendedWindow).viewActivityDetails = (activityId: string) => {
+    (window as any).viewActivityDetails = (activityId: string) => {
       navigateTo(`/activity/${activityId}`);
     };
   }

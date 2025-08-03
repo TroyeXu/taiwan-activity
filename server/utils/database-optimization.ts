@@ -284,14 +284,14 @@ export class DatabaseOptimizationService {
       `);
 
       const totalQueries: number = recentQueries.reduce(
-        (sum: number, row: any) => sum + (row.count as number),
+        (sum: number, row: any) => sum + Number(row.count || 0),
         0
       );
 
       // 簡化的快取命中率計算 (基於查詢時間)
       const fastQueries: number = recentQueries
-        .filter((row: any) => (row.avg_time as number) < 100)
-        .reduce((sum: number, row: any) => sum + (row.count as number), 0);
+        .filter((row: any) => Number(row.avg_time || 0) < 100)
+        .reduce((sum: number, row: any) => sum + Number(row.count || 0), 0);
 
       const hitRate = totalQueries > 0 ? fastQueries / totalQueries : 0;
 

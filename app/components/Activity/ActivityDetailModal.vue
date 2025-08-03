@@ -195,7 +195,7 @@ import {
   CircleCheckFilled,
   CircleCloseFilled,
 } from '@element-plus/icons-vue';
-import type { Activity } from '~/types';
+import type { Activity, ActivityStatus, Region } from '~/types';
 
 // 導入缺失的組件
 import ActivityMap from '~/components/Map/ActivityMap.vue';
@@ -269,44 +269,46 @@ const fetchActivity = async () => {
     if (data) {
       // 格式化活動資料
       activity.value = {
-        id: data.id,
-        name: data.name,
-        description: data.description || undefined,
-        summary: data.summary || undefined,
-        status: data.status || 'active',
-        qualityScore: data.qualityScore || 0,
-        createdAt: data.createdAt,
-        updatedAt: data.updatedAt,
+        id: String(data.id),
+        name: String(data.name),
+        description: data.description ? String(data.description) : undefined,
+        summary: data.summary ? String(data.summary) : undefined,
+        status: (data.status as ActivityStatus) || 'active',
+        qualityScore: Number(data.qualityScore) || 0,
+        createdAt: new Date(String(data.createdAt)),
+        updatedAt: new Date(String(data.updatedAt)),
         location:
           data.latitude && data.longitude
             ? {
-                id: data.locationId || '',
-                activityId: data.id,
-                address: data.address,
-                district: data.district || undefined,
-                city: data.city,
-                region: data.region || 'north',
-                latitude: data.latitude,
-                longitude: data.longitude,
-                venue: data.venue || undefined,
-                landmarks: data.landmarks ? JSON.parse(data.landmarks) : [],
+                id: String(data.locationId || ''),
+                activityId: String(data.id),
+                address: String(data.address),
+                district: data.district ? String(data.district) : undefined,
+                city: String(data.city),
+                region: (data.region as Region) || 'north',
+                latitude: Number(data.latitude),
+                longitude: Number(data.longitude),
+                venue: data.venue ? String(data.venue) : undefined,
+                landmarks: data.landmarks ? JSON.parse(String(data.landmarks)) : [],
               }
             : undefined,
         time: data.startDate
           ? {
-              id: data.timeId || '',
-              activityId: data.id,
-              startDate: data.startDate,
-              endDate: data.endDate,
-              startTime: data.startTime,
-              endTime: data.endTime,
-              timezone: data.timezone || 'Asia/Taipei',
-              isRecurring: data.isRecurring || false,
-              recurrenceRule: data.recurrenceRule ? JSON.parse(data.recurrenceRule) : undefined,
+              id: String(data.timeId || ''),
+              activityId: String(data.id),
+              startDate: String(data.startDate),
+              endDate: data.endDate ? String(data.endDate) : undefined,
+              startTime: data.startTime ? String(data.startTime) : undefined,
+              endTime: data.endTime ? String(data.endTime) : undefined,
+              timezone: String(data.timezone || 'Asia/Taipei'),
+              isRecurring: Boolean(data.isRecurring),
+              recurrenceRule: data.recurrenceRule
+                ? JSON.parse(String(data.recurrenceRule))
+                : undefined,
             }
           : undefined,
         categories: data.categories
-          ? data.categories
+          ? String(data.categories)
               .split(',')
               .map((name: string) => ({
                 id: '',
