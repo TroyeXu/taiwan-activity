@@ -1,6 +1,12 @@
 import { getDatabase } from '../../utils/database';
-import { activities, locations, categories, activityCategories, activityTimes } from '../../../db/schema';
-import { eq, and, or, like, inArray, sql, desc, asc } from 'drizzle-orm';
+import {
+  activities,
+  locations,
+  categories,
+  activityCategories,
+  activityTimes,
+} from '../../../db/schema';
+import { eq, and, or, inArray, sql, desc, asc } from 'drizzle-orm';
 import type { ApiResponse, Activity } from '../../../app/types';
 
 export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>> => {
@@ -14,7 +20,6 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
       startDate,
       endDate,
       timeFilter,
-      features,
       sorting = 'relevance',
       page = 1,
       limit = 20,
@@ -64,7 +69,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
       if (timeFilter) {
         // 快速時間選項
         switch (timeFilter) {
-          case 'today':
+          case 'today': {
             const today = new Date().toISOString().split('T')[0];
             dateConditions.push(
               and(
@@ -73,7 +78,8 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
               )
             );
             break;
-          case 'tomorrow':
+          }
+          case 'tomorrow': {
             const tomorrow = new Date();
             tomorrow.setDate(now.getDate() + 1);
             const tomorrowStr = tomorrow.toISOString().split('T')[0];
@@ -87,7 +93,8 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
               )
             );
             break;
-          case 'this_week':
+          }
+          case 'this_week': {
             const weekStart = new Date(now);
             weekStart.setDate(now.getDate() - now.getDay());
             const weekEnd = new Date(weekStart);
@@ -102,7 +109,8 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
               )
             );
             break;
-          case 'this_month':
+          }
+          case 'this_month': {
             const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
             const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
             dateConditions.push(
@@ -115,6 +123,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
               )
             );
             break;
+          }
         }
       }
 
@@ -173,7 +182,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
 
     // 應用排序和分頁
     switch (sorting) {
-      case 'distance':
+      case 'distance': {
         if (lat && lng) {
           const latNum = parseFloat(lat as string);
           const lngNum = parseFloat(lng as string);
@@ -198,6 +207,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
             .offset(offset);
         }
         break;
+      }
       case 'popularity':
         queryBuilder = (queryBuilder as any)
           .orderBy(desc(activities.qualityScore))

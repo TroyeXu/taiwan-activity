@@ -7,12 +7,11 @@ import {
   activityCategories,
   userFavorites,
 } from '../../../db/schema';
-import { eq, and, or, desc, sql, inArray, ne } from 'drizzle-orm';
+import { eq, and, desc, sql, ne } from 'drizzle-orm';
 import type { ApiResponse, Activity } from '../../../app/types';
 
 export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>> => {
   try {
-    const db = getDatabase();
     const query = getQuery(event);
     const userId = query.userId as string;
     const activityId = query.activityId as string;

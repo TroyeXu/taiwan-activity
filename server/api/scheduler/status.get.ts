@@ -3,7 +3,7 @@ import type { ApiResponse } from '../../../app/types';
 // 排程器實例 (單例模式)
 let schedulerInstance: any = null;
 
-export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
+export default defineEventHandler(async (_event): Promise<ApiResponse<any>> => {
   try {
     // 如果排程器未初始化，返回基礎狀態
     if (!schedulerInstance) {

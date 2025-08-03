@@ -73,7 +73,7 @@
 
               <!-- 詳細描述 -->
               <div v-if="activity.description" class="prose max-w-none">
-                <div v-html="formatDescription(activity.description)"></div>
+                <p class="whitespace-pre-wrap">{{ activity.description }}</p>
               </div>
 
               <!-- 分類標籤 -->
@@ -433,10 +433,6 @@ useHead({
 });
 
 // 格式化函數
-const formatDescription = (description: string) => {
-  return description.replace(/\n/g, '<br>');
-};
-
 const formatDate = (date: string | Date) => {
   return new Date(date).toLocaleDateString('zh-TW', {
     year: 'numeric',

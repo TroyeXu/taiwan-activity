@@ -1,11 +1,10 @@
 import { getDatabase } from '../../utils/database';
-import { activities, locations, validationLogs, userFavorites } from '../../../db/schema';
-import { sql, eq, gte, desc } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { CacheManager } from '../../utils/cache';
 import { logger } from '../../utils/logger';
 import type { ApiResponse } from '../../../app/types';
 
-export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
+export default defineEventHandler(async (_event): Promise<ApiResponse<any>> => {
   const startTime = Date.now();
 
   try {

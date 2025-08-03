@@ -3,7 +3,7 @@ import { categories, activityCategories } from '../../../db/schema';
 import { sql, desc, eq } from 'drizzle-orm';
 import type { ApiResponse, Category } from '../../../app/types';
 
-export default defineEventHandler(async (event): Promise<ApiResponse<Category[]>> => {
+export default defineEventHandler(async (_event): Promise<ApiResponse<Category[]>> => {
   try {
     const db = getDatabase();
 

@@ -124,7 +124,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
 });
 
 async function performFullTextSearch(params: FullTextSearchParams): Promise<SearchResult> {
-  const { query, location, radius, filters, sorting, page, limit, highlight } = params;
+  const { query } = params;
 
   try {
     // 處理搜尋關鍵字

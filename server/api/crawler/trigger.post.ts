@@ -156,7 +156,7 @@ async function executeCrawler(spider: string, args: Record<string, any> = {}) {
   }
 }
 
-async function executeCrawlerAsync(spider: string, args: Record<string, any>, crawlerId: string) {
+async function executeCrawlerAsync(spider: string, args: Record<string, any>, _crawlerId: string) {
   const result = runningCrawlers.get(spider);
   if (!result) return;
 

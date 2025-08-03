@@ -1,5 +1,4 @@
-import { getDatabase, getSqlite } from '../../utils/database';
-import { sql } from 'drizzle-orm';
+import { getSqlite } from '../../utils/database';
 // import { monitorQuery } from '../../utils/database-optimization';
 import type { ApiResponse, Activity } from '../../../app/types';
 
@@ -29,10 +28,7 @@ interface SpatialSearchParams {
 }
 
 export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>> => {
-  const startTime = Date.now();
-
   try {
-    const db = getDatabase();
     const sqlite = getSqlite();
     const body = (await readBody(event)) as SpatialSearchParams;
     const {
@@ -44,9 +40,6 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
       page = 1,
       limit = 50,
     } = body;
-
-    // Ensure filters is defined
-    const safeFilters = filters || {};
 
     // 驗證參數
     if (!center?.lat || !center?.lng) {
@@ -83,8 +76,6 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
       },
       sqlite
     );
-
-    const executionTime = Date.now() - startTime;
 
     return {
       success: true,
@@ -297,7 +288,7 @@ async function performSpatialSearch(params: SpatialSearchParams, sqlite: any) {
     // 執行查詢
     // Note: This is a workaround for Drizzle sql.raw parameter issues
     let finalQuery = query;
-    queryParams.forEach((param, index) => {
+    queryParams.forEach((param) => {
       finalQuery = finalQuery.replace(
         '?',
         typeof param === 'string' ? `'${param}'` : param.toString()
@@ -313,7 +304,7 @@ async function performSpatialSearch(params: SpatialSearchParams, sqlite: any) {
 
     const countParams = queryParams.slice(0, -2); // 移除 LIMIT 和 OFFSET
     let finalCountQuery = countQuery;
-    countParams.forEach((param, index) => {
+    countParams.forEach((param) => {
       finalCountQuery = finalCountQuery.replace(
         '?',
         typeof param === 'string' ? `'${param}'` : param.toString()

@@ -2,7 +2,7 @@ import { getDatabase } from '../../utils/database';
 import { sql } from 'drizzle-orm';
 import type { ApiResponse } from '../../../app/types';
 
-export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
+export default defineEventHandler(async (_event): Promise<ApiResponse<any>> => {
   try {
     // 取得活動統計
     const activityStats = await getActivityStats();
