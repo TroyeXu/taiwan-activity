@@ -1,10 +1,11 @@
-import { db } from '~/db';
+import { getDatabase } from '~/server/utils/database';
 import { activities, locations, activityTimes, categories, activityCategories } from '~/db/schema';
 import { eq, and, inArray, sql } from 'drizzle-orm';
 import type { ApiResponse } from '~/types';
 
 export default defineEventHandler(async (event): Promise<any> => {
   try {
+    const db = getDatabase();
     const query = getQuery(event);
     const format = (query.format as string) || 'json';
     const ids = query.ids as string | string[];

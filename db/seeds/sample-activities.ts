@@ -119,7 +119,7 @@ export const sampleActivities = () => {
   const locations: NewLocation[] = [
     {
       id: nanoid(),
-      activityId: activities[0].id,
+      activityId: activities[0]!.id,
       address: '台北市中正區中山南路21號',
       district: '中正區',
       city: '台北市',
@@ -131,7 +131,7 @@ export const sampleActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[1].id,
+      activityId: activities[1]!.id,
       address: '嘉義縣阿里山鄉中正村59號',
       district: '阿里山鄉',
       city: '嘉義縣',
@@ -143,7 +143,7 @@ export const sampleActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[2].id,
+      activityId: activities[2]!.id,
       address: '屏東縣恆春鎮墾丁路596號',
       district: '恆春鎮',
       city: '屏東縣',
@@ -155,7 +155,7 @@ export const sampleActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[3].id,
+      activityId: activities[3]!.id,
       address: '台中市新社區協成里協興街30號',
       district: '新社區',
       city: '台中市',
@@ -167,7 +167,7 @@ export const sampleActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[4].id,
+      activityId: activities[4]!.id,
       address: '新北市平溪區南山里南山坑2號',
       district: '平溪區',
       city: '新北市',
@@ -179,7 +179,7 @@ export const sampleActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[5].id,
+      activityId: activities[5]!.id,
       address: '台南市中西區民族路二段212號',
       district: '中西區',
       city: '台南市',
@@ -191,7 +191,7 @@ export const sampleActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[6].id,
+      activityId: activities[6]!.id,
       address: '花蓮縣秀林鄉富世村富世291號',
       district: '秀林鄉',
       city: '花蓮縣',
@@ -203,7 +203,7 @@ export const sampleActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[7].id,
+      activityId: activities[7]!.id,
       address: '宜蘭縣蘇澳鎮武荖坑路75號',
       district: '蘇澳鎮',
       city: '宜蘭縣',
@@ -215,7 +215,7 @@ export const sampleActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[8].id,
+      activityId: activities[8]!.id,
       address: '高雄市前金區河東路180號',
       district: '前金區',
       city: '高雄市',
@@ -227,7 +227,7 @@ export const sampleActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[9].id,
+      activityId: activities[9]!.id,
       address: '澎湖縣馬公市新生路178號',
       district: '馬公市',
       city: '澎湖縣',
@@ -242,7 +242,7 @@ export const sampleActivities = () => {
   const activityTimes: NewActivityTime[] = [
     {
       id: nanoid(),
-      activityId: activities[0].id,
+      activityId: activities[0]!.id,
       startDate: '2025-02-01',
       endDate: '2025-02-15',
       startTime: '18:00',
@@ -252,7 +252,7 @@ export const sampleActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[1].id,
+      activityId: activities[1]!.id,
       startDate: '2025-03-01',
       endDate: '2025-04-15',
       startTime: '06:00',
@@ -262,7 +262,7 @@ export const sampleActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[2].id,
+      activityId: activities[2]!.id,
       startDate: '2025-04-04',
       endDate: '2025-04-06',
       startTime: '17:00',
@@ -272,7 +272,7 @@ export const sampleActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[3].id,
+      activityId: activities[3]!.id,
       startDate: '2025-11-01',
       endDate: '2025-12-01',
       startTime: '08:00',
@@ -282,7 +282,7 @@ export const sampleActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[4].id,
+      activityId: activities[4]!.id,
       startDate: '2025-02-12',
       endDate: '2025-02-12',
       startTime: '18:00',
@@ -292,7 +292,7 @@ export const sampleActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[5].id,
+      activityId: activities[5]!.id,
       startDate: '2025-01-15',
       endDate: '2025-12-31',
       startTime: '09:00',
@@ -306,7 +306,7 @@ export const sampleActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[6].id,
+      activityId: activities[6]!.id,
       startDate: '2025-01-15',
       endDate: '2025-12-31',
       startTime: '08:00',
@@ -316,7 +316,7 @@ export const sampleActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[7].id,
+      activityId: activities[7]!.id,
       startDate: '2025-03-15',
       endDate: '2025-05-15',
       startTime: '09:00',
@@ -326,7 +326,7 @@ export const sampleActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[8].id,
+      activityId: activities[8]!.id,
       startDate: '2025-01-20',
       endDate: '2025-02-28',
       startTime: '19:00',
@@ -336,7 +336,7 @@ export const sampleActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[9].id,
+      activityId: activities[9]!.id,
       startDate: '2025-04-19',
       endDate: '2025-06-28',
       startTime: '20:00',

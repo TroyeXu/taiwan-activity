@@ -1,5 +1,5 @@
 import { ClaudeValidationService } from '~/server/utils/claude-validation';
-import { db } from '~/db';
+import { getDatabase } from '~/server/utils/database';
 import { activities, validationLogs, locations, categories, activityCategories } from '~/db/schema';
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
@@ -29,6 +29,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
         const validationResult = await validationService.validateActivity(activity);
         
         // 記錄驗證結果
+        const db = getDatabase();
         await db.insert(validationLogs).values({
           id: nanoid(),
           activityId: activity.id || nanoid(),
@@ -111,6 +112,7 @@ async function saveValidatedActivity(validatedData: any): Promise<string> {
   const activityId = validatedData.id || nanoid();
   
   try {
+    const db = getDatabase();
     // 插入活動主資料
     await db.insert(activities).values({
       id: activityId,
@@ -180,7 +182,7 @@ async function saveValidatedActivity(validatedData: any): Promise<string> {
             icon: category.icon
           });
         } else {
-          categoryId = existingCategory[0].id;
+          categoryId = existingCategory[0]!.id;
         }
 
         // 建立關聯

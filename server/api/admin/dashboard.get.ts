@@ -1,4 +1,4 @@
-import { db } from '~/db';
+import { getDatabase } from '~/server/utils/database';
 import { activities, locations, validationLogs, userFavorites } from '~/db/schema';
 import { sql, eq, gte, desc } from 'drizzle-orm';
 import { CacheManager } from '~/server/utils/cache';
@@ -78,6 +78,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
 
 async function getOverviewStats() {
   try {
+    const db = getDatabase();
     const result = await db.get(sql`
       SELECT 
         COUNT(*) as total_activities,
@@ -100,6 +101,7 @@ async function getOverviewStats() {
 
 async function getQualityStats() {
   try {
+    const db = getDatabase();
     const result = await db.get(sql`
       SELECT 
         COUNT(CASE WHEN quality_score >= 90 THEN 1 END) as excellent,
@@ -139,6 +141,7 @@ async function getQualityStats() {
 
 async function getRegionStats() {
   try {
+    const db = getDatabase();
     const result = await db.get(sql`
       SELECT 
         l.region,
@@ -163,6 +166,7 @@ async function getRegionStats() {
 
 async function getRecentActivities() {
   try {
+    const db = getDatabase();
     const result = await db.get(sql`
       SELECT 
         a.id,
@@ -187,6 +191,7 @@ async function getRecentActivities() {
 
 async function getValidationSummary() {
   try {
+    const db = getDatabase();
     // 檢查驗證記錄表是否存在
     const tableExists = await db.get(sql`
       SELECT name FROM sqlite_master 
@@ -224,6 +229,7 @@ async function getValidationSummary() {
 
 async function getPopularActivities() {
   try {
+    const db = getDatabase();
     const result = await db.get(sql`
       SELECT 
         a.id,
@@ -271,6 +277,7 @@ async function checkDatabaseHealth() {
   const startTime = Date.now();
   
   try {
+    const db = getDatabase();
     await db.get(sql`SELECT 1`);
     const responseTime = Date.now() - startTime;
     

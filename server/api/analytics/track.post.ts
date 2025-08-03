@@ -1,4 +1,4 @@
-import { db } from '~/db';
+import { getDatabase } from '~/server/utils/database';
 import { activities } from '~/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import type { ApiResponse } from '~/types';
@@ -76,6 +76,7 @@ async function trackActivityView(
   userAgent?: string
 ) {
   try {
+    const db = getDatabase();
     // 更新活動瀏覽數
     await db
       .update(activities)
@@ -113,6 +114,7 @@ async function trackActivityClick(
   userAgent?: string
 ) {
   try {
+    const db = getDatabase();
     // 更新活動點擊數
     await db
       .update(activities)
@@ -150,6 +152,7 @@ async function trackSearch(
   userAgent?: string
 ) {
   try {
+    const db = getDatabase();
     // 檢查搜尋記錄表是否存在
     const tableExists = await db.all(sql`
       SELECT name FROM sqlite_master 
@@ -208,8 +211,8 @@ function generateId(): string {
 
 function getClientIP(event: any): string | null {
   const forwarded = getHeader(event, 'x-forwarded-for');
-  if (forwarded) {
-    return forwarded.split(',')[0].trim();
+  if (forwarded && typeof forwarded === 'string') {
+    return forwarded.split(',')[0]?.trim() || null;
   }
   return getHeader(event, 'x-real-ip') || null;
 }

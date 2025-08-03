@@ -1,90 +1,20 @@
-import { defineEventHandler, getQuery } from 'h3';
-import { db } from '~/db';
-import { activities, locations, activityCategories, categories, activityTimes } from '~/db/schema';
-import { eq, desc, gte, sql, and } from 'drizzle-orm';
+import { mockActivities } from '~/server/utils/mock-data';
+import type { ApiResponse, Activity } from '~/types';
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>> => {
   try {
     const query = getQuery(event);
-    const limit = parseInt(query.limit as string) || 10;
-    const type = query.type as 'popular' | 'trending' | 'recommended' || 'popular';
-
-    let orderBy;
-    let whereConditions = [eq(activities.status, 'active')];
-
-    switch (type) {
-      case 'trending':
-        // 最近 7 天內瀏覽次數成長最快的活動
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        
-        orderBy = desc(activities.viewCount);
-        whereConditions.push(gte(activities.updatedAt, sevenDaysAgo));
-        break;
-
-      case 'recommended':
-        // 基於品質分數和受歡迎程度的推薦
-        orderBy = desc(sql`${activities.qualityScore} * 0.3 + ${activities.popularityScore} * 0.7`);
-        break;
-
-      case 'popular':
-      default:
-        // 基於綜合熱門度分數
-        orderBy = desc(activities.popularityScore);
-        break;
-    }
-
-    // 查詢熱門活動
-    const popularActivities = await db
-      .select({
-        activity: activities,
-        location: locations,
-        time: activityTimes,
-      })
-      .from(activities)
-      .leftJoin(locations, eq(activities.id, locations.activityId))
-      .leftJoin(activityTimes, eq(activities.id, activityTimes.activityId))
-      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
-      .orderBy(orderBy)
-      .limit(limit);
-
-    // 載入關聯資料
-    const results = await Promise.all(
-      popularActivities.map(async (row) => {
-        // 載入分類
-        const activityCategoriesResult = await db
-          .select({ category: categories })
-          .from(categories)
-          .innerJoin(activityCategories, eq(categories.id, activityCategories.categoryId))
-          .where(eq(activityCategories.activityId, row.activity.id));
-
-        // 更新熱門度分數（基於瀏覽次數、收藏次數等）
-        const newPopularityScore = calculatePopularityScore(row.activity);
-        if (newPopularityScore !== row.activity.popularityScore) {
-          await db
-            .update(activities)
-            .set({ popularityScore: newPopularityScore })
-            .where(eq(activities.id, row.activity.id));
-        }
-
-        return {
-          ...row.activity,
-          location: row.location,
-          time: row.time,
-          categories: activityCategoriesResult.map(ac => ac.category),
-          stats: {
-            viewCount: row.activity.viewCount || 0,
-            favoriteCount: row.activity.favoriteCount || 0,
-            popularityScore: newPopularityScore
-          }
-        };
-      })
-    );
+    const { limit = 10 } = query;
+    
+    // 按品質分數排序取得熱門活動
+    const popularActivities = [...mockActivities]
+      .sort((a, b) => b.qualityScore - a.qualityScore)
+      .slice(0, parseInt(limit as string));
 
     return {
       success: true,
-      data: results,
-      type
+      data: popularActivities,
+      message: `取得前 ${popularActivities.length} 個熱門活動`
     };
 
   } catch (error) {

@@ -1121,8 +1121,8 @@ const handlePriceChange = () => {
 
 // 處理價格範圍變更
 const handlePriceRangeChange = (value: number[]) => {
-  filters.value.priceRange.min = value[0];
-  filters.value.priceRange.max = value[1];
+  filters.value.priceRange.min = value[0] ?? 0;
+  filters.value.priceRange.max = value[1] ?? 10000;
   emitFiltersChange();
 };
 
@@ -1225,7 +1225,7 @@ const handleDistanceToggle = (show: string | number | boolean) => {
 
 // 處理距離範圍變更
 const handleDistanceRadiusChange = (radius: number | number[]) => {
-  distanceRadius.value = Array.isArray(radius) ? radius[0] : radius;
+  distanceRadius.value = Array.isArray(radius) ? (radius[0] ?? 10) : radius;
   if (enableDistanceFilter.value) {
     emitFiltersChange();
   }

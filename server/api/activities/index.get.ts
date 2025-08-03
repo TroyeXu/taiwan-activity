@@ -1,52 +1,11 @@
-import { db } from '~/db';
+import { getDatabase } from '~/server/utils/database';
 import { activities, locations, categories, activityCategories, activityTimes } from '~/db/schema';
 import { eq, and, or, like, inArray, sql, desc, asc } from 'drizzle-orm';
 import type { ApiResponse, Activity } from '~/types';
 
 export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>> => {
   try {
-    // 簡化版本 - 如果資料庫查詢失敗，返回測試數據
-    if (!db) {
-      return {
-        success: true,
-        data: [
-          {
-            id: '1',
-            name: '測試活動',
-            description: '這是一個測試活動',
-            status: 'active' as any,
-            qualityScore: 100,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            location: {
-              id: '1',
-              activityId: '1',
-              address: '台北市信義區',
-              city: '台北市',
-              region: 'north' as any,
-              latitude: 25.0330,
-              longitude: 121.5654,
-              landmarks: []
-            },
-            categories: [
-              {
-                id: '1',
-                name: '文化藝術',
-                slug: 'culture',
-                colorCode: '#ff6b6b',
-                icon: '🎨'
-              }
-            ]
-          }
-        ],
-        pagination: {
-          page: 1,
-          limit: 20,
-          total: 1,
-          totalPages: 1
-        }
-      };
-    }
+    const db = getDatabase();
     const query = getQuery(event);
     const {
       categories: categoryFilter,
@@ -273,52 +232,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
     }
 
     // 執行查詢
-    let results;
-    try {
-      results = await queryBuilder;
-    } catch (dbError) {
-      console.error('資料庫查詢錯誤:', dbError);
-      // 返回測試數據
-      return {
-        success: true,
-        data: [
-          {
-            id: '1',
-            name: '測試活動',
-            description: '這是一個測試活動',
-            status: 'active' as any,
-            qualityScore: 100,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            location: {
-              id: '1',
-              activityId: '1',
-              address: '台北市信義區',
-              city: '台北市',
-              region: 'north' as any,
-              latitude: 25.0330,
-              longitude: 121.5654,
-              landmarks: []
-            },
-            categories: [
-              {
-                id: '1',
-                name: '文化藝術',
-                slug: 'culture',
-                colorCode: '#ff6b6b',
-                icon: '🎨'
-              }
-            ]
-          }
-        ],
-        pagination: {
-          page: 1,
-          limit: 20,
-          total: 1,
-          totalPages: 1
-        }
-      };
-    }
+    const results = await queryBuilder;
 
     // 轉換結果格式
     const formattedResults: Activity[] = results.map(row => ({
@@ -334,7 +248,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
         id: row.location.id,
         activityId: row.location.activityId,
         address: row.location.address,
-        district: row.location.district || undefined, // 轉換 null 為 undefined
+        district: row.location.district || undefined,
         city: row.location.city,
         region: row.location.region as any,
         latitude: row.location.latitude,

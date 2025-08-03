@@ -1,37 +1,30 @@
 import { drizzle } from 'drizzle-orm/better-sqlite3';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import * as schema from './schema';
 
-// 建立資料庫連接
-const databaseUrl = process.env.DATABASE_URL || './data/tourism.db';
-const sqlite = new Database(databaseUrl);
+// 使用 GitHub repo 中的 SQLite 檔案
+const DATABASE_PATH = './database/tourism.sqlite';
+
+// Initialize database
+const sqlite = new Database(DATABASE_PATH);
+const db = drizzle(sqlite, { schema });
 
 // 啟用外鍵約束
 sqlite.pragma('foreign_keys = ON');
 
-// 嘗試載入 SpatiaLite 擴展
+// 嘗試載入 SpatiaLite 擴展（可選）
 try {
   sqlite.exec('SELECT load_extension("mod_spatialite")');
   console.log('✅ SpatiaLite extension loaded');
-  
-  // 初始化空間元數據 (僅在首次使用時)
-  try {
-    sqlite.exec('SELECT InitSpatialMetaData(1)');
-    console.log('✅ Spatial metadata initialized');
-  } catch (error) {
-    // 如果元數據已存在，會拋出錯誤，這是正常的
-    console.log('ℹ️ Spatial metadata already exists or failed to initialize');
-  }
 } catch (error) {
-  console.warn('⚠️ SpatiaLite extension not available, using basic geo functions');
+  console.log('ℹ️ Using basic geo functions (SpatiaLite not available)');
 }
 
-// 建立 Drizzle 實例
-export const db = drizzle(sqlite, { schema });
-
-// 匯出原生 SQLite 實例供需要原生查詢的場景使用
-export const sqlite3 = sqlite;
+// 匯出資料庫實例
+export { db };
+export { sqlite as sqlite3 };
 
 // 執行遷移
 export async function runMigrations() {

@@ -356,7 +356,7 @@ export const extendedActivities = () => {
     // 台北地區
     {
       id: nanoid(),
-      activityId: activities[0].id,
+      activityId: activities[0]!.id,
       address: '台北市信義區信義路五段7號',
       district: '信義區',
       city: '台北市',
@@ -368,7 +368,7 @@ export const extendedActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[1].id,
+      activityId: activities[1]!.id,
       address: '台北市北投區竹子湖路',
       district: '北投區',
       city: '台北市',
@@ -380,7 +380,7 @@ export const extendedActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[2].id,
+      activityId: activities[2]!.id,
       address: '台北市士林區大東路',
       district: '士林區',
       city: '台北市',
@@ -392,7 +392,7 @@ export const extendedActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[3].id,
+      activityId: activities[3]!.id,
       address: '新北市淡水區中正路',
       district: '淡水區',
       city: '新北市',
@@ -406,7 +406,7 @@ export const extendedActivities = () => {
     // 新北地區
     {
       id: nanoid(),
-      activityId: activities[4].id,
+      activityId: activities[4]!.id,
       address: '新北市瑞芳區九份',
       district: '瑞芳區',
       city: '新北市',
@@ -418,7 +418,7 @@ export const extendedActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[5].id,
+      activityId: activities[5]!.id,
       address: '新北市萬里區野柳里港東路167-1號',
       district: '萬里區',
       city: '新北市',
@@ -432,7 +432,7 @@ export const extendedActivities = () => {
     // 桃園地區
     {
       id: nanoid(),
-      activityId: activities[6].id,
+      activityId: activities[6]!.id,
       address: '桃園市大園區航站南路9號',
       district: '大園區',
       city: '桃園市',
@@ -444,7 +444,7 @@ export const extendedActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[7].id,
+      activityId: activities[7]!.id,
       address: '桃園市大溪區和平路',
       district: '大溪區',
       city: '桃園市',
@@ -458,7 +458,7 @@ export const extendedActivities = () => {
     // 新竹地區
     {
       id: nanoid(),
-      activityId: activities[8].id,
+      activityId: activities[8]!.id,
       address: '新竹市北區中山路75號',
       district: '北區',
       city: '新竹市',
@@ -470,7 +470,7 @@ export const extendedActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[9].id,
+      activityId: activities[9]!.id,
       address: '新竹縣尖石鄉玉峰村14鄰司馬庫斯2號',
       district: '尖石鄉',
       city: '新竹縣',
@@ -484,7 +484,7 @@ export const extendedActivities = () => {
     // 台中地區
     {
       id: nanoid(),
-      activityId: activities[10].id,
+      activityId: activities[10]!.id,
       address: '台中市西屯區文華路',
       district: '西屯區',
       city: '台中市',
@@ -496,7 +496,7 @@ export const extendedActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[11].id,
+      activityId: activities[11]!.id,
       address: '台中市清水區美堤街',
       district: '清水區',
       city: '台中市',
@@ -508,7 +508,7 @@ export const extendedActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[12].id,
+      activityId: activities[12]!.id,
       address: '台中市南屯區春安路56巷',
       district: '南屯區',
       city: '台中市',
@@ -522,7 +522,7 @@ export const extendedActivities = () => {
     // 彰化地區
     {
       id: nanoid(),
-      activityId: activities[13].id,
+      activityId: activities[13]!.id,
       address: '彰化縣鹿港鎮龍山里金門街81號',
       district: '鹿港鎮',
       city: '彰化縣',
@@ -536,7 +536,7 @@ export const extendedActivities = () => {
     // 南投地區
     {
       id: nanoid(),
-      activityId: activities[14].id,
+      activityId: activities[14]!.id,
       address: '南投縣魚池鄉水社村中山路',
       district: '魚池鄉',
       city: '南投縣',
@@ -548,7 +548,7 @@ export const extendedActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[15].id,
+      activityId: activities[15]!.id,
       address: '南投縣仁愛鄉大同村仁和路170號',
       district: '仁愛鄉',
       city: '南投縣',
@@ -562,7 +562,7 @@ export const extendedActivities = () => {
     // 雲林地區
     {
       id: nanoid(),
-      activityId: activities[16].id,
+      activityId: activities[16]!.id,
       address: '雲林縣古坑鄉永光村大湖口67號',
       district: '古坑鄉',
       city: '雲林縣',
@@ -576,7 +576,7 @@ export const extendedActivities = () => {
     // 嘉義地區
     {
       id: nanoid(),
-      activityId: activities[17].id,
+      activityId: activities[17]!.id,
       address: '嘉義市東區中山路',
       district: '東區',
       city: '嘉義市',
@@ -590,7 +590,7 @@ export const extendedActivities = () => {
     // 台南地區
     {
       id: nanoid(),
-      activityId: activities[18].id,
+      activityId: activities[18]!.id,
       address: '台南市中西區南門路2號',
       district: '中西區',
       city: '台南市',
@@ -602,7 +602,7 @@ export const extendedActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[19].id,
+      activityId: activities[19]!.id,
       address: '台南市安平區延平街',
       district: '安平區',
       city: '台南市',
@@ -616,7 +616,7 @@ export const extendedActivities = () => {
     // 高雄地區
     {
       id: nanoid(),
-      activityId: activities[20].id,
+      activityId: activities[20]!.id,
       address: '高雄市鹽埕區大勇路1號',
       district: '鹽埕區',
       city: '高雄市',
@@ -628,7 +628,7 @@ export const extendedActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[21].id,
+      activityId: activities[21]!.id,
       address: '高雄市旗津區廟前路',
       district: '旗津區',
       city: '高雄市',
@@ -642,7 +642,7 @@ export const extendedActivities = () => {
     // 屏東地區
     {
       id: nanoid(),
-      activityId: activities[22].id,
+      activityId: activities[22]!.id,
       address: '屏東縣琉球鄉民生路',
       district: '琉球鄉',
       city: '屏東縣',
@@ -656,7 +656,7 @@ export const extendedActivities = () => {
     // 宜蘭地區
     {
       id: nanoid(),
-      activityId: activities[23].id,
+      activityId: activities[23]!.id,
       address: '宜蘭縣五結鄉季新村五濱路二段201號',
       district: '五結鄉',
       city: '宜蘭縣',
@@ -668,7 +668,7 @@ export const extendedActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[24].id,
+      activityId: activities[24]!.id,
       address: '宜蘭縣礁溪鄉德陽路',
       district: '礁溪鄉',
       city: '宜蘭縣',
@@ -682,7 +682,7 @@ export const extendedActivities = () => {
     // 花蓮地區
     {
       id: nanoid(),
-      activityId: activities[25].id,
+      activityId: activities[25]!.id,
       address: '花蓮市中山路50號',
       district: '花蓮市',
       city: '花蓮縣',
@@ -694,7 +694,7 @@ export const extendedActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[26].id,
+      activityId: activities[26]!.id,
       address: '花蓮縣新城鄉海岸路',
       district: '新城鄉',
       city: '花蓮縣',
@@ -708,7 +708,7 @@ export const extendedActivities = () => {
     // 台東地區
     {
       id: nanoid(),
-      activityId: activities[27].id,
+      activityId: activities[27]!.id,
       address: '台東縣鹿野鄉永安村高台路',
       district: '鹿野鄉',
       city: '台東縣',
@@ -720,7 +720,7 @@ export const extendedActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[28].id,
+      activityId: activities[28]!.id,
       address: '台東縣成功鎮三仙台',
       district: '成功鎮',
       city: '台東縣',
@@ -734,7 +734,7 @@ export const extendedActivities = () => {
     // 離島地區
     {
       id: nanoid(),
-      activityId: activities[29].id,
+      activityId: activities[29]!.id,
       address: '金門縣金城鎮',
       district: '金城鎮',
       city: '金門縣',
@@ -746,7 +746,7 @@ export const extendedActivities = () => {
     },
     {
       id: nanoid(),
-      activityId: activities[30].id,
+      activityId: activities[30]!.id,
       address: '連江縣南竿鄉',
       district: '南竿鄉',
       city: '連江縣',
@@ -762,8 +762,8 @@ export const extendedActivities = () => {
   const activityTimes: NewActivityTime[] = activities.map((activity, index) => ({
     id: nanoid(),
     activityId: activity.id,
-    startDate: getRandomDate(2025, 1, 12).toISOString().split('T')[0],
-    endDate: getRandomDate(2025, 3, 8).toISOString().split('T')[0],
+    startDate: getRandomDate(2025, 1, 12).toISOString().split('T')[0]!,
+    endDate: getRandomDate(2025, 3, 8).toISOString().split('T')[0]!,
     startTime: getRandomTime(),
     endTime: getRandomEndTime(),
     timezone: 'Asia/Taipei',

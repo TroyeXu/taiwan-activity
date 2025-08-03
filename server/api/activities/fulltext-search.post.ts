@@ -1,12 +1,12 @@
-import { db, sqlite3 } from '~/db';
+import { getDatabase, getSqlite } from '~/server/utils/database';
 import { sql } from 'drizzle-orm';
 // import { monitorQuery } from '~/server/utils/database-optimization';
 import type { ApiResponse, Activity } from '~/types';
 
 function getClientIP(event: any): string | null {
   const forwarded = getHeader(event, 'x-forwarded-for');
-  if (forwarded) {
-    return forwarded.split(',')[0].trim();
+  if (forwarded && typeof forwarded === 'string') {
+    return forwarded.split(',')[0]?.trim() || null;
   }
   return getHeader(event, 'x-real-ip') || null;
 }
@@ -47,6 +47,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
   const startTime = Date.now();
 
   try {
+    const db = getDatabase();
     const body = await readBody(event) as FullTextSearchParams;
     const {
       query,
@@ -237,6 +238,10 @@ async function performFTSSearch(
       .replace(/SELECT[\s\S]*?FROM/, 'SELECT COUNT(DISTINCT a.id) as total FROM')
       .replace(/ORDER BY[\s\S]*$/, '');
     
+    const sqlite3 = getSqlite();
+    if (!sqlite3) {
+      throw new Error('Database connection not available');
+    }
     const countStmt = sqlite3.prepare(countQuery);
     const countResult = countStmt.all(...queryParams);
     const total = (countResult as any)[0]?.total as number || 0;
@@ -351,6 +356,10 @@ async function performLikeSearch(
       .replace(/SELECT[\s\S]*?FROM/, 'SELECT COUNT(DISTINCT a.id) as total FROM')
       .replace(/ORDER BY[\s\S]*$/, '');
     
+    const sqlite3 = getSqlite();
+    if (!sqlite3) {
+      throw new Error('Database connection not available');
+    }
     const countStmt = sqlite3.prepare(countQuery);
     const countResult = countStmt.all(...queryParams);
     const total = (countResult as any)[0]?.total as number || 0;
@@ -551,6 +560,7 @@ function applyHighlight(activity: Activity, terms: string[]): Activity {
 
 async function checkFTSAvailability(): Promise<boolean> {
   try {
+    const db = getDatabase();
     await db.all(sql`SELECT * FROM activities_fts LIMIT 1`);
     return true;
   } catch (error) {
@@ -560,6 +570,7 @@ async function checkFTSAvailability(): Promise<boolean> {
 
 async function generateSearchSuggestions(query: string): Promise<string[]> {
   try {
+    const db = getDatabase();
     // 簡單的建議生成 - 尋找相似的活動名稱或分類
     const result = await db.all(sql`
       SELECT DISTINCT name 
@@ -598,6 +609,7 @@ async function logSearchQuery(
   event: any
 ): Promise<void> {
   try {
+    const db = getDatabase();
     const userAgent = getHeader(event, 'user-agent') || '';
     const ipAddress = getClientIP(event) || '';
 

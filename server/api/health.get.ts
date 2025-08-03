@@ -1,4 +1,4 @@
-import { db } from '~/db';
+import { getDatabase } from '~/server/utils/database';
 import { sql } from 'drizzle-orm';
 import type { ApiResponse } from '~/types';
 
@@ -50,6 +50,7 @@ async function checkDatabaseHealth(): Promise<{ status: string; responseTime: nu
   const start = Date.now();
   
   try {
+    const db = getDatabase();
     await db.get(sql`SELECT 1`);
     return {
       status: 'healthy',

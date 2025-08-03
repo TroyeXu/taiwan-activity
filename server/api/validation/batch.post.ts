@@ -1,5 +1,5 @@
 import { ClaudeValidationService } from '~/server/utils/claude-validation';
-import { db } from '~/db';
+import { getDatabase } from '~/server/utils/database';
 import { activities, validationLogs, locations, activityTimes, categories, activityCategories } from '~/db/schema';
 import { eq, isNull, or, lt, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
@@ -53,6 +53,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
         const validationResult = await validationService.validateActivity(activityData);
         
         // 記錄驗證結果
+        const db = getDatabase();
         await db.insert(validationLogs).values({
           id: validationResult.id || 'val_' + Date.now(),
           activityId: activity.id,
@@ -157,6 +158,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
 // 查找需要驗證的活動
 async function findActivitiesForValidation(limit: number = 50) {
   try {
+    const db = getDatabase();
     const { locations, activityTimes, categories, activityCategories } = 
       await import('~/db/schema');
 

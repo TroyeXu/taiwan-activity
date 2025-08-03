@@ -1,4 +1,4 @@
-import { db } from '~/db';
+import { getDatabase } from '~/server/utils/database';
 import { 
   activities, 
   locations, 
@@ -13,6 +13,7 @@ import type { ApiResponse, Activity } from '~/types';
 
 export default defineEventHandler(async (event): Promise<ApiResponse<Activity>> => {
   try {
+    const db = getDatabase();
     const activityId = getRouterParam(event, 'id');
 
     if (!activityId) {
@@ -59,6 +60,12 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity>> 
     }
 
     const row = result[0];
+    if (!row) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: 'Activity not found'
+      })
+    }
 
     // 格式化回應資料
     const activity: Activity = {
@@ -100,22 +107,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity>> 
           slug: row.categorySlugs?.split(',')[index]?.trim() || '',
           colorCode: row.categoryColors?.split(',')[index]?.trim() || '',
           icon: row.categoryIcons?.split(',')[index]?.trim() || ''
-        })).filter(cat => cat.name) : [],
-      source: row.source ? {
-        id: row.source.id,
-        activityId: row.source.activityId,
-        website: row.source.website,
-        url: row.source.url || undefined,
-        crawledAt: row.source.crawledAt,
-        crawlerVersion: row.source.crawlerVersion || undefined
-      } : undefined,
-      validation: row.validation ? {
-        verified: row.validation.qualityScore ? row.validation.qualityScore > 70 : false,
-        verificationDate: row.validation.validatedAt,
-        qualityScore: row.validation.qualityScore || undefined,
-        validator: row.validation.validator || undefined,
-        issues: row.validation.issues ? JSON.parse(row.validation.issues) : []
-      } : undefined
+        })).filter(cat => cat.name) : []
     };
 
     return {

@@ -1,10 +1,11 @@
-import { db } from '~/db';
+import { getDatabase } from '~/server/utils/database';
 import { activities, locations, activityTimes, categories, activityCategories, userFavorites } from '~/db/schema';
 import { eq, and, or, desc, sql, inArray, ne } from 'drizzle-orm';
 import type { ApiResponse, Activity } from '~/types';
 
 export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>> => {
   try {
+    const db = getDatabase();
     const query = getQuery(event);
     const userId = query.userId as string;
     const activityId = query.activityId as string;
@@ -51,6 +52,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
 
 async function getUserBasedRecommendations(userId: string, limit: number): Promise<Activity[]> {
   try {
+    const db = getDatabase();
     // 獲取使用者收藏的活動分類
     const userCategories = await db
       .select({
@@ -123,6 +125,7 @@ async function getUserBasedRecommendations(userId: string, limit: number): Promi
 
 async function getActivityBasedRecommendations(activityId: string, limit: number): Promise<Activity[]> {
   try {
+    const db = getDatabase();
     // 獲取目標活動的資訊
     const targetActivity = await db
       .select({
@@ -142,6 +145,12 @@ async function getActivityBasedRecommendations(activityId: string, limit: number
     }
 
     const target = targetActivity[0];
+    if (!target) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: '找不到指定的活動'
+      });
+    }
     const categoryIds = target.categoryIds ? target.categoryIds.split(',') : [];
 
     // 尋找相似活動
@@ -186,6 +195,7 @@ async function getActivityBasedRecommendations(activityId: string, limit: number
 
 async function getLocationBasedRecommendations(lat: number, lng: number, limit: number): Promise<Activity[]> {
   try {
+    const db = getDatabase();
     const result = await db
       .select({
         activity: activities,
@@ -235,6 +245,7 @@ async function getLocationBasedRecommendations(lat: number, lng: number, limit: 
 
 async function getPopularRecommendations(limit: number): Promise<Activity[]> {
   try {
+    const db = getDatabase();
     const result = await db
       .select({
         activity: activities,

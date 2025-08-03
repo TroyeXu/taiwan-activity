@@ -1,10 +1,12 @@
-import { db } from '~/db';
+import { getDatabase } from '~/server/utils/database';
 import { categories, activityCategories } from '~/db/schema';
 import { sql, desc, eq } from 'drizzle-orm';
 import type { ApiResponse, Category } from '~/types';
 
 export default defineEventHandler(async (event): Promise<ApiResponse<Category[]>> => {
   try {
+    const db = getDatabase();
+    
     // 查詢所有分類，包含活動數量統計
     const results = await db
       .select({

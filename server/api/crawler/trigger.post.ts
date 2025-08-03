@@ -215,8 +215,8 @@ function parseScrapyStats(output: string): any {
       ];
 
       for (const { key, pattern } of patterns) {
-        const match = statsText.match(pattern);
-        if (match) {
+        const match = statsText?.match(pattern);
+        if (match && match[1]) {
           stats[key] = key === 'elapsed_time_seconds' ? parseFloat(match[1]) : parseInt(match[1]);
         }
       }

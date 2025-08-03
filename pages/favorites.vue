@@ -360,10 +360,10 @@ const exportFavorites = () => {
     收藏時間: formatDate(fav.createdAt)
   }));
 
-  const csv = [
-    Object.keys(data[0]).join(','),
-    ...data.map(row => Object.values(row).join(','))
-  ].join('\n');
+  const csv = data.length > 0 ? [
+    Object.keys(data[0]!).join(','),
+    ...data.map(row => Object.values(row!).join(','))
+  ].join('\n') : '';
 
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');

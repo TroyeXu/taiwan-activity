@@ -1,5 +1,5 @@
 import { defineEventHandler, readBody } from 'h3';
-import { db } from '~/db';
+import { getDatabase } from '~/server/utils/database';
 import { activities, locations, activityCategories, categories, activityTimes, activityTags, tags } from '~/db/schema';
 import { eq, and, or, gte, lte, like, desc, asc, sql, inArray } from 'drizzle-orm';
 import type { SearchFilters } from '~/types';
@@ -12,6 +12,7 @@ interface AdvancedSearchRequest extends SearchFilters {
 
 export default defineEventHandler(async (event) => {
   try {
+    const db = getDatabase();
     const body = await readBody<AdvancedSearchRequest>(event);
     const {
       query,

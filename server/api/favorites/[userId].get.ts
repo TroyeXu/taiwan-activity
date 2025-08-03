@@ -1,10 +1,11 @@
-import { db } from '~/db';
+import { getDatabase } from '~/server/utils/database';
 import { userFavorites, activities, locations, activityTimes, categories, activityCategories } from '~/db/schema';
 import { eq, desc, sql } from 'drizzle-orm';
 import type { ApiResponse, Activity } from '~/types';
 
 export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>> => {
   try {
+    const db = getDatabase();
     const userId = getRouterParam(event, 'userId');
     const query = getQuery(event);
     

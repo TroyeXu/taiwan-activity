@@ -1,0 +1,56 @@
+name: Update Database
+
+on:
+  # 手動觸發
+  workflow_dispatch:
+  
+  # 定期執行（每週一次）
+  schedule:
+    - cron: '0 0 * * 1'  # 每週一 00:00 UTC
+  
+  # 當 db 相關檔案有變更時
+  push:
+    paths:
+      - 'db/schema.ts'
+      - 'db/seeds/**'
+      - 'scripts/init-database.ts'
+
+jobs:
+  update-db:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Generate database
+      run: npm run db:reset
+    
+    - name: Check if database changed
+      id: check-changes
+      run: |
+        if git diff --quiet database/tourism.sqlite; then
+          echo "changed=false" >> $GITHUB_OUTPUT
+        else
+          echo "changed=true" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Commit and push if changed
+      if: steps.check-changes.outputs.changed == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add database/tourism.sqlite
+        git commit -m "🔄 Update database [skip ci]"
+        git push

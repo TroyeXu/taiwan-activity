@@ -1,4 +1,4 @@
-import { db } from '~/db';
+import { getDatabase } from '~/server/utils/database';
 import { activities, locations, activityTimes, categories, activityCategories } from '~/db/schema';
 import { eq, and, gte, lte, or, sql } from 'drizzle-orm';
 import type { ApiResponse } from '~/types';
@@ -17,6 +17,7 @@ interface CalendarEvent {
 
 export default defineEventHandler(async (event): Promise<ApiResponse<CalendarEvent[]>> => {
   try {
+    const db = getDatabase();
     const query = getQuery(event);
     const start = query.start as string;
     const end = query.end as string;
@@ -204,7 +205,7 @@ function generateRecurringInstances(
       const instance: CalendarEvent = {
         ...event,
         id: `${event.id}_${instanceCount}`,
-        start: currentDate.toISOString().split('T')[0],
+        start: currentDate.toISOString().split('T')[0] as string,
         end: event.end ? 
           new Date(currentDate.getTime() + 
             (new Date(event.end).getTime() - new Date(event.start).getTime())

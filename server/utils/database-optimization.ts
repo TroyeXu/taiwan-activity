@@ -398,15 +398,18 @@ export class DatabaseOptimizationService {
         stats[query.queryType] = { count: 0, avgTime: 0, totalTime: 0 };
       }
       
-      stats[query.queryType].count++;
-      stats[query.queryType].totalTime += query.executionTimeMs;
+      stats[query.queryType]!.count++;
+      stats[query.queryType]!.totalTime += query.executionTimeMs;
     }
 
     // 計算平均時間
     for (const queryType in stats) {
-      stats[queryType].avgTime = Math.round(
-        stats[queryType].totalTime / stats[queryType].count
-      );
+      const stat = stats[queryType];
+      if (stat) {
+        stat.avgTime = Math.round(
+          stat.totalTime / stat.count
+        );
+      }
     }
 
     return stats;

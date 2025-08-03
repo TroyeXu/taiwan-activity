@@ -82,7 +82,7 @@ export const useCategories = () => {
             category
           };
         }
-        stats[category.slug].count++;
+        stats[category.slug]!.count++;
       });
     });
 

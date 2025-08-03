@@ -5,6 +5,13 @@ CREATE TABLE `activities` (
 	`summary` text,
 	`status` text DEFAULT 'pending' NOT NULL,
 	`quality_score` integer DEFAULT 0 NOT NULL,
+	`price` integer DEFAULT 0,
+	`price_type` text DEFAULT 'free',
+	`currency` text DEFAULT 'TWD',
+	`view_count` integer DEFAULT 0,
+	`favorite_count` integer DEFAULT 0,
+	`click_count` integer DEFAULT 0,
+	`popularity_score` real DEFAULT 0,
 	`created_at` integer NOT NULL,
 	`updated_at` integer NOT NULL
 );
@@ -15,6 +22,14 @@ CREATE TABLE `activity_categories` (
 	`category_id` text NOT NULL,
 	FOREIGN KEY (`activity_id`) REFERENCES `activities`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`category_id`) REFERENCES `categories`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE TABLE `activity_tags` (
+	`id` text PRIMARY KEY NOT NULL,
+	`activity_id` text NOT NULL,
+	`tag_id` text NOT NULL,
+	FOREIGN KEY (`activity_id`) REFERENCES `activities`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`tag_id`) REFERENCES `tags`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
 CREATE TABLE `activity_times` (
@@ -75,6 +90,16 @@ CREATE TABLE `search_logs` (
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
+CREATE TABLE `tags` (
+	`id` text PRIMARY KEY NOT NULL,
+	`name` text NOT NULL,
+	`slug` text NOT NULL,
+	`category` text,
+	`usage_count` integer DEFAULT 0,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE `user_favorites` (
 	`id` text PRIMARY KEY NOT NULL,
 	`user_id` text NOT NULL,
@@ -108,4 +133,5 @@ CREATE TABLE `validation_logs` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `categories_slug_unique` ON `categories` (`slug`);--> statement-breakpoint
+CREATE UNIQUE INDEX `tags_slug_unique` ON `tags` (`slug`);--> statement-breakpoint
 CREATE UNIQUE INDEX `users_email_unique` ON `users` (`email`);

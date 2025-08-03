@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Nuxt
+.nuxt/
+.output/
+.nitro/
+dist/
+
+# Database
+database/
+*.sqlite
+*.db
+
+# Generated
+coverage/
+*.min.js
+*.min.css
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Env
+.env
+.env.*

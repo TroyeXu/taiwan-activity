@@ -4,7 +4,7 @@ import { seedCategories } from './categories';
 import { sampleActivities, getActivityCategoriesRelations } from './sample-activities';
 import { extendedActivities } from './extended-activities';
 
-async function seedDatabase() {
+export async function seedDatabase() {
   console.log('🌱 開始種子資料建立...');
 
   try {
@@ -94,4 +94,3 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     });
 }
 
-export { seedDatabase };

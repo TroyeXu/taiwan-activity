@@ -1,4 +1,4 @@
-import { db } from '~/db';
+import { getDatabase, getSqlite } from '~/server/utils/database';
 import { sql } from 'drizzle-orm';
 // import { monitorQuery } from '~/server/utils/database-optimization';
 import type { ApiResponse, Activity } from '~/types';
@@ -32,6 +32,8 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
   const startTime = Date.now();
 
   try {
+    const db = getDatabase();
+    const sqlite = getSqlite();
     const body = await readBody(event) as SpatialSearchParams;
     const {
       center,
@@ -78,7 +80,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
       sorting,
       page,
       limit
-    });
+    }, sqlite);
 
     const executionTime = Date.now() - startTime;
 
@@ -107,7 +109,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
   }
 });
 
-async function performSpatialSearch(params: SpatialSearchParams) {
+async function performSpatialSearch(params: SpatialSearchParams, sqlite: any) {
   const { center, radius, bounds, filters, sorting, page, limit } = params;
   const safeFilters = filters || {};
   
@@ -281,7 +283,7 @@ async function performSpatialSearch(params: SpatialSearchParams) {
     queryParams.forEach((param, index) => {
       finalQuery = finalQuery.replace('?', typeof param === 'string' ? `'${param}'` : param.toString());
     });
-    const result = await db.all(sql.raw(finalQuery));
+    const result = await sqlite.prepare(finalQuery).all();
     
     // 同時執行計數查詢 (不含 LIMIT/OFFSET)
     const countQuery = query
@@ -294,7 +296,7 @@ async function performSpatialSearch(params: SpatialSearchParams) {
     countParams.forEach((param, index) => {
       finalCountQuery = finalCountQuery.replace('?', typeof param === 'string' ? `'${param}'` : param.toString());
     });
-    const countResult = await db.get(sql.raw(finalCountQuery));
+    const countResult = await sqlite.prepare(finalCountQuery).get();
     const total = (countResult as any)?.total as number || 0;
 
     // 格式化結果

@@ -1,4 +1,4 @@
-import { db } from '~/db';
+import { getDatabase } from '~/server/utils/database';
 import { userFavorites, activities } from '~/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
@@ -6,6 +6,7 @@ import type { ApiResponse } from '~/types';
 
 export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
   try {
+    const db = getDatabase();
     const body = await readBody(event);
     const { userId, activityId, action = 'add' } = body;
 

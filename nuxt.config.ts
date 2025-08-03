@@ -39,13 +39,12 @@ export default defineNuxtConfig({
     experimental: {
       wasm: true
     },
-    // SQLite 支持
-    externals: {
-      inline: ['better-sqlite3']
-    },
-    // 修復 cookie-es 和 youch 導入問題
+    // Node.js 原生模組
+    nodeModulesDirs: ['./node_modules'],
+    
+    // 修復 cookie-es 導入問題
     rollupConfig: {
-      external: ['cookie-es', 'youch']
+      external: ['cookie-es', 'better-sqlite3']
     },
     // 禁用有問題的 Azure 相關功能
     preset: 'node-server',
@@ -54,9 +53,7 @@ export default defineNuxtConfig({
         driver: 'fs',
         base: './data/cache'
       }
-    },
-    // 禁用開發環境錯誤頁面以避免 youch 導入問題
-    devErrorHandler: false
+    }
   },
   
   // 應用程式配置
