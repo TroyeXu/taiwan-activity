@@ -116,10 +116,47 @@ const initMap = async () => {
     maxBoundsViscosity: 1.0 // 防止拖曳超出邊界
   });
 
-  // 添加圖層 - 使用 OpenStreetMap（最穩定）
-  const tileLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  // 定義台灣邊界
+  const taiwanBounds = L.latLngBounds(
+    [21.5, 119.5], // 西南角
+    [25.5, 122.5]  // 東北角
+  );
+
+  // 自定義圖磚載入函數，只載入台灣範圍內的圖磚
+  const customTileLayer = L.TileLayer.extend({
+    createTile: function(coords: any, done: any) {
+      const tile = document.createElement('img');
+      
+      // 檢查圖磚是否在台灣範圍內
+      const tileBounds = this._tileCoordsToBounds(coords);
+      if (!taiwanBounds.intersects(tileBounds)) {
+        // 圖磚在台灣範圍外，返回空白圖磚
+        tile.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+        done(null, tile);
+        return tile;
+      }
+      
+      // 正常載入圖磚
+      const url = this.getTileUrl(coords);
+      tile.setAttribute('role', 'presentation');
+      tile.src = url;
+      
+      tile.onload = () => done(null, tile);
+      tile.onerror = () => done(new Error(`Failed to load tile at ${url}`), tile);
+      
+      return tile;
+    }
+  });
+
+  // 添加圖層 - 使用自定義的 OpenStreetMap 圖層
+  const tileLayer = new customTileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    minZoom: 7,
+    bounds: taiwanBounds, // 設定圖層邊界
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    updateWhenIdle: true, // 只在地圖停止移動時更新
+    updateWhenZooming: false, // 縮放時不更新
+    keepBuffer: 1 // 減少圖磚緩衝區
   });
   
   console.log('添加瓦片圖層');

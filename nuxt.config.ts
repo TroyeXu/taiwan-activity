@@ -55,6 +55,7 @@ export default defineNuxtConfig({
   
   // 應用程式配置
   app: {
+    baseURL: '/taiwan-activity/', // GitHub Pages 子目錄
     head: {
       title: '台灣觀光活動地圖',
       titleTemplate: '%s - 台灣觀光活動地圖',

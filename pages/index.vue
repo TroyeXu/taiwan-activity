@@ -350,7 +350,7 @@ const {
   searchActivities,
   loadMoreActivities,
   refreshActivities
-} = useActivities({
+} = useActivitiesClient({
   autoLoad: false, // 不自動載入，讓地圖先顯示
   pageSize: 20
 });

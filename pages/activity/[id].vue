@@ -306,29 +306,102 @@ import FavoriteButton from '~/components/Activity/FavoriteButton.vue';
 const route = useRoute();
 const activityId = route.params.id as string;
 
-// 獲取活動詳情
-const { data: activity, pending, error, refresh } = await useFetch<Activity>(
-  `/api/activities/${activityId}`,
-  {
-    transform: (data: any) => data.data,
-    key: `activity-${activityId}`
-  }
-);
+// 使用客戶端 SQLite
+import { useSqlite } from '~/composables/useSqlite';
+const { getActivity, getNearbyActivities, initDatabase } = useSqlite();
 
-// 獲取附近活動
-const { data: nearbyActivities } = await useFetch<Activity[]>(
-  `/api/activities/nearby`,
-  {
-    query: computed(() => ({
-      lat: activity.value?.location?.latitude,
-      lng: activity.value?.location?.longitude,
-      radius: 5,
-      limit: 10
-    })),
-    transform: (data: any) => data.data?.filter((a: Activity) => a.id !== activityId) || [],
-    server: false
+// 響應式狀態
+const activity = ref<Activity | null>(null);
+const nearbyActivities = ref<Activity[]>([]);
+const pending = ref(true);
+const error = ref<any>(null);
+
+// 格式化活動資料
+const formatActivity = (row: any): Activity => {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description || undefined,
+    summary: row.summary || undefined,
+    status: row.status || 'active',
+    qualityScore: row.qualityScore || 0,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    location: row.latitude && row.longitude ? {
+      id: row.locationId || '',
+      activityId: row.id,
+      address: row.address,
+      district: row.district || undefined,
+      city: row.city,
+      region: row.region || 'north',
+      latitude: row.latitude,
+      longitude: row.longitude,
+      venue: row.venue || undefined,
+      landmarks: row.landmarks ? JSON.parse(row.landmarks) : []
+    } : undefined,
+    time: row.startDate ? {
+      id: row.timeId || '',
+      activityId: row.id,
+      startDate: row.startDate,
+      endDate: row.endDate,
+      startTime: row.startTime,
+      endTime: row.endTime,
+      timezone: row.timezone || 'Asia/Taipei',
+      isRecurring: row.isRecurring || false,
+      recurrenceRule: row.recurrenceRule ? JSON.parse(row.recurrenceRule) : undefined
+    } : undefined,
+    categories: row.categories ? 
+      row.categories.split(',').map((name: string) => ({
+        id: '',
+        name: name.trim(),
+        slug: name.trim().toLowerCase(),
+        colorCode: '#3B82F6',
+        icon: '📍'
+      })).filter((cat: any) => cat.name) : []
+  };
+};
+
+// 載入活動詳情
+const loadActivity = async () => {
+  pending.value = true;
+  error.value = null;
+  
+  try {
+    await initDatabase();
+    const data = await getActivity(activityId);
+    
+    if (data) {
+      activity.value = formatActivity(data);
+      
+      // 載入附近活動
+      if (activity.value.location?.latitude && activity.value.location?.longitude) {
+        const nearby = await getNearbyActivities(
+          activity.value.location.latitude,
+          activity.value.location.longitude,
+          10
+        );
+        nearbyActivities.value = nearby.map(formatActivity).filter(a => a.id !== activityId);
+      }
+    } else {
+      error.value = { message: '找不到活動' };
+    }
+  } catch (err) {
+    error.value = err;
+    console.error('載入活動失敗:', err);
+  } finally {
+    pending.value = false;
   }
-);
+};
+
+// 重新載入
+const refresh = () => {
+  loadActivity();
+};
+
+// 初始載入
+onMounted(() => {
+  loadActivity();
+});
 
 // 頁面元資料
 useHead({

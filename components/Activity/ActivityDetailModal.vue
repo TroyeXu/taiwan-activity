@@ -254,6 +254,10 @@ watch(() => props.visible, (visible) => {
   }
 });
 
+// 使用客戶端 SQLite
+import { useSqlite } from '~/composables/useSqlite';
+const { getActivity, initDatabase } = useSqlite();
+
 // 載入活動詳情
 const fetchActivity = async () => {
   if (!props.activityId) return;
@@ -262,8 +266,55 @@ const fetchActivity = async () => {
   error.value = null;
 
   try {
-    const { data } = await $fetch<{ data: Activity }>(`/api/activities/${props.activityId}`);
-    activity.value = data;
+    await initDatabase();
+    const data = await getActivity(props.activityId);
+    
+    if (data) {
+      // 格式化活動資料
+      activity.value = {
+        id: data.id,
+        name: data.name,
+        description: data.description || undefined,
+        summary: data.summary || undefined,
+        status: data.status || 'active',
+        qualityScore: data.qualityScore || 0,
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
+        location: data.latitude && data.longitude ? {
+          id: data.locationId || '',
+          activityId: data.id,
+          address: data.address,
+          district: data.district || undefined,
+          city: data.city,
+          region: data.region || 'north',
+          latitude: data.latitude,
+          longitude: data.longitude,
+          venue: data.venue || undefined,
+          landmarks: data.landmarks ? JSON.parse(data.landmarks) : []
+        } : undefined,
+        time: data.startDate ? {
+          id: data.timeId || '',
+          activityId: data.id,
+          startDate: data.startDate,
+          endDate: data.endDate,
+          startTime: data.startTime,
+          endTime: data.endTime,
+          timezone: data.timezone || 'Asia/Taipei',
+          isRecurring: data.isRecurring || false,
+          recurrenceRule: data.recurrenceRule ? JSON.parse(data.recurrenceRule) : undefined
+        } : undefined,
+        categories: data.categories ? 
+          data.categories.split(',').map((name: string) => ({
+            id: '',
+            name: name.trim(),
+            slug: name.trim().toLowerCase(),
+            colorCode: '#3B82F6',
+            icon: '📍'
+          })).filter((cat: any) => cat.name) : []
+      };
+    } else {
+      throw new Error('找不到活動');
+    }
   } catch (err) {
     error.value = err as Error;
     console.error('載入活動詳情失敗:', err);

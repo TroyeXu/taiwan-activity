@@ -28,7 +28,9 @@
     "clean": "rm -rf .nuxt .output node_modules/.cache",
     "clean:all": "rm -rf .nuxt .output node_modules database/tourism.sqlite",
     "postinstall": "nuxt prepare",
-    "prepare": "husky"
+    "prepare": "husky",
+    "build:gh-pages": "npm run generate && cp data/tourism.db .output/public/tourism.sqlite",
+    "deploy:gh-pages": "npm run build:gh-pages && npx gh-pages -d .output/public"
   },
   "dependencies": {
     "@element-plus/nuxt": "^1.1.4",

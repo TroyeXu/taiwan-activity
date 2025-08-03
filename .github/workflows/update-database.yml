@@ -1,3 +1,4 @@
+# 更新資料庫工作流程
 name: Update Database
 
 on:
@@ -8,35 +9,41 @@ on:
   schedule:
     - cron: '0 0 * * 1'  # 每週一 00:00 UTC
   
-  # 當 db 相關檔案有變更時
+  # 當 db 相關檔案有變更時觸發
   push:
     paths:
-      - 'db/schema.ts'
-      - 'db/seeds/**'
-      - 'scripts/init-database.ts'
+      - 'db/schema.ts'       # 資料庫結構檔案
+      - 'db/seeds/**'        # 種子資料檔案
+      - 'scripts/init-database.ts'  # 資料庫初始化腳本
 
 jobs:
+  # 更新資料庫工作
   update-db:
     runs-on: ubuntu-latest
     
     steps:
+    # 檢出倉庫程式碼
     - name: Checkout repository
       uses: actions/checkout@v3
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
     
+    # 設定 Node.js 環境
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
         node-version: '18'
         cache: 'npm'
     
+    # 安裝相依套件
     - name: Install dependencies
       run: npm ci
     
+    # 產生新的資料庫
     - name: Generate database
       run: npm run db:reset
     
+    # 檢查資料庫是否有變更
     - name: Check if database changed
       id: check-changes
       run: |
@@ -46,6 +53,7 @@ jobs:
           echo "changed=true" >> $GITHUB_OUTPUT
         fi
     
+    # 如果有變更則提交並推送
     - name: Commit and push if changed
       if: steps.check-changes.outputs.changed == 'true'
       run: |

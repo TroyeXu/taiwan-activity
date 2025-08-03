@@ -75,10 +75,25 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
       maxBoundsViscosity: 1.0
     });
 
-    // 添加 OpenStreetMap 圖層
+    // 定義台灣邊界
+    const taiwanBounds = L.latLngBounds(
+      [21.5, 119.5], // 西南角
+      [25.5, 122.5]  // 東北角
+    );
+
+    // 添加 OpenStreetMap 圖層，限制在台灣範圍
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
-      maxZoom: 18
+      maxZoom: 18,
+      minZoom: 7,
+      bounds: taiwanBounds,
+      noWrap: true, // 防止地圖重複
+      updateWhenIdle: true, // 只在地圖停止移動時更新
+      updateWhenZooming: false, // 縮放時不更新
+      keepBuffer: 1, // 減少圖磚緩衝區
+      tileSize: 256,
+      zoomOffset: 0,
+      detectRetina: true // 支援高解析度螢幕
     }).addTo(mapInstance.value);
 
     // 初始化標記聚合群組

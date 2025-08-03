@@ -29,7 +29,9 @@ export const useSqlite = () => {
         console.log('📥 正在下載資料庫檔案...');
         
         // 載入資料庫檔案
-        const response = await fetch('/tourism.sqlite');
+        const { $config } = useNuxtApp();
+        const baseURL = $config.app.baseURL || '/';
+        const response = await fetch(`${baseURL}tourism.sqlite`);
         const buffer = await response.arrayBuffer();
         
         // 建立資料庫實例
