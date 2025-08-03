@@ -143,14 +143,14 @@ export enum Region {
 }
 
 export enum CategorySlug {
-  TRADITIONAL = 'traditional',
-  ROMANTIC = 'romantic',
-  ART_CULTURE = 'art_culture',
-  WELLNESS = 'wellness',
-  CUISINE = 'cuisine',
-  NATURE = 'nature',
-  INDIGENOUS = 'indigenous',
-  HAKKA = 'hakka',
+  MUSIC = 'music',
+  EXHIBITION = 'exhibition',
+  SPORTS = 'sports',
+  EDUCATION = 'education',
+  FOOD = 'food',
+  FAMILY = 'family',
+  CULTURE = 'culture',
+  OUTDOOR = 'outdoor',
 }
 
 // 篩選相關類型
@@ -364,44 +364,44 @@ export const REGIONS = {
 };
 
 export const CATEGORIES = {
-  [CategorySlug.TRADITIONAL]: {
-    name: '傳統節慶',
-    icon: '🎊',
-    color: '#DC2626',
+  [CategorySlug.MUSIC]: {
+    name: '音樂表演',
+    icon: '🎵',
+    color: '#FF6B6B',
   },
-  [CategorySlug.ROMANTIC]: {
-    name: '浪漫之旅',
-    icon: '💕',
-    color: '#EC4899',
+  [CategorySlug.EXHIBITION]: {
+    name: '展覽活動',
+    icon: '🖼️',
+    color: '#4ECDC4',
   },
-  [CategorySlug.ART_CULTURE]: {
-    name: '藝術文化',
-    icon: '🎭',
-    color: '#7C3AED',
+  [CategorySlug.SPORTS]: {
+    name: '運動健身',
+    icon: '⚽',
+    color: '#45B7D1',
   },
-  [CategorySlug.WELLNESS]: {
-    name: '養生樂活',
-    icon: '🧘',
-    color: '#10B981',
+  [CategorySlug.EDUCATION]: {
+    name: '教育講座',
+    icon: '📚',
+    color: '#F7DC6F',
   },
-  [CategorySlug.CUISINE]: {
+  [CategorySlug.FOOD]: {
     name: '美食饗宴',
-    icon: '🍜',
-    color: '#F59E0B',
+    icon: '🍴',
+    color: '#FFA07A',
   },
-  [CategorySlug.NATURE]: {
-    name: '自然生態',
-    icon: '🌿',
-    color: '#059669',
+  [CategorySlug.FAMILY]: {
+    name: '親子活動',
+    icon: '👨‍👩‍👧‍👦',
+    color: '#98D8C8',
   },
-  [CategorySlug.INDIGENOUS]: {
-    name: '原民慶典',
-    icon: '🪶',
-    color: '#B91C1C',
+  [CategorySlug.CULTURE]: {
+    name: '文化藝術',
+    icon: '🎨',
+    color: '#9B59B6',
   },
-  [CategorySlug.HAKKA]: {
-    name: '客家文化',
-    icon: '🏮',
-    color: '#1E40AF',
+  [CategorySlug.OUTDOOR]: {
+    name: '戶外活動',
+    icon: '🌲',
+    color: '#52C41A',
   },
 };

@@ -33,7 +33,6 @@ export default defineNuxtConfig({
     // 私有環境變數 (僅服務端可用)
     claudeApiKey: process.env.CLAUDE_API_KEY,
     googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
-    databaseUrl: process.env.DATABASE_URL || './data/tourism.db',
 
     public: {
       // 公開環境變數 (客戶端可用)
@@ -137,7 +136,7 @@ export default defineNuxtConfig({
   // Vite 配置
   vite: {
     optimizeDeps: {
-      include: ['leaflet', 'leaflet.markercluster'],
+      include: ['leaflet', 'leaflet.markercluster', 'sql.js'],
       exclude: ['cookie-es'],
     },
     define: {

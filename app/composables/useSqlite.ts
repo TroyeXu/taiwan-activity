@@ -1,10 +1,19 @@
 import initSqlJs from 'sql.js';
 import type { Database } from 'sql.js';
+import {
+  DatabaseHealthMonitor,
+  DatabaseError,
+  DatabaseErrorType,
+  withRetry,
+} from '~/utils/database-health';
 
 // 全域 SQLite 實例
 let db: Database | null = null;
 let isInitializing = false;
 let initPromise: Promise<Database> | null = null;
+
+// 健康監控實例
+const healthMonitor = DatabaseHealthMonitor.getInstance();
 
 export const useSqlite = () => {
   // 初始化 SQLite
@@ -19,33 +28,83 @@ export const useSqlite = () => {
 
     initPromise = (async () => {
       try {
-        console.log('🔄 正在初始化 SQL.js...');
+        console.log('🔄 開始初始化資料庫...');
 
-        // 初始化 sql.js
-        const SQL = await initSqlJs({
-          locateFile: (file: string) =>
-            `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`,
-        });
-
-        console.log('📥 正在下載資料庫檔案...');
+        // 使用重試機制初始化 sql.js
+        const SQL = await withRetry(
+          async () => {
+            return await initSqlJs({
+              locateFile: (file: string) => {
+                if (file === 'sql-wasm.wasm') {
+                  return 'https://sql.js.org/dist/sql-wasm.wasm';
+                }
+                return `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`;
+              },
+            });
+          },
+          { maxAttempts: 3, delay: 500, backoffMultiplier: 2 }
+        );
 
         // 載入資料庫檔案
         const { $config } = useNuxtApp();
         const baseURL = $config.app.baseURL || '/';
-        const response = await fetch(`${baseURL}tourism.sqlite`);
-        const buffer = await response.arrayBuffer();
+        const dbPath = baseURL.endsWith('/')
+          ? `${baseURL}tourism.sqlite`
+          : `${baseURL}/tourism.sqlite`;
+
+        console.log('📁 載入資料庫檔案:', dbPath);
+
+        // 使用重試機制載入資料庫檔案
+        const buffer = await withRetry(async () => {
+          const response = await fetch(dbPath, {
+            signal: AbortSignal.timeout(30000), // 30秒超時
+          });
+
+          if (!response.ok) {
+            throw new DatabaseError(
+              DatabaseErrorType.CONNECTION_FAILED,
+              `無法載入資料庫檔案: ${response.status} ${response.statusText} - 路徑: ${dbPath}`
+            );
+          }
+
+          const contentLength = response.headers.get('content-length');
+          if (contentLength && parseInt(contentLength) === 0) {
+            throw new DatabaseError(DatabaseErrorType.INVALID_DATA, '資料庫檔案為空');
+          }
+
+          return await response.arrayBuffer();
+        });
 
         // 建立資料庫實例
         db = new SQL.Database(new Uint8Array(buffer));
 
-        console.log('✅ 資料庫初始化完成！');
+        // 執行健康檢查
+        const healthCheck = await healthMonitor.performHealthCheck(async () => {
+          const result = db!.exec('SELECT 1 as test');
+          if (!result || result.length === 0) {
+            throw new Error('健康檢查查詢失敗');
+          }
+        });
 
+        if (healthCheck.status === 'unhealthy') {
+          throw new DatabaseError(DatabaseErrorType.CONNECTION_FAILED, '資料庫健康檢查失敗');
+        }
+
+        console.log('✅ 資料庫初始化成功', healthCheck);
         return db;
       } catch (error) {
-        console.error('❌ 資料庫初始化失敗:', error);
         isInitializing = false;
         initPromise = null;
-        throw error;
+
+        // 記錄錯誤到健康監控
+        healthMonitor.recordError(error as Error);
+
+        // 轉換為 DatabaseError
+        const dbError =
+          error instanceof DatabaseError ? error : DatabaseError.fromError(error as Error);
+
+        console.error('❌ 資料庫初始化失敗:', dbError);
+        throw dbError;
       }
     })();
 
@@ -54,25 +113,48 @@ export const useSqlite = () => {
 
   // 執行查詢
   const query = async (sql: string, params: unknown[] = []): Promise<Record<string, unknown>[]> => {
-    const database = await initDatabase();
-
     try {
-      const stmt = database.prepare(sql);
-      const results: Record<string, unknown>[] = [];
+      const database = await initDatabase();
 
-      stmt.bind(params as any);
+      // 查詢超時控制
+      const queryPromise = new Promise<Record<string, unknown>[]>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new DatabaseError(DatabaseErrorType.TIMEOUT, 'SQL 查詢超時'));
+        }, 10000); // 10秒超時
 
-      while (stmt.step()) {
-        const row = stmt.getAsObject();
-        results.push(row);
-      }
+        try {
+          const stmt = database.prepare(sql);
+          const results: Record<string, unknown>[] = [];
 
-      stmt.free();
+          stmt.bind(params as any);
 
-      return results;
+          while (stmt.step()) {
+            const row = stmt.getAsObject();
+            results.push(row);
+          }
+
+          stmt.free();
+          clearTimeout(timeout);
+
+          // 記錄成功
+          healthMonitor.recordSuccess();
+          resolve(results);
+        } catch (error) {
+          clearTimeout(timeout);
+          reject(error);
+        }
+      });
+
+      return await queryPromise;
     } catch (error) {
-      console.error('查詢錯誤:', error);
-      throw error;
+      // 記錄錯誤
+      healthMonitor.recordError(error as Error);
+
+      const dbError =
+        error instanceof DatabaseError ? error : DatabaseError.fromError(error as Error);
+
+      console.error('查詢錯誤:', { sql, params, error: dbError });
+      throw dbError;
     }
   };
 
@@ -93,6 +175,7 @@ export const useSqlite = () => {
       search?: string;
       category?: string;
       city?: string;
+      region?: string;
     } = {}
   ) => {
     let sql = `
@@ -101,9 +184,9 @@ export const useSqlite = () => {
         l.address, l.city, l.district, l.latitude, l.longitude,
         GROUP_CONCAT(c.name) as categories
       FROM activities a
-      LEFT JOIN locations l ON l.activityId = a.id
-      LEFT JOIN activity_categories ac ON ac.activityId = a.id
-      LEFT JOIN categories c ON c.id = ac.categoryId
+      LEFT JOIN locations l ON l.activity_id = a.id
+      LEFT JOIN activity_categories ac ON ac.activity_id = a.id
+      LEFT JOIN categories c ON c.id = ac.category_id
       WHERE 1=1
     `;
 
@@ -124,6 +207,11 @@ export const useSqlite = () => {
       params.push(options.city);
     }
 
+    if (options.region) {
+      sql += ` AND l.region = ?`;
+      params.push(options.region);
+    }
+
     sql += ` GROUP BY a.id`;
 
     if (options.limit) {
@@ -136,7 +224,9 @@ export const useSqlite = () => {
       }
     }
 
-    return await query(sql, params);
+    const results = await query(sql, params);
+
+    return results;
   };
 
   // 取得單一活動
@@ -145,10 +235,10 @@ export const useSqlite = () => {
       SELECT 
         a.*,
         l.address, l.city, l.district, l.latitude, l.longitude,
-        t.startDate, t.endDate, t.startTime, t.endTime
+        t.start_date, t.end_date, t.start_time, t.end_time
       FROM activities a
-      LEFT JOIN locations l ON l.activityId = a.id
-      LEFT JOIN activity_times t ON t.activityId = a.id
+      LEFT JOIN locations l ON l.activity_id = a.id
+      LEFT JOIN activity_times t ON t.activity_id = a.id
       WHERE a.id = ?
     `;
 
@@ -174,9 +264,9 @@ export const useSqlite = () => {
         l.address, l.city, l.district, l.latitude, l.longitude,
         GROUP_CONCAT(c.name) as categories
       FROM activities a
-      INNER JOIN locations l ON l.activityId = a.id
-      LEFT JOIN activity_categories ac ON ac.activityId = a.id
-      LEFT JOIN categories c ON c.id = ac.categoryId
+      INNER JOIN locations l ON l.activity_id = a.id
+      LEFT JOIN activity_categories ac ON ac.activity_id = a.id
+      LEFT JOIN categories c ON c.id = ac.category_id
       WHERE l.latitude BETWEEN ? AND ?
         AND l.longitude BETWEEN ? AND ?
       GROUP BY a.id
@@ -184,6 +274,31 @@ export const useSqlite = () => {
     `;
 
     return await query(sql, [lat - latDiff, lat + latDiff, lng - lngDiff, lng + lngDiff]);
+  };
+
+  // 健康檢查 API
+  const checkHealth = async () => {
+    return await healthMonitor.performHealthCheck(async () => {
+      await query('SELECT 1 as test');
+    });
+  };
+
+  // 重置資料庫連接
+  const resetDatabase = async () => {
+    console.log('🔄 重置資料庫連接...');
+    db = null;
+    isInitializing = false;
+    initPromise = null;
+    healthMonitor.reset();
+
+    // 嘗試重新初始化
+    try {
+      await initDatabase();
+      console.log('✅ 資料庫重置成功');
+    } catch (error) {
+      console.error('❌ 資料庫重置失敗:', error);
+      throw error;
+    }
   };
 
   return {
@@ -194,5 +309,8 @@ export const useSqlite = () => {
     getActivity,
     getCategories,
     getNearbyActivities,
+    checkHealth,
+    resetDatabase,
+    getHealthStatus: () => healthMonitor.getStatus(),
   };
 };

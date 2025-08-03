@@ -1,7 +1,8 @@
-import { ref, readonly, onMounted } from 'vue';
+import { ref, readonly, onMounted, nextTick } from 'vue';
 import type { Activity, SearchFilters, MapCenter } from '~/types';
 import { ActivityStatus, Region } from '~/types';
 import { useSqlite } from './useSqlite';
+import { DatabaseError, DatabaseErrorType } from '~/utils/database-health';
 
 interface UseActivitiesOptions {
   autoLoad?: boolean;
@@ -17,7 +18,7 @@ interface SearchOptions {
 
 export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
   const { autoLoad = false, pageSize = 20 } = options;
-  const { getActivities, initDatabase } = useSqlite();
+  const { getActivities, initDatabase, checkHealth, resetDatabase } = useSqlite();
 
   // 響應式狀態
   const activities = ref<Activity[]>([]);
@@ -26,6 +27,8 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
   const hasMoreActivities = ref(false);
   const currentPage = ref(1);
   const isInitialized = ref(false);
+  const lastError = ref<string | null>(null);
+  const retryCount = ref(0);
 
   // 格式化活動資料
   interface ActivityRow {
@@ -47,10 +50,10 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
     venue?: string;
     landmarks?: string;
     timeId?: string;
-    startDate?: string;
-    endDate?: string;
-    startTime?: string;
-    endTime?: string;
+    start_date?: string;
+    end_date?: string;
+    start_time?: string;
+    end_time?: string;
     timezone?: string;
     isRecurring?: boolean;
     recurrenceRule?: string;
@@ -58,15 +61,16 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
   }
 
   const formatActivity = (row: ActivityRow): Activity => {
-    return {
+    // SQLite 可能返回小寫的欄位名稱
+    const data = {
       id: row.id,
       name: row.name,
       description: row.description || undefined,
       summary: row.summary || undefined,
       status: (row.status as ActivityStatus) || ActivityStatus.ACTIVE,
-      qualityScore: row.qualityScore || 0,
-      createdAt: new Date(row.createdAt),
-      updatedAt: new Date(row.updatedAt),
+      qualityScore: row.quality_score || row.qualityScore || 0,
+      createdAt: new Date(row.created_at || row.createdAt),
+      updatedAt: new Date(row.updated_at || row.updatedAt),
       location:
         row.latitude && row.longitude
           ? {
@@ -82,14 +86,14 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
               landmarks: row.landmarks ? JSON.parse(row.landmarks) : [],
             }
           : undefined,
-      time: row.startDate
+      time: row.start_date
         ? {
             id: row.timeId || '',
             activityId: row.id,
-            startDate: row.startDate,
-            endDate: row.endDate,
-            startTime: row.startTime,
-            endTime: row.endTime,
+            startDate: row.start_date,
+            endDate: row.end_date,
+            startTime: row.start_time,
+            endTime: row.end_time,
             timezone: row.timezone || 'Asia/Taipei',
             isRecurring: row.isRecurring || false,
             recurrenceRule: row.recurrenceRule ? JSON.parse(row.recurrenceRule) : undefined,
@@ -108,6 +112,8 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
             .filter((cat) => cat.name)
         : [],
     };
+
+    return data;
   };
 
   // 初始化資料庫
@@ -115,11 +121,31 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
     if (isInitialized.value) return;
 
     loading.value = true;
+    lastError.value = null;
+
     try {
       await initDatabase();
       isInitialized.value = true;
+      retryCount.value = 0;
     } catch (error) {
-      console.error('初始化資料庫失敗:', error);
+      const dbError =
+        error instanceof DatabaseError ? error : DatabaseError.fromError(error as Error);
+
+      console.error('初始化資料庫失敗:', dbError);
+      lastError.value = dbError.message;
+
+      // 根據錯誤類型決定是否重試
+      if (dbError.type === DatabaseErrorType.CONNECTION_FAILED && retryCount.value < 3) {
+        retryCount.value++;
+        console.log(`🔄 將在 ${retryCount.value * 2} 秒後重試...`);
+
+        setTimeout(() => {
+          isInitialized.value = false;
+          initialize();
+        }, retryCount.value * 2000);
+      }
+
+      throw dbError;
     } finally {
       loading.value = false;
     }
@@ -141,9 +167,9 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
       const formattedResults = results.map((row: any) => formatActivity(row as ActivityRow));
 
       if (reset || page === 1) {
-        activities.value = formattedResults;
+        activities.value = [...formattedResults];
       } else {
-        activities.value.push(...formattedResults);
+        activities.value = [...activities.value, ...formattedResults];
       }
 
       // 簡單估算總數
@@ -152,8 +178,31 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
 
       hasMoreActivities.value = results.length === pageSize;
       currentPage.value = page;
+      lastError.value = null;
     } catch (error) {
-      console.error('載入活動失敗:', error);
+      const dbError =
+        error instanceof DatabaseError ? error : DatabaseError.fromError(error as Error);
+
+      console.error('載入活動失敗:', dbError);
+      lastError.value = dbError.message;
+
+      // 檢查是否需要重置資料庫
+      if (
+        dbError.type === DatabaseErrorType.CONNECTION_FAILED ||
+        dbError.type === DatabaseErrorType.TIMEOUT
+      ) {
+        isInitialized.value = false;
+
+        // 嘗試自動修復
+        try {
+          await resetDatabase();
+          // 重試查詢
+          return await loadActivities(page, reset);
+        } catch (resetError) {
+          console.error('重置資料庫失敗:', resetError);
+        }
+      }
+
       activities.value = [];
       totalActivities.value = 0;
       hasMoreActivities.value = false;
@@ -175,6 +224,7 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
         search?: string;
         category?: string;
         city?: string;
+        region?: string;
       }
 
       const queryOptions: QueryOptions = {
@@ -187,26 +237,18 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
       }
 
       if (searchOptions.filters?.categories?.length) {
+        // categories 陣列包含的是 slug，直接使用
         queryOptions.category = searchOptions.filters.categories[0];
       }
 
       if (searchOptions.filters?.regions?.length) {
-        // 根據地區過濾城市
-        const regionCityMap: Record<string, string[]> = {
-          north: ['台北市', '新北市', '基隆市', '桃園市', '新竹市', '新竹縣', '宜蘭縣'],
-          central: ['台中市', '彰化縣', '南投縣', '雲林縣', '苗栗縣'],
-          south: ['台南市', '高雄市', '嘉義市', '嘉義縣', '屏東縣'],
-          east: ['花蓮縣', '台東縣'],
-          island: ['澎湖縣', '金門縣', '連江縣'],
-        };
+        // 直接使用地區篩選
+        queryOptions.region = searchOptions.filters.regions[0]; // SQLite 查詢限制，只用第一個地區
+      }
 
-        const cities = searchOptions.filters.regions.flatMap(
-          (region) => regionCityMap[region] || []
-        );
-
-        if (cities.length > 0) {
-          queryOptions.city = cities[0]; // SQLite 查詢限制，只用第一個城市
-        }
+      if (searchOptions.filters?.cities?.length) {
+        // 如果有指定城市，使用城市篩選
+        queryOptions.city = searchOptions.filters.cities[0];
       }
 
       const results = await getActivities(queryOptions);
@@ -218,7 +260,9 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
         const radius = searchOptions.radius;
 
         const filteredResults = formattedResults.filter((activity) => {
-          if (!activity.location?.latitude || !activity.location?.longitude) return false;
+          if (!activity.location?.latitude || !activity.location?.longitude) {
+            return false;
+          }
 
           const distance = calculateDistance(
             lat,
@@ -230,31 +274,78 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
           return distance <= radius;
         });
 
-        // 按距離排序
-        filteredResults.sort((a, b) => {
-          if (
-            !a.location?.latitude ||
-            !a.location?.longitude ||
-            !b.location?.latitude ||
-            !b.location?.longitude
-          ) {
-            return 0;
-          }
-          const distA = calculateDistance(lat, lng, a.location.latitude, a.location.longitude);
-          const distB = calculateDistance(lat, lng, b.location.latitude, b.location.longitude);
-          return distA - distB;
-        });
+        // 如果沒有活動在範圍內，顯示所有活動但按距離排序
+        if (filteredResults.length === 0) {
+          // 為所有活動計算距離並排序
+          formattedResults.forEach((activity) => {
+            if (activity.location?.latitude && activity.location?.longitude) {
+              const distance = calculateDistance(
+                lat,
+                lng,
+                activity.location.latitude,
+                activity.location.longitude
+              );
+              (activity as any).distance = distance;
+            }
+          });
 
-        activities.value = filteredResults;
+          // 按距離排序所有活動
+          formattedResults.sort((a, b) => {
+            const distA = (a as any).distance || 999999;
+            const distB = (b as any).distance || 999999;
+            return distA - distB;
+          });
+
+          // 使用所有活動
+          activities.value.length = 0;
+          activities.value.push(...formattedResults);
+        } else {
+          // 按距離排序
+          filteredResults.sort((a, b) => {
+            if (
+              !a.location?.latitude ||
+              !a.location?.longitude ||
+              !b.location?.latitude ||
+              !b.location?.longitude
+            ) {
+              return 0;
+            }
+            const distA = calculateDistance(lat, lng, a.location.latitude, a.location.longitude);
+            const distB = calculateDistance(lat, lng, b.location.latitude, b.location.longitude);
+            return distA - distB;
+          });
+
+          // 先清空再賦值
+          activities.value.length = 0;
+          activities.value.push(...filteredResults);
+        }
       } else {
-        activities.value = formattedResults;
+        // 先清空再賦值
+        activities.value.length = 0;
+        activities.value.push(...formattedResults);
       }
 
+      // 強制觸發響應式更新
+      await nextTick();
+
       totalActivities.value = activities.value.length;
-      hasMoreActivities.value = false; // 客戶端搜尋不分頁
+      hasMoreActivities.value = activities.value.length === 0 ? false : true;
       currentPage.value = 1;
+      lastError.value = null;
     } catch (error) {
-      console.error('搜尋活動失敗:', error);
+      const dbError =
+        error instanceof DatabaseError ? error : DatabaseError.fromError(error as Error);
+
+      console.error('搜尋活動失敗:', dbError);
+      lastError.value = dbError.message;
+
+      // 針對特定錯誤提供更好的錯誤提示
+      if (dbError.type === DatabaseErrorType.QUERY_FAILED) {
+        lastError.value = '搜尋查詢失敗，請檢查搜尋條件';
+      } else if (dbError.type === DatabaseErrorType.CONNECTION_FAILED) {
+        lastError.value = '資料庫連接失敗，請稍後再試';
+      }
+
       activities.value = [];
       totalActivities.value = 0;
       hasMoreActivities.value = false;
@@ -297,14 +388,36 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
     });
   }
 
+  // 檢查資料庫健康狀態
+  const checkDatabaseHealth = async () => {
+    try {
+      const health = await checkHealth();
+      return health;
+    } catch (error) {
+      console.error('健康檢查失敗:', error);
+      return {
+        status: 'unhealthy' as const,
+        message: '無法檢查資料庫狀態',
+        timestamp: new Date(),
+      };
+    }
+  };
+
   return {
     activities: readonly(activities),
     loading: readonly(loading),
     totalActivities: readonly(totalActivities),
     hasMoreActivities: readonly(hasMoreActivities),
+    lastError: readonly(lastError),
     searchActivities,
     loadMoreActivities,
     refreshActivities,
     loadActivities,
+    checkDatabaseHealth,
+    resetDatabase: async () => {
+      isInitialized.value = false;
+      retryCount.value = 0;
+      await resetDatabase();
+    },
   };
 };
