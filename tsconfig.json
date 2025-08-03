@@ -4,7 +4,7 @@
     "strict": false,
     "noImplicitAny": false,
     "paths": {
-      "~/*": ["./*"],
+      "~/*": ["./app/*"],
       "@/*": ["./*"]
     }
   }

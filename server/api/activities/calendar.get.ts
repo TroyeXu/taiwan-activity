@@ -1,5 +1,11 @@
 import { getDatabase } from '../../utils/database';
-import { activities, locations, activityTimes, categories, activityCategories } from '../../../db/schema';
+import {
+  activities,
+  locations,
+  activityTimes,
+  categories,
+  activityCategories,
+} from '../../../db/schema';
 import { eq, and, gte, lte, or, sql } from 'drizzle-orm';
 import type { ApiResponse } from '../../../app/types';
 

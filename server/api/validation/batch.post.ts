@@ -1,9 +1,6 @@
 import { ClaudeValidationService } from '../../utils/claude-validation';
 import { getDatabase } from '../../utils/database';
-import {
-  activities,
-  validationLogs,
-} from '../../../db/schema';
+import { activities, validationLogs } from '../../../db/schema';
 import { eq, or, lt, sql } from 'drizzle-orm';
 import type { ApiResponse } from '../../../app/types';
 

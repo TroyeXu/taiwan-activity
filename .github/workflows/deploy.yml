@@ -11,14 +11,14 @@ on:
 
 # 設定所需權限
 permissions:
-  contents: read      # 讀取倉庫內容
-  pages: write       # 寫入 GitHub Pages
-  id-token: write    # 用於 OIDC 驗證
+  contents: read # 讀取倉庫內容
+  pages: write # 寫入 GitHub Pages
+  id-token: write # 用於 OIDC 驗證
 
 # 並發控制
 concurrency:
-  group: "pages"
-  cancel-in-progress: false  # 不取消正在進行的部署
+  group: 'pages'
+  cancel-in-progress: false # 不取消正在進行的部署
 
 jobs:
   # 建構工作
@@ -33,7 +33,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: '20'
           cache: npm
 
       # 安裝相依套件
@@ -78,7 +78,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: build  # 需要等待 build 工作完成
+    needs: build # 需要等待 build 工作完成
     steps:
       # 部署到 GitHub Pages
       - name: Deploy to GitHub Pages

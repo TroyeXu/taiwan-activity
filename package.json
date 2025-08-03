@@ -17,6 +17,12 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,vue,json,md,yml,yaml,css,scss}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,vue,json,md,yml,yaml,css,scss}\"",
+    "typecheck": "nuxt typecheck",
+    "typecheck:ci": "nuxt typecheck --no-install",
+    "check": "npm run lint && npm run format:check && npm run typecheck",
+    "check:fix": "npm run lint:fix && npm run format",
+    "precommit": "npm run check:fix",
     "clean": "rm -rf .nuxt .output node_modules/.cache"
   },
   "dependencies": {

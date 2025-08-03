@@ -26,6 +26,7 @@
 ### Node.js 版本要求
 
 ⚠️ **重要提醒**：Nuxt 4.0.2 需要 Node.js v20.19.0 或更高版本
+
 - 當前版本：v20.17.0
 - 建議升級到：v20.19.0+ 或 v22.x
 
@@ -52,7 +53,7 @@ nvm use 20.19.0
 1. **better-sqlite3**: 9.6.0 → 12.2.0
    - 等待確認與 Drizzle ORM 0.44 的相容性
 
-2. **@typescript-eslint/***：6.21.0 → 8.38.0
+2. **@typescript-eslint/\***：6.21.0 → 8.38.0
    - 需要更新 ESLint 到 v9.x
    - 可能需要調整 ESLint 配置
 
