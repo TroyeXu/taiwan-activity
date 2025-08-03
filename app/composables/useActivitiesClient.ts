@@ -1,5 +1,6 @@
 import { ref, readonly, onMounted } from 'vue';
-import type { Activity, SearchFilters, MapCenter, ActivityStatus, Region } from '~/types';
+import type { Activity, SearchFilters, MapCenter } from '~/types';
+import { ActivityStatus, Region } from '~/types';
 import { useSqlite } from './useSqlite';
 
 interface UseActivitiesOptions {
@@ -62,7 +63,7 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
       name: row.name,
       description: row.description || undefined,
       summary: row.summary || undefined,
-      status: (row.status as ActivityStatus) || 'active',
+      status: (row.status as ActivityStatus) || ActivityStatus.ACTIVE,
       qualityScore: row.qualityScore || 0,
       createdAt: new Date(row.createdAt),
       updatedAt: new Date(row.updatedAt),
@@ -74,7 +75,7 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
               address: row.address,
               district: row.district || undefined,
               city: row.city,
-              region: (row.region as Region) || 'north',
+              region: (row.region as Region) || Region.NORTH,
               latitude: row.latitude,
               longitude: row.longitude,
               venue: row.venue || undefined,

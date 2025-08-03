@@ -766,7 +766,7 @@ export const extendedActivities = () => {
   ];
 
   // 對應的時間資料
-  const activityTimes: NewActivityTime[] = activities.map((activity, index) => ({
+  const activityTimes: NewActivityTime[] = activities.map((activity, _index) => ({
     id: nanoid(),
     activityId: activity.id,
     startDate: getRandomDate(2025, 1, 12).toISOString().split('T')[0]!,

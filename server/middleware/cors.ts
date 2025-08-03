@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   });
 
   // 處理 OPTIONS 預檢請求
-  if (getMethod(event) === 'OPTIONS') {
+  if (event.method === 'OPTIONS') {
     event.node.res.statusCode = 204;
     return '';
   }

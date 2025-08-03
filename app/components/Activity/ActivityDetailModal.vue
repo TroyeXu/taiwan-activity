@@ -195,7 +195,8 @@ import {
   CircleCheckFilled,
   CircleCloseFilled,
 } from '@element-plus/icons-vue';
-import type { Activity, ActivityStatus, Region } from '~/types';
+import type { Activity } from '~/types';
+import { ActivityStatus, Region } from '~/types';
 
 // 導入缺失的組件
 import ActivityMap from '~/components/Map/ActivityMap.vue';
@@ -273,7 +274,7 @@ const fetchActivity = async () => {
         name: String(data.name),
         description: data.description ? String(data.description) : undefined,
         summary: data.summary ? String(data.summary) : undefined,
-        status: (data.status as ActivityStatus) || 'active',
+        status: (data.status as ActivityStatus) || ActivityStatus.ACTIVE,
         qualityScore: Number(data.qualityScore) || 0,
         createdAt: new Date(String(data.createdAt)),
         updatedAt: new Date(String(data.updatedAt)),
@@ -285,7 +286,7 @@ const fetchActivity = async () => {
                 address: String(data.address),
                 district: data.district ? String(data.district) : undefined,
                 city: String(data.city),
-                region: (data.region as Region) || 'north',
+                region: (data.region as Region) || Region.NORTH,
                 latitude: Number(data.latitude),
                 longitude: Number(data.longitude),
                 venue: data.venue ? String(data.venue) : undefined,

@@ -286,12 +286,12 @@ export class DatabaseOptimizationService {
       const totalQueries: number = recentQueries.reduce(
         (sum: number, row: any) => sum + Number(row.count || 0),
         0
-      );
+      ) as number;
 
       // 簡化的快取命中率計算 (基於查詢時間)
       const fastQueries: number = recentQueries
         .filter((row: any) => Number(row.avg_time || 0) < 100)
-        .reduce((sum: number, row: any) => sum + Number(row.count || 0), 0);
+        .reduce((sum: number, row: any) => sum + Number(row.count || 0), 0) as number;
 
       const hitRate = totalQueries > 0 ? fastQueries / totalQueries : 0;
 

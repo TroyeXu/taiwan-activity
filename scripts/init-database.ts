@@ -1,4 +1,4 @@
-import { db, runMigrations, closeDatabase } from '../db';
+import { db as _db, runMigrations, closeDatabase } from '../db';
 import { seedDatabase } from '../db/seeds';
 
 async function initDatabase() {

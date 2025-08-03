@@ -15,37 +15,16 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
   } = options;
 
   // 響應式狀態
-  interface LeafletMap {
-    setView: (center: [number, number], zoom?: number) => void;
-    setZoom: (zoom: number) => void;
-    getCenter: () => { lat: number; lng: number };
-    getBounds: () => {
-      getNorth: () => number;
-      getSouth: () => number;
-      getEast: () => number;
-      getWest: () => number;
-    };
-    getZoom: () => number;
-    remove: () => void;
-    removeLayer: (layer: unknown) => void;
-    addLayer: (layer: unknown) => void;
-    on: (event: string, handler: () => void) => void;
-    fitBounds: (bounds: unknown, options?: Record<string, unknown>) => void;
-  }
+  type LeafletMap = any;
 
   const mapInstance = ref<LeafletMap | null>(null);
   const mapElement = ref<HTMLElement | null>(null);
   const isMapLoaded = ref(false);
   const mapError = ref<string | null>(null);
-  interface LeafletMarker {
-    addTo: (map: LeafletMap) => void;
-  }
+  type LeafletMarker = any;
 
   const markers = ref<LeafletMarker[]>([]);
-  interface MarkerClusterGroup {
-    clearLayers: () => void;
-    addLayers: (markers: LeafletMarker[]) => void;
-  }
+  type MarkerClusterGroup = any;
 
   const markerCluster = ref<MarkerClusterGroup | null>(null);
   const selectedActivity = ref<Activity | null>(null);
@@ -88,7 +67,7 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
     mapElement.value = element;
 
     // 創建地圖實例
-    mapInstance.value = L.map(element, {
+    mapInstance.value = (L as any).map(element, {
       center: [center.value.lat, center.value.lng],
       zoom: zoom.value,
       zoomControl: true,
@@ -126,8 +105,8 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
     // 初始化標記聚合群組
     if (clustered) {
       const MarkerClusterGroup = await import('leaflet.markercluster');
-      markerCluster.value = new MarkerClusterGroup.default();
-      mapInstance.value.addLayer(markerCluster.value);
+      markerCluster.value = new (MarkerClusterGroup as any).default();
+      mapInstance.value.addLayer(markerCluster.value as any);
     }
 
     // 監聽地圖事件
@@ -305,7 +284,7 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
     if (!mapInstance.value || markers.value.length === 0) return;
 
     const L = await import('leaflet');
-    const group = new L.FeatureGroup(markers.value);
+    const group = new (L as any).FeatureGroup(markers.value as any);
     mapInstance.value.fitBounds(group.getBounds(), {
       padding: [20, 20],
     });

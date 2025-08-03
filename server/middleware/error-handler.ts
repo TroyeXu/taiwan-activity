@@ -1,8 +1,6 @@
 export default defineEventHandler(async (event) => {
-  try {
-    // 繼續處理請求
-    return;
-  } catch (error) {
+  // 註冊錯誤處理器
+  event.context.onError = (error: any) => {
     console.error('API Error:', error);
 
     // 記錄錯誤
@@ -18,15 +16,5 @@ export default defineEventHandler(async (event) => {
 
     // 這裡可以發送到錯誤追蹤服務
     console.error('Error details:', errorInfo);
-
-    // 回傳標準化錯誤回應
-    if (error && typeof error === 'object' && 'statusCode' in error) {
-      throw error;
-    }
-
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'Internal Server Error',
-    });
-  }
+  };
 });

@@ -1,4 +1,4 @@
-export default defineNitroPlugin(async (nitroApp) => {
+export default defineNitroPlugin(async (_nitroApp) => {
   console.log('🚀 Database ready at ./database/tourism.sqlite');
 
   // 檢查資料庫檔案是否存在

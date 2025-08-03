@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "strict": false,
+    "noImplicitAny": false
+  },
+  "include": [
+    "./app/**/*",
+    "./server/**/*",
+    "./db/**/*",
+    "./scripts/**/*",
+    "./nuxt.config.ts",
+    "./drizzle.config.ts"
+  ],
+  "exclude": ["node_modules", ".nuxt", ".output", "dist"]
+}

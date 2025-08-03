@@ -24,6 +24,11 @@ export default [
       '**/.nitro/**',
       '**/logs/**',
       '**/.git/**',
+      'db/**',
+      'scripts/**',
+      'server/middleware/**',
+      'server/plugins/**',
+      'drizzle.config.ts',
     ],
   },
 
