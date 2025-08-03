@@ -26,7 +26,7 @@ const runningCrawlers = new Map<string, CrawlerResult>();
 
 export default defineEventHandler(async (event): Promise<ApiResponse<CrawlerResult>> => {
   try {
-    const body = await readBody(event) as CrawlerTriggerParams;
+    const body = (await readBody(event)) as CrawlerTriggerParams;
     const { spider, args = {}, async = true } = body;
 
     // 驗證爬蟲名稱
@@ -34,13 +34,13 @@ export default defineEventHandler(async (event): Promise<ApiResponse<CrawlerResu
       'tourism_bureau',
       'local_government',
       'event_platforms',
-      'cultural_centers'
+      'cultural_centers',
     ];
 
     if (!spider || !availableSpiders.includes(spider)) {
       throw createError({
         statusCode: 400,
-        statusMessage: `無效的爬蟲名稱。可用爬蟲: ${availableSpiders.join(', ')}`
+        statusMessage: `無效的爬蟲名稱。可用爬蟲: ${availableSpiders.join(', ')}`,
       });
     }
 
@@ -49,7 +49,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<CrawlerResu
     if (runningCrawlers.has(spider)) {
       throw createError({
         statusCode: 409,
-        statusMessage: `爬蟲 ${spider} 正在運行中`
+        statusMessage: `爬蟲 ${spider} 正在運行中`,
       });
     }
 
@@ -57,7 +57,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<CrawlerResu
     const result: CrawlerResult = {
       spider,
       status: 'started',
-      startTime: new Date().toISOString()
+      startTime: new Date().toISOString(),
     };
 
     runningCrawlers.set(spider, result);
@@ -65,7 +65,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<CrawlerResu
     try {
       if (async) {
         // 異步執行爬蟲
-        executeCrawlerAsync(spider, args, crawlerId).catch(error => {
+        executeCrawlerAsync(spider, args, crawlerId).catch((error) => {
           console.error(`Async crawler ${spider} failed:`, error);
           const result = runningCrawlers.get(spider);
           if (result) {
@@ -79,12 +79,12 @@ export default defineEventHandler(async (event): Promise<ApiResponse<CrawlerResu
         return {
           success: true,
           data: result,
-          message: `爬蟲 ${spider} 已啟動（異步執行）`
+          message: `爬蟲 ${spider} 已啟動（異步執行）`,
         };
       } else {
         // 同步執行爬蟲
         const crawlerResult = await executeCrawler(spider, args);
-        
+
         result.status = 'completed';
         result.endTime = new Date().toISOString();
         result.duration = Date.now() - new Date(result.startTime).getTime();
@@ -96,24 +96,22 @@ export default defineEventHandler(async (event): Promise<ApiResponse<CrawlerResu
         return {
           success: true,
           data: result,
-          message: `爬蟲 ${spider} 執行完成`
+          message: `爬蟲 ${spider} 執行完成`,
         };
       }
-
     } catch (error) {
       result.status = 'failed';
       result.error = error instanceof Error ? error.message : String(error);
       result.endTime = new Date().toISOString();
       result.duration = Date.now() - new Date(result.startTime).getTime();
-      
+
       runningCrawlers.delete(spider);
-      
+
       throw createError({
         statusCode: 500,
-        statusMessage: `爬蟲執行失敗: ${error instanceof Error ? error.message : String(error)}`
+        statusMessage: `爬蟲執行失敗: ${error instanceof Error ? error.message : String(error)}`,
       });
     }
-
   } catch (error) {
     console.error('Crawler trigger failed:', error);
 
@@ -123,7 +121,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<CrawlerResu
 
     throw createError({
       statusCode: 500,
-      statusMessage: '觸發爬蟲失敗'
+      statusMessage: '觸發爬蟲失敗',
     });
   }
 });
@@ -135,13 +133,13 @@ async function executeCrawler(spider: string, args: Record<string, any> = {}) {
     .join(' ');
 
   const command = `cd crawler && python -m scrapy crawl ${spider} ${crawlerArgs}`;
-  
+
   console.log(`Executing crawler command: ${command}`);
 
   try {
     const { stdout, stderr } = await execAsync(command, {
       timeout: 30 * 60 * 1000, // 30 分鐘超時
-      maxBuffer: 10 * 1024 * 1024 // 10MB 輸出緩衝
+      maxBuffer: 10 * 1024 * 1024, // 10MB 輸出緩衝
     });
 
     // 解析輸出中的統計資訊
@@ -150,26 +148,21 @@ async function executeCrawler(spider: string, args: Record<string, any> = {}) {
     return {
       output: stdout,
       error: stderr,
-      stats
+      stats,
     };
-
   } catch (error) {
     console.error(`Crawler execution failed:`, error);
     throw new Error(`爬蟲執行失敗: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
-async function executeCrawlerAsync(
-  spider: string, 
-  args: Record<string, any>, 
-  crawlerId: string
-) {
+async function executeCrawlerAsync(spider: string, args: Record<string, any>, crawlerId: string) {
   const result = runningCrawlers.get(spider);
   if (!result) return;
 
   try {
     const crawlerResult = await executeCrawler(spider, args);
-    
+
     result.status = 'completed';
     result.endTime = new Date().toISOString();
     result.duration = Date.now() - new Date(result.startTime).getTime();
@@ -180,7 +173,6 @@ async function executeCrawlerAsync(
 
     // 觸發資料驗證
     await triggerValidation(spider);
-
   } catch (error) {
     result.status = 'failed';
     result.error = error instanceof Error ? error.message : String(error);
@@ -190,17 +182,22 @@ async function executeCrawlerAsync(
     console.error(`Async crawler ${spider} failed:`, error);
   } finally {
     // 5 分鐘後清理完成的爬蟲記錄
-    setTimeout(() => {
-      runningCrawlers.delete(spider);
-    }, 5 * 60 * 1000);
+    setTimeout(
+      () => {
+        runningCrawlers.delete(spider);
+      },
+      5 * 60 * 1000
+    );
   }
 }
 
 function parseScrapyStats(output: string): any {
   try {
     // 嘗試解析 Scrapy 統計輸出
-    const statsMatch = output.match(/INFO: Dumping Scrapy stats:([\s\S]*?)(?=\d{4}-\d{2}-\d{2}|\n\n|$)/);
-    
+    const statsMatch = output.match(
+      /INFO: Dumping Scrapy stats:([\s\S]*?)(?=\d{4}-\d{2}-\d{2}|\n\n|$)/
+    );
+
     if (statsMatch) {
       const statsText = statsMatch[1];
       const stats: any = {};
@@ -231,9 +228,8 @@ function parseScrapyStats(output: string): any {
     return {
       item_scraped_count: itemsMatch && itemsMatch[1] ? parseInt(itemsMatch[1]) : 0,
       elapsed_time_seconds: timeMatch && timeMatch[1] ? parseFloat(timeMatch[1]) : 0,
-      raw_output: output
+      raw_output: output,
     };
-
   } catch (error) {
     console.warn('Failed to parse scrapy stats:', error);
     return { raw_output: output };
@@ -248,10 +244,10 @@ async function triggerValidation(spider: string) {
         source: `crawler-${spider}`,
         batchSize: 50,
         autoProcess: true,
-        qualityThreshold: 60
-      }
+        qualityThreshold: 60,
+      },
     });
-    
+
     console.log(`Validation triggered for crawler: ${spider}`);
   } catch (error) {
     console.error(`Failed to trigger validation for ${spider}:`, error);
@@ -263,7 +259,7 @@ export function getCrawlerStatus(spider?: string) {
   if (spider) {
     return runningCrawlers.get(spider);
   }
-  
+
   return Object.fromEntries(runningCrawlers.entries());
 }
 
@@ -278,12 +274,12 @@ export async function stopCrawler(spider: string) {
     // 嘗試終止爬蟲進程
     // 注意：這是簡化版本，實際上需要追蹤進程 ID
     await execAsync(`pkill -f "scrapy crawl ${spider}"`);
-    
+
     result.status = 'failed';
     result.error = 'Manually stopped';
     result.endTime = new Date().toISOString();
     result.duration = Date.now() - new Date(result.startTime).getTime();
-    
+
     return result;
   } catch (error) {
     throw new Error(`停止爬蟲失敗: ${error instanceof Error ? error.message : String(error)}`);

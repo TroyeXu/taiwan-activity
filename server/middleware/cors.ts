@@ -4,7 +4,7 @@ export default defineEventHandler(async (event) => {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
-    'Access-Control-Max-Age': '86400'
+    'Access-Control-Max-Age': '86400',
   });
 
   // 處理 OPTIONS 預檢請求

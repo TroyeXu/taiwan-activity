@@ -21,7 +21,7 @@ export default defineEventHandler(async (event): Promise<any> => {
         time: activityTimes,
         categoryNames: sql<string>`GROUP_CONCAT(${categories.name})`,
         categorySlugs: sql<string>`GROUP_CONCAT(${categories.slug})`,
-        categoryColors: sql<string>`GROUP_CONCAT(${categories.colorCode})`
+        categoryColors: sql<string>`GROUP_CONCAT(${categories.colorCode})`,
       })
       .from(activities)
       .leftJoin(locations, eq(activities.id, locations.activityId))
@@ -53,7 +53,7 @@ export default defineEventHandler(async (event): Promise<any> => {
     const results = await queryBuilder;
 
     // 格式化資料
-    const exportData = results.map(row => ({
+    const exportData = results.map((row) => ({
       id: row.activity.id,
       name: row.activity.name,
       description: row.activity.description,
@@ -62,38 +62,41 @@ export default defineEventHandler(async (event): Promise<any> => {
       qualityScore: row.activity.qualityScore,
       price: row.activity.price,
       priceType: row.activity.priceType,
-      location: row.location ? {
-        address: row.location.address,
-        city: row.location.city,
-        region: row.location.region,
-        latitude: row.location.latitude,
-        longitude: row.location.longitude,
-        venue: row.location.venue
-      } : null,
-      time: row.time ? {
-        startDate: row.time.startDate,
-        endDate: row.time.endDate,
-        startTime: row.time.startTime,
-        endTime: row.time.endTime,
-        isRecurring: row.time.isRecurring
-      } : null,
-      categories: row.categoryNames ? 
-        row.categoryNames.split(',').map(name => name.trim()) : [],
+      location: row.location
+        ? {
+            address: row.location.address,
+            city: row.location.city,
+            region: row.location.region,
+            latitude: row.location.latitude,
+            longitude: row.location.longitude,
+            venue: row.location.venue,
+          }
+        : null,
+      time: row.time
+        ? {
+            startDate: row.time.startDate,
+            endDate: row.time.endDate,
+            startTime: row.time.startTime,
+            endTime: row.time.endTime,
+            isRecurring: row.time.isRecurring,
+          }
+        : null,
+      categories: row.categoryNames ? row.categoryNames.split(',').map((name) => name.trim()) : [],
       createdAt: row.activity.createdAt,
-      updatedAt: row.activity.updatedAt
+      updatedAt: row.activity.updatedAt,
     }));
 
     // 根據格式回傳資料
     switch (format.toLowerCase()) {
       case 'csv':
         return exportAsCSV(exportData, event);
-        
+
       case 'xml':
         return exportAsXML(exportData, event);
-        
+
       case 'ical':
         return exportAsICal(exportData, event);
-        
+
       case 'json':
       default:
         setHeader(event, 'Content-Type', 'application/json');
@@ -104,17 +107,16 @@ export default defineEventHandler(async (event): Promise<any> => {
           meta: {
             total: exportData.length,
             format: 'json',
-            exportedAt: new Date().toISOString()
-          }
+            exportedAt: new Date().toISOString(),
+          },
         };
     }
-
   } catch (error) {
     console.error('Export activities failed:', error);
 
     throw createError({
       statusCode: 500,
-      statusMessage: '匯出活動失敗'
+      statusMessage: '匯出活動失敗',
     });
   }
 });
@@ -130,39 +132,59 @@ function exportAsCSV(data: any[], event: any): string {
 
   // CSV 標題行
   const headers = [
-    'ID', '活動名稱', '描述', '摘要', '狀態', '品質分數', '價格', '價格類型',
-    '地址', '城市', '地區', '緯度', '經度', '場地',
-    '開始日期', '結束日期', '開始時間', '結束時間', '重複性',
-    '分類', '建立時間', '更新時間'
+    'ID',
+    '活動名稱',
+    '描述',
+    '摘要',
+    '狀態',
+    '品質分數',
+    '價格',
+    '價格類型',
+    '地址',
+    '城市',
+    '地區',
+    '緯度',
+    '經度',
+    '場地',
+    '開始日期',
+    '結束日期',
+    '開始時間',
+    '結束時間',
+    '重複性',
+    '分類',
+    '建立時間',
+    '更新時間',
   ];
 
   // 轉換資料為 CSV 行
   const csvRows = [
     headers.join(','),
-    ...data.map(item => [
-      escapeCSV(item.id),
-      escapeCSV(item.name),
-      escapeCSV(item.description),
-      escapeCSV(item.summary),
-      escapeCSV(item.status),
-      item.qualityScore || 0,
-      item.price || 0,
-      escapeCSV(item.priceType),
-      escapeCSV(item.location?.address),
-      escapeCSV(item.location?.city),
-      escapeCSV(item.location?.region),
-      item.location?.latitude || '',
-      item.location?.longitude || '',
-      escapeCSV(item.location?.venue),
-      escapeCSV(item.time?.startDate),
-      escapeCSV(item.time?.endDate),
-      escapeCSV(item.time?.startTime),
-      escapeCSV(item.time?.endTime),
-      item.time?.isRecurring ? '是' : '否',
-      escapeCSV(item.categories?.join('; ')),
-      escapeCSV(item.createdAt),
-      escapeCSV(item.updatedAt)
-    ].join(','))
+    ...data.map((item) =>
+      [
+        escapeCSV(item.id),
+        escapeCSV(item.name),
+        escapeCSV(item.description),
+        escapeCSV(item.summary),
+        escapeCSV(item.status),
+        item.qualityScore || 0,
+        item.price || 0,
+        escapeCSV(item.priceType),
+        escapeCSV(item.location?.address),
+        escapeCSV(item.location?.city),
+        escapeCSV(item.location?.region),
+        item.location?.latitude || '',
+        item.location?.longitude || '',
+        escapeCSV(item.location?.venue),
+        escapeCSV(item.time?.startDate),
+        escapeCSV(item.time?.endDate),
+        escapeCSV(item.time?.startTime),
+        escapeCSV(item.time?.endTime),
+        item.time?.isRecurring ? '是' : '否',
+        escapeCSV(item.categories?.join('; ')),
+        escapeCSV(item.createdAt),
+        escapeCSV(item.updatedAt),
+      ].join(',')
+    ),
   ];
 
   return csvRows.join('\n');
@@ -172,7 +194,9 @@ function exportAsXML(data: any[], event: any): string {
   setHeader(event, 'Content-Type', 'application/xml; charset=utf-8');
   setHeader(event, 'Content-Disposition', 'attachment; filename="activities.xml"');
 
-  const xmlItems = data.map(item => `
+  const xmlItems = data
+    .map(
+      (item) => `
     <activity>
       <id>${escapeXML(item.id)}</id>
       <name>${escapeXML(item.name)}</name>
@@ -182,7 +206,9 @@ function exportAsXML(data: any[], event: any): string {
       <qualityScore>${item.qualityScore || 0}</qualityScore>
       <price>${item.price || 0}</price>
       <priceType>${escapeXML(item.priceType || '')}</priceType>
-      ${item.location ? `
+      ${
+        item.location
+          ? `
       <location>
         <address>${escapeXML(item.location.address || '')}</address>
         <city>${escapeXML(item.location.city || '')}</city>
@@ -191,8 +217,12 @@ function exportAsXML(data: any[], event: any): string {
         <longitude>${item.location.longitude || ''}</longitude>
         <venue>${escapeXML(item.location.venue || '')}</venue>
       </location>
-      ` : '<location />'}
-      ${item.time ? `
+      `
+          : '<location />'
+      }
+      ${
+        item.time
+          ? `
       <time>
         <startDate>${escapeXML(item.time.startDate || '')}</startDate>
         <endDate>${escapeXML(item.time.endDate || '')}</endDate>
@@ -200,14 +230,18 @@ function exportAsXML(data: any[], event: any): string {
         <endTime>${escapeXML(item.time.endTime || '')}</endTime>
         <isRecurring>${item.time.isRecurring ? 'true' : 'false'}</isRecurring>
       </time>
-      ` : '<time />'}
+      `
+          : '<time />'
+      }
       <categories>
         ${item.categories?.map((cat: any) => `<category>${escapeXML(cat)}</category>`).join('') || ''}
       </categories>
       <createdAt>${escapeXML(item.createdAt)}</createdAt>
       <updatedAt>${escapeXML(item.updatedAt)}</updatedAt>
     </activity>
-  `).join('');
+  `
+    )
+    .join('');
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <activities>
@@ -224,11 +258,11 @@ function exportAsICal(data: any[], event: any): string {
   setHeader(event, 'Content-Disposition', 'attachment; filename="activities.ics"');
 
   const events = data
-    .filter(item => item.time?.startDate)
-    .map(item => {
+    .filter((item) => item.time?.startDate)
+    .map((item) => {
       const startDate = new Date(item.time.startDate);
       const endDate = item.time.endDate ? new Date(item.time.endDate) : startDate;
-      
+
       // 格式化為 iCal 日期格式
       const formatDate = (date: Date) => {
         return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
@@ -241,14 +275,18 @@ DTEND:${formatDate(endDate)}
 SUMMARY:${escapeICal(item.name)}
 DESCRIPTION:${escapeICal(item.description || item.summary || '')}
 ${item.location?.address ? `LOCATION:${escapeICal(item.location.address)}` : ''}
-${item.location?.latitude && item.location?.longitude ? 
-  `GEO:${item.location.latitude};${item.location.longitude}` : ''}
+${
+  item.location?.latitude && item.location?.longitude
+    ? `GEO:${item.location.latitude};${item.location.longitude}`
+    : ''
+}
 CATEGORIES:${item.categories?.join(',') || ''}
 STATUS:CONFIRMED
 CREATED:${formatDate(new Date(item.createdAt))}
 LAST-MODIFIED:${formatDate(new Date(item.updatedAt))}
 END:VEVENT`;
-    }).join('\n');
+    })
+    .join('\n');
 
   return `BEGIN:VCALENDAR
 VERSION:2.0

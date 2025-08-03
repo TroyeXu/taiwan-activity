@@ -26,14 +26,17 @@ export const useActivities = (options: UseActivitiesOptions = {}) => {
   // 載入活動資料
   const loadActivities = async (page = 1, reset = false) => {
     loading.value = true;
-    
+
     try {
-      const response = await $fetch<{ success: boolean; data: Activity[]; pagination: any }>('/api/activities', {
-        query: {
-          page,
-          limit: pageSize,
+      const response = await $fetch<{ success: boolean; data: Activity[]; pagination: any }>(
+        '/api/activities',
+        {
+          query: {
+            page,
+            limit: pageSize,
+          },
         }
-      });
+      );
 
       if (reset || page === 1) {
         activities.value = response.data || [];
@@ -44,7 +47,6 @@ export const useActivities = (options: UseActivitiesOptions = {}) => {
       totalActivities.value = response.pagination?.total || response.data?.length || 0;
       hasMoreActivities.value = (response.data?.length || 0) === pageSize;
       currentPage.value = page;
-
     } catch (error) {
       console.error('載入活動失敗:', error);
       // 設置空數組以防止地圖組件等待
@@ -59,7 +61,7 @@ export const useActivities = (options: UseActivitiesOptions = {}) => {
   // 搜尋活動
   const searchActivities = async (searchOptions: SearchOptions = {}) => {
     loading.value = true;
-    
+
     try {
       // 先嘗試測試 API，如果失敗再嘗試真實 API
       try {
@@ -98,15 +100,17 @@ export const useActivities = (options: UseActivitiesOptions = {}) => {
         queryParams.radius = searchOptions.radius || 10;
       }
 
-      const response = await $fetch<{ success: boolean; data: Activity[]; pagination: any }>('/api/activities', {
-        query: queryParams
-      });
+      const response = await $fetch<{ success: boolean; data: Activity[]; pagination: any }>(
+        '/api/activities',
+        {
+          query: queryParams,
+        }
+      );
 
       activities.value = response.data || [];
       totalActivities.value = response.pagination?.total || response.data?.length || 0;
       hasMoreActivities.value = (response.data?.length || 0) === pageSize;
       currentPage.value = 1;
-
     } catch (error) {
       console.error('搜尋活動失敗:', error);
       // 設置空數組以防止地圖組件等待
@@ -121,7 +125,7 @@ export const useActivities = (options: UseActivitiesOptions = {}) => {
   // 載入更多活動
   const loadMoreActivities = async () => {
     if (!hasMoreActivities.value || loading.value) return;
-    
+
     await loadActivities(currentPage.value + 1, false);
   };
 
@@ -145,6 +149,6 @@ export const useActivities = (options: UseActivitiesOptions = {}) => {
     searchActivities,
     loadMoreActivities,
     refreshActivities,
-    loadActivities
+    loadActivities,
   };
 };

@@ -73,17 +73,17 @@ export class DatabaseOptimizationService {
     try {
       // 獲取表格統計
       const tableStats = await this.getTableStats();
-      
-      // 獲取索引統計  
+
+      // 獲取索引統計
       const indexStats = await this.getIndexStats();
-      
+
       // 獲取效能統計
       const performance = await this.getPerformanceStats();
 
       return {
         tableStats,
         indexStats,
-        performance
+        performance,
       };
     } catch (error) {
       console.error('Failed to get database stats:', error);
@@ -104,12 +104,12 @@ export class DatabaseOptimizationService {
       vacuum: false,
       analyze: false,
       reindex: false,
-      cleanupOldLogs: 0
+      cleanupOldLogs: 0,
     };
 
     try {
       // 1. 清理舊的查詢效能記錄 (保留 30 天)
-      const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+      const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
       const cleanupResult = await db.run(sql`
         DELETE FROM query_performance 
         WHERE executed_at < ${thirtyDaysAgo}
@@ -127,7 +127,7 @@ export class DatabaseOptimizationService {
       // 4. 執行 VACUUM 來回收空間 (謹慎使用，會鎖定資料庫)
       const stats = await this.getTableStats();
       const totalSize = stats.reduce((sum, table) => sum + table.sizeKB, 0);
-      
+
       // 只有當資料庫大於 100MB 且有明顯碎片時才執行 VACUUM
       if (totalSize > 100 * 1024) {
         await db.run(sql`VACUUM`);
@@ -136,7 +136,6 @@ export class DatabaseOptimizationService {
 
       console.log('Database optimization completed:', results);
       return results;
-
     } catch (error) {
       console.error('Database optimization failed:', error);
       throw error;
@@ -165,7 +164,7 @@ export class DatabaseOptimizationService {
         parameters: row.parameters ? JSON.parse(row.parameters as string) : null,
         executedAt: new Date(row.executed_at as number),
         userAgent: row.user_agent as string,
-        ipAddress: row.ip_address as string
+        ipAddress: row.ip_address as string,
       }));
     } catch (error) {
       console.error('Failed to get slow query report:', error);
@@ -176,12 +175,14 @@ export class DatabaseOptimizationService {
   /**
    * 建議查詢最佳化
    */
-  async getOptimizationSuggestions(): Promise<Array<{
-    type: 'index' | 'query' | 'schema';
-    priority: 'high' | 'medium' | 'low';
-    description: string;
-    solution: string;
-  }>> {
+  async getOptimizationSuggestions(): Promise<
+    Array<{
+      type: 'index' | 'query' | 'schema';
+      priority: 'high' | 'medium' | 'low';
+      description: string;
+      solution: string;
+    }>
+  > {
     const suggestions = [];
 
     try {
@@ -196,7 +197,7 @@ export class DatabaseOptimizationService {
             type: 'index' as const,
             priority: 'high' as const,
             description: `${queryType} 查詢頻繁且緩慢 (${stats.count} 次, 平均 ${stats.avgTime}ms)`,
-            solution: '考慮添加相關索引或優化查詢邏輯'
+            solution: '考慮添加相關索引或優化查詢邏輯',
           });
         }
       }
@@ -209,26 +210,25 @@ export class DatabaseOptimizationService {
             type: 'schema' as const,
             priority: 'medium' as const,
             description: `表格 ${table.tableName} 過大 (${table.rowCount} 行, ${table.sizeKB}KB)`,
-            solution: '考慮資料分割、歸檔舊資料或優化資料結構'
+            solution: '考慮資料分割、歸檔舊資料或優化資料結構',
           });
         }
       }
 
       // 檢查空間索引使用情況
-      const spatialQueries = slowQueries.filter(q => 
-        q.queryType.includes('spatial') || q.queryType.includes('nearby')
+      const spatialQueries = slowQueries.filter(
+        (q) => q.queryType.includes('spatial') || q.queryType.includes('nearby')
       );
       if (spatialQueries.length > 5) {
         suggestions.push({
           type: 'index' as const,
           priority: 'high' as const,
           description: `地理空間查詢效能不佳 (${spatialQueries.length} 個慢查詢)`,
-          solution: '確保 SpatiaLite 空間索引已正確建立並使用'
+          solution: '確保 SpatiaLite 空間索引已正確建立並使用',
         });
       }
 
       return suggestions;
-
     } catch (error) {
       console.error('Failed to generate optimization suggestions:', error);
       return [];
@@ -249,14 +249,13 @@ export class DatabaseOptimizationService {
       await db.run(sql`
         SELECT DisableSpatialIndex('locations', 'geom')
       `);
-      
+
       await db.run(sql`
         SELECT CreateSpatialIndex('locations', 'geom')
       `);
 
       console.log('Spatial indexes optimized successfully');
       return true;
-
     } catch (error) {
       console.error('Failed to optimize spatial indexes:', error);
       return false;
@@ -274,7 +273,7 @@ export class DatabaseOptimizationService {
     try {
       // SQLite 快取統計
       const pragmaResult = await db.get(sql`PRAGMA cache_size`);
-      const cacheSize = (pragmaResult as any)?.cache_size as number || 0;
+      const cacheSize = ((pragmaResult as any)?.cache_size as number) || 0;
 
       // 從查詢記錄分析快取命中率
       const recentQueries = await db.all(sql`
@@ -285,22 +284,22 @@ export class DatabaseOptimizationService {
       `);
 
       const totalQueries: number = recentQueries.reduce(
-        (sum: number, row: any) => sum + (row.count as number), 0
+        (sum: number, row: any) => sum + (row.count as number),
+        0
       );
 
       // 簡化的快取命中率計算 (基於查詢時間)
-      const fastQueries: number = recentQueries.filter(
-        (row: any) => (row.avg_time as number) < 100
-      ).reduce((sum: number, row: any) => sum + (row.count as number), 0);
+      const fastQueries: number = recentQueries
+        .filter((row: any) => (row.avg_time as number) < 100)
+        .reduce((sum: number, row: any) => sum + (row.count as number), 0);
 
       const hitRate = totalQueries > 0 ? fastQueries / totalQueries : 0;
 
       return {
         hitRate,
         totalQueries,
-        cacheSize
+        cacheSize,
       };
-
     } catch (error) {
       console.error('Failed to get cache stats:', error);
       return { hitRate: 0, totalQueries: 0, cacheSize: 0 };
@@ -311,9 +310,18 @@ export class DatabaseOptimizationService {
 
   private async getTableStats() {
     const tables = [
-      'activities', 'locations', 'categories', 'activity_categories',
-      'activity_times', 'data_sources', 'validation_logs', 'users',
-      'user_favorites', 'search_logs', 'tags', 'activity_tags'
+      'activities',
+      'locations',
+      'categories',
+      'activity_categories',
+      'activity_times',
+      'data_sources',
+      'validation_logs',
+      'users',
+      'user_favorites',
+      'search_logs',
+      'tags',
+      'activity_tags',
     ];
 
     const stats = [];
@@ -322,7 +330,7 @@ export class DatabaseOptimizationService {
         const countResult = await db.get(sql`
           SELECT COUNT(*) as count FROM ${sql.identifier(table)}
         `);
-        
+
         const sizeResult = await db.get(sql`
           SELECT page_count * page_size as size 
           FROM pragma_page_count('${sql.identifier(table)}'), pragma_page_size
@@ -330,8 +338,8 @@ export class DatabaseOptimizationService {
 
         stats.push({
           tableName: table,
-          rowCount: (countResult as any)?.count as number || 0,
-          sizeKB: Math.round(((sizeResult as any)?.size as number || 0) / 1024)
+          rowCount: ((countResult as any)?.count as number) || 0,
+          sizeKB: Math.round((((sizeResult as any)?.size as number) || 0) / 1024),
         });
       } catch (error) {
         console.warn(`Failed to get stats for table ${table}:`, error);
@@ -354,7 +362,7 @@ export class DatabaseOptimizationService {
         tableName: row.tbl_name as string,
         indexName: row.name as string,
         isUsed: true, // SQLite 沒有直接的索引使用統計
-        lastUsed: undefined
+        lastUsed: undefined,
       }));
     } catch (error) {
       console.error('Failed to get index stats:', error);
@@ -377,15 +385,15 @@ export class DatabaseOptimizationService {
 
       return {
         slowQueries,
-        averageQueryTime: Math.round((result as any)[0]?.avg_time as number || 0),
-        queryCount: (result as any)[0]?.query_count as number || 0
+        averageQueryTime: Math.round(((result as any)[0]?.avg_time as number) || 0),
+        queryCount: ((result as any)[0]?.query_count as number) || 0,
       };
     } catch (error) {
       console.error('Failed to get performance stats:', error);
       return {
         slowQueries: [],
         averageQueryTime: 0,
-        queryCount: 0
+        queryCount: 0,
       };
     }
   }
@@ -397,7 +405,7 @@ export class DatabaseOptimizationService {
       if (!stats[query.queryType]) {
         stats[query.queryType] = { count: 0, avgTime: 0, totalTime: 0 };
       }
-      
+
       stats[query.queryType]!.count++;
       stats[query.queryType]!.totalTime += query.executionTimeMs;
     }
@@ -406,9 +414,7 @@ export class DatabaseOptimizationService {
     for (const queryType in stats) {
       const stat = stats[queryType];
       if (stat) {
-        stat.avgTime = Math.round(
-          stat.totalTime / stat.count
-        );
+        stat.avgTime = Math.round(stat.totalTime / stat.count);
       }
     }
 
@@ -437,23 +443,26 @@ export function monitorQuery(queryType: string) {
 
     descriptor.value = async function (...args: any[]) {
       const startTime = Date.now();
-      
+
       try {
         const result = await originalMethod.apply(this, args);
         const executionTime = Date.now() - startTime;
-        
+
         // 異步記錄效能，不影響查詢回應時間
-        optimizer.logQueryPerformance(queryType, executionTime, args).catch(
-          error => console.warn('Failed to log query performance:', error)
-        );
-        
+        optimizer
+          .logQueryPerformance(queryType, executionTime, args)
+          .catch((error) => console.warn('Failed to log query performance:', error));
+
         return result;
       } catch (error) {
         const executionTime = Date.now() - startTime;
-        optimizer.logQueryPerformance(
-          `${queryType}_error`, executionTime, { args, error: (error as Error).message }
-        ).catch(err => console.warn('Failed to log error performance:', err));
-        
+        optimizer
+          .logQueryPerformance(`${queryType}_error`, executionTime, {
+            args,
+            error: (error as Error).message,
+          })
+          .catch((err) => console.warn('Failed to log error performance:', err));
+
         throw error;
       }
     };

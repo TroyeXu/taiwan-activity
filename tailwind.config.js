@@ -6,14 +6,14 @@ module.exports = {
     './pages/**/*.vue',
     './plugins/**/*.{js,ts}',
     './app.vue',
-    './error.vue'
+    './error.vue',
   ],
   theme: {
     extend: {
       colors: {
         primary: {
           50: '#eff6ff',
-          100: '#dbeafe', 
+          100: '#dbeafe',
           200: '#bfdbfe',
           300: '#93c5fd',
           400: '#60a5fa',
@@ -26,7 +26,7 @@ module.exports = {
         secondary: {
           50: '#f0fdf4',
           100: '#dcfce7',
-          200: '#bbf7d0', 
+          200: '#bbf7d0',
           300: '#86efac',
           400: '#4ade80',
           500: '#22c55e',
@@ -37,22 +37,22 @@ module.exports = {
         },
         // 活動類別色彩
         category: {
-          traditional: '#DC2626',    // 傳統節慶 - 紅
-          romantic: '#EC4899',       // 浪漫之旅 - 粉
-          art: '#7C3AED',           // 藝術文化 - 紫
-          wellness: '#10B981',      // 養生樂活 - 綠
-          cuisine: '#F59E0B',       // 美食饗宴 - 橘
-          nature: '#059669',        // 自然生態 - 深綠
-          indigenous: '#B91C1C',    // 原民慶典 - 深紅
-          hakka: '#1E40AF',         // 客家文化 - 深藍
-        }
+          traditional: '#DC2626', // 傳統節慶 - 紅
+          romantic: '#EC4899', // 浪漫之旅 - 粉
+          art: '#7C3AED', // 藝術文化 - 紫
+          wellness: '#10B981', // 養生樂活 - 綠
+          cuisine: '#F59E0B', // 美食饗宴 - 橘
+          nature: '#059669', // 自然生態 - 深綠
+          indigenous: '#B91C1C', // 原民慶典 - 深紅
+          hakka: '#1E40AF', // 客家文化 - 深藍
+        },
       },
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       spacing: {
-        '18': '4.5rem',
-        '88': '22rem',
+        18: '4.5rem',
+        88: '22rem',
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
@@ -73,9 +73,9 @@ module.exports = {
         xs: '2px',
       },
       boxShadow: {
-        'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
-        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-      }
+        soft: '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
+        card: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+      },
     },
   },
   plugins: [

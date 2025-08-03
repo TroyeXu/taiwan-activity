@@ -48,7 +48,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
 
   try {
     const db = getDatabase();
-    const body = await readBody(event) as FullTextSearchParams;
+    const body = (await readBody(event)) as FullTextSearchParams;
     const {
       query,
       location,
@@ -57,21 +57,21 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
       sorting = 'relevance',
       page = 1,
       limit = 20,
-      highlight = false
+      highlight = false,
     } = body;
 
     // 驗證參數
     if (!query || typeof query !== 'string' || query.trim().length === 0) {
       throw createError({
         statusCode: 400,
-        statusMessage: '搜尋關鍵字不能為空'
+        statusMessage: '搜尋關鍵字不能為空',
       });
     }
 
     if (query.length > 100) {
       throw createError({
         statusCode: 400,
-        statusMessage: '搜尋關鍵字過長'
+        statusMessage: '搜尋關鍵字過長',
       });
     }
 
@@ -83,14 +83,14 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
       sorting,
       page,
       limit,
-      highlight
+      highlight,
     });
 
     const executionTime = Date.now() - startTime;
 
     // 記錄搜尋日誌 (異步)
-    logSearchQuery(query, filters, result.total, executionTime, event).catch(
-      error => console.warn('Failed to log search:', error)
+    logSearchQuery(query, filters, result.total, executionTime, event).catch((error) =>
+      console.warn('Failed to log search:', error)
     );
 
     return {
@@ -100,16 +100,15 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
         page,
         limit,
         total: result.total,
-        totalPages: Math.ceil(result.total / limit)
+        totalPages: Math.ceil(result.total / limit),
       },
       meta: {
         queryInfo: result.queryInfo,
         suggestions: result.suggestions,
         executionTime,
-        hasMore: result.total > page * limit
-      }
+        hasMore: result.total > page * limit,
+      },
     };
-
   } catch (error) {
     console.error('全文搜尋失敗:', error);
 
@@ -119,7 +118,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
 
     throw createError({
       statusCode: 500,
-      statusMessage: '搜尋失敗'
+      statusMessage: '搜尋失敗',
     });
   }
 });
@@ -132,17 +131,17 @@ async function performFullTextSearch(params: FullTextSearchParams): Promise<Sear
     const processedQuery = preprocessSearchQuery(query);
     const searchTerms = extractSearchTerms(query);
 
-    console.log('Processing search:', { 
-      original: query, 
-      processed: processedQuery, 
-      terms: searchTerms 
+    console.log('Processing search:', {
+      original: query,
+      processed: processedQuery,
+      terms: searchTerms,
     });
 
     // 嘗試使用 FTS5 全文搜尋
     const useFTS = await checkFTSAvailability();
-    
+
     let searchResult: SearchResult;
-    
+
     if (useFTS) {
       searchResult = await performFTSSearch(params, processedQuery, searchTerms);
     } else {
@@ -155,7 +154,6 @@ async function performFullTextSearch(params: FullTextSearchParams): Promise<Sear
     }
 
     return searchResult;
-
   } catch (error) {
     console.error('Full-text search error:', error);
     throw error;
@@ -163,8 +161,8 @@ async function performFullTextSearch(params: FullTextSearchParams): Promise<Sear
 }
 
 async function performFTSSearch(
-  params: FullTextSearchParams, 
-  processedQuery: string, 
+  params: FullTextSearchParams,
+  processedQuery: string,
   searchTerms: string[]
 ): Promise<SearchResult> {
   const { location, radius, filters, sorting, page, limit, highlight } = params;
@@ -185,7 +183,9 @@ async function performFTSSearch(
         GROUP_CONCAT(DISTINCT c.icon) AS category_icons,
         fts.rank,
         -- 計算距離 (如果有位置篩選)
-        ${location ? `
+        ${
+          location
+            ? `
           (6371 * acos(
             cos(radians(${location.lat})) * 
             cos(radians(l.latitude)) * 
@@ -193,7 +193,9 @@ async function performFTSSearch(
             sin(radians(${location.lat})) * 
             sin(radians(l.latitude))
           )) AS distance_km
-        ` : 'NULL AS distance_km'}
+        `
+            : 'NULL AS distance_km'
+        }
       FROM activities_fts fts
       INNER JOIN activities_with_details a ON fts.id = a.id
       INNER JOIN locations l ON a.id = l.activity_id
@@ -237,14 +239,14 @@ async function performFTSSearch(
     const countQuery = baseQuery
       .replace(/SELECT[\s\S]*?FROM/, 'SELECT COUNT(DISTINCT a.id) as total FROM')
       .replace(/ORDER BY[\s\S]*$/, '');
-    
+
     const sqlite3 = getSqlite();
     if (!sqlite3) {
       throw new Error('Database connection not available');
     }
     const countStmt = sqlite3.prepare(countQuery);
     const countResult = countStmt.all(...queryParams);
-    const total = (countResult as any)[0]?.total as number || 0;
+    const total = ((countResult as any)[0]?.total as number) || 0;
 
     // 執行分頁查詢
     baseQuery += ` LIMIT ? OFFSET ?`;
@@ -261,10 +263,9 @@ async function performFTSSearch(
         originalQuery: params.query,
         processedQuery,
         searchTerms,
-        hasLocationFilter: !!location
-      }
+        hasLocationFilter: !!location,
+      },
     };
-
   } catch (error) {
     console.warn('FTS search failed, falling back to LIKE search:', error);
     return await performLikeSearch(params, processedQuery, searchTerms);
@@ -272,8 +273,8 @@ async function performFTSSearch(
 }
 
 async function performLikeSearch(
-  params: FullTextSearchParams, 
-  processedQuery: string, 
+  params: FullTextSearchParams,
+  processedQuery: string,
   searchTerms: string[]
 ): Promise<SearchResult> {
   const { location, radius, filters, sorting, page, limit, highlight } = params;
@@ -300,7 +301,9 @@ async function performLikeSearch(
           CASE WHEN l.venue LIKE ? THEN 2 ELSE 0 END
         ) AS relevance_score,
         -- 計算距離 (如果有位置篩選)
-        ${location ? `
+        ${
+          location
+            ? `
           (6371 * acos(
             cos(radians(${location.lat})) * 
             cos(radians(l.latitude)) * 
@@ -308,7 +311,9 @@ async function performLikeSearch(
             sin(radians(${location.lat})) * 
             sin(radians(l.latitude))
           )) AS distance_km
-        ` : 'NULL AS distance_km'}
+        `
+            : 'NULL AS distance_km'
+        }
       FROM activities a
       INNER JOIN locations l ON a.id = l.activity_id
       LEFT JOIN activity_times t ON a.id = t.activity_id
@@ -328,9 +333,18 @@ async function performLikeSearch(
     const searchPattern = `%${processedQuery}%`;
     const queryParams: any[] = [
       // 相關性計算參數
-      searchPattern, searchPattern, searchPattern, searchPattern, searchPattern,
+      searchPattern,
+      searchPattern,
+      searchPattern,
+      searchPattern,
+      searchPattern,
       // WHERE 條件參數
-      searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern
+      searchPattern,
+      searchPattern,
+      searchPattern,
+      searchPattern,
+      searchPattern,
+      searchPattern,
     ];
 
     // 地理篩選
@@ -355,14 +369,14 @@ async function performLikeSearch(
     const countQuery = baseQuery
       .replace(/SELECT[\s\S]*?FROM/, 'SELECT COUNT(DISTINCT a.id) as total FROM')
       .replace(/ORDER BY[\s\S]*$/, '');
-    
+
     const sqlite3 = getSqlite();
     if (!sqlite3) {
       throw new Error('Database connection not available');
     }
     const countStmt = sqlite3.prepare(countQuery);
     const countResult = countStmt.all(...queryParams);
-    const total = (countResult as any)[0]?.total as number || 0;
+    const total = ((countResult as any)[0]?.total as number) || 0;
 
     // 排序
     baseQuery += buildOrderByClause(sorting || 'relevance', !!location, true);
@@ -382,10 +396,9 @@ async function performLikeSearch(
         originalQuery: params.query,
         processedQuery,
         searchTerms,
-        hasLocationFilter: !!location
-      }
+        hasLocationFilter: !!location,
+      },
     };
-
   } catch (error) {
     console.error('LIKE search failed:', error);
     throw error;
@@ -405,7 +418,7 @@ function preprocessSearchQuery(query: string): string {
 function extractSearchTerms(query: string): string[] {
   return query
     .split(/\s+/)
-    .filter(term => term.length > 0)
+    .filter((term) => term.length > 0)
     .slice(0, 10); // 限制最多 10 個搜尋詞
 }
 
@@ -441,8 +454,10 @@ function buildFilterConditions(filters: any, queryParams: any[]): string {
       OR (t.start_date >= ? AND t.start_date <= ?)
     )`;
     queryParams.push(
-      filters.dateRange.end, filters.dateRange.start,
-      filters.dateRange.start, filters.dateRange.end
+      filters.dateRange.end,
+      filters.dateRange.start,
+      filters.dateRange.start,
+      filters.dateRange.end
     );
   }
 
@@ -450,8 +465,8 @@ function buildFilterConditions(filters: any, queryParams: any[]): string {
 }
 
 function buildOrderByClause(
-  sorting: string, 
-  hasLocation: boolean, 
+  sorting: string,
+  hasLocation: boolean,
   hasRelevance: boolean = false
 ): string {
   switch (sorting) {
@@ -462,7 +477,7 @@ function buildOrderByClause(
         return ` ORDER BY fts.rank, a.quality_score DESC`;
       }
     case 'distance':
-      return hasLocation 
+      return hasLocation
         ? ` ORDER BY distance_km ASC, a.quality_score DESC`
         : ` ORDER BY a.quality_score DESC`;
     case 'popularity':
@@ -477,12 +492,12 @@ function buildOrderByClause(
 }
 
 function formatSearchResults(rows: any[], highlightTerms: string[]): Activity[] {
-  return rows.map(row => {
+  return rows.map((row) => {
     let activity: Activity = {
       id: row.id as string,
       name: row.name as string,
-      description: row.description as string || undefined,
-      summary: row.summary as string || undefined,
+      description: (row.description as string) || undefined,
+      summary: (row.summary as string) || undefined,
       status: row.status as any,
       qualityScore: row.quality_score as number,
       popularityScore: row.popularity_score as number,
@@ -496,32 +511,38 @@ function formatSearchResults(rows: any[], highlightTerms: string[]): Activity[] 
         id: '',
         activityId: row.id as string,
         address: row.address as string,
-        district: row.district as string || undefined,
+        district: (row.district as string) || undefined,
         city: row.city as string,
         region: row.region as any,
         latitude: row.latitude as number,
         longitude: row.longitude as number,
-        venue: row.venue as string || undefined,
-        landmarks: row.landmarks ? JSON.parse(row.landmarks as string) : []
+        venue: (row.venue as string) || undefined,
+        landmarks: row.landmarks ? JSON.parse(row.landmarks as string) : [],
       },
-      time: row.start_date ? {
-        id: '',
-        activityId: row.id as string,
-        startDate: row.start_date as string,
-        endDate: row.end_date as string || undefined,
-        startTime: row.start_time as string || undefined,
-        endTime: row.end_time as string || undefined,
-        timezone: 'Asia/Taipei',
-        isRecurring: Boolean(row.is_recurring)
-      } : undefined,
-      categories: row.category_names ? 
-        (row.category_names as string).split(',').map((name, index) => ({
-          id: '',
-          name: name.trim(),
-          slug: ((row.category_slugs as string)?.split(',')[index] || '').trim(),
-          colorCode: ((row.category_colors as string)?.split(',')[index] || '').trim(),
-          icon: ((row.category_icons as string)?.split(',')[index] || '').trim()
-        })).filter(cat => cat.name) : []
+      time: row.start_date
+        ? {
+            id: '',
+            activityId: row.id as string,
+            startDate: row.start_date as string,
+            endDate: (row.end_date as string) || undefined,
+            startTime: (row.start_time as string) || undefined,
+            endTime: (row.end_time as string) || undefined,
+            timezone: 'Asia/Taipei',
+            isRecurring: Boolean(row.is_recurring),
+          }
+        : undefined,
+      categories: row.category_names
+        ? (row.category_names as string)
+            .split(',')
+            .map((name, index) => ({
+              id: '',
+              name: name.trim(),
+              slug: ((row.category_slugs as string)?.split(',')[index] || '').trim(),
+              colorCode: ((row.category_colors as string)?.split(',')[index] || '').trim(),
+              icon: ((row.category_icons as string)?.split(',')[index] || '').trim(),
+            }))
+            .filter((cat) => cat.name)
+        : [],
     };
 
     // 添加距離資訊
@@ -541,7 +562,7 @@ function formatSearchResults(rows: any[], highlightTerms: string[]): Activity[] 
 function applyHighlight(activity: Activity, terms: string[]): Activity {
   const highlightText = (text: string): string => {
     if (!text) return text;
-    
+
     let highlighted = text;
     for (const term of terms) {
       const regex = new RegExp(`(${term})`, 'gi');
@@ -554,7 +575,7 @@ function applyHighlight(activity: Activity, terms: string[]): Activity {
     ...activity,
     name: highlightText(activity.name),
     description: activity.description ? highlightText(activity.description) : undefined,
-    summary: activity.summary ? highlightText(activity.summary) : undefined
+    summary: activity.summary ? highlightText(activity.summary) : undefined,
   };
 }
 
@@ -590,7 +611,7 @@ async function generateSearchSuggestions(query: string): Promise<string[]> {
         WHERE name LIKE ${'%' + query + '%'}
         LIMIT 3
       `);
-      
+
       suggestions.push(...(categoryResult as any).map((row: any) => row.name as string));
     }
 

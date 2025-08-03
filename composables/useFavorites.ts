@@ -1,6 +1,6 @@
-import { ref, computed, readonly, onMounted } from 'vue';
+import { ref, computed, readonly } from 'vue';
 import { ElMessage } from 'element-plus';
-import type { Activity, UserFavorite, ApiResponse, FavoriteActivity } from '~/types';
+import type { Activity, FavoriteActivity } from '~/types';
 
 export const useFavorites = () => {
   // 響應式狀態
@@ -32,11 +32,11 @@ export const useFavorites = () => {
         const favoritesData = favorites.value;
         console.log('準備儲存到 localStorage 的完整收藏資料:', favoritesData.length, '個');
         localStorage.setItem('tourism-favorites-full', JSON.stringify(favoritesData));
-        
+
         // 同時儲存 ID 列表（向後兼容）
         const ids = Array.from(favoriteIds.value);
         localStorage.setItem('tourism-favorites', JSON.stringify(ids));
-        
+
         console.log('已儲存完整收藏資料到 localStorage');
       } catch (err) {
         console.warn('儲存本地收藏失敗:', err);
@@ -51,7 +51,7 @@ export const useFavorites = () => {
 
     try {
       console.log('開始載入收藏（純 localStorage 模式）...');
-      
+
       // 從 localStorage 載入完整的收藏資料
       if (import.meta.client) {
         try {
@@ -59,10 +59,10 @@ export const useFavorites = () => {
           if (storedFavorites) {
             const parsedFavorites = JSON.parse(storedFavorites) as FavoriteActivity[];
             favorites.value = parsedFavorites;
-            
+
             // 同步更新 favoriteIds
-            favoriteIds.value = new Set(parsedFavorites.map(fav => fav.activityId));
-            
+            favoriteIds.value = new Set(parsedFavorites.map((fav) => fav.activityId));
+
             console.log(`成功載入 ${parsedFavorites.length} 個收藏活動`);
           } else {
             favorites.value = [];
@@ -75,7 +75,6 @@ export const useFavorites = () => {
           favoriteIds.value = new Set();
         }
       }
-      
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '載入收藏失敗';
       error.value = errorMessage;
@@ -89,7 +88,7 @@ export const useFavorites = () => {
   // 新增到收藏
   const addToFavorites = async (activity: Activity) => {
     console.log('準備加入收藏:', activity.name, activity.id);
-    
+
     if (favoriteIds.value.has(activity.id)) {
       console.log('活動已在收藏中:', activity.id);
       ElMessage.info('此活動已在收藏中');
@@ -101,15 +100,15 @@ export const useFavorites = () => {
 
     try {
       console.log('開始加入收藏流程...');
-      
+
       // 本地處理
       favoriteIds.value.add(activity.id);
       console.log('已加入到 favoriteIds:', Array.from(favoriteIds.value));
-      
+
       // 檢查活動是否已在列表中
-      const existingIndex = favorites.value.findIndex(fav => fav.activityId === activity.id);
+      const existingIndex = favorites.value.findIndex((fav) => fav.activityId === activity.id);
       console.log('檢查是否已存在於 favorites 列表中:', existingIndex);
-      
+
       if (existingIndex === -1) {
         const favoriteActivity: FavoriteActivity = {
           id: `fav_${activity.id}_${Date.now()}`,
@@ -117,7 +116,7 @@ export const useFavorites = () => {
           userId: null,
           activity: activity,
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          updatedAt: new Date().toISOString(),
         };
         favorites.value.push(favoriteActivity);
         console.log('已加入到 favorites 列表，目前總數:', favorites.value.length);
@@ -128,7 +127,6 @@ export const useFavorites = () => {
 
       // 顯示成功訊息
       ElMessage.success('已加入收藏');
-      
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '加入收藏失敗';
       error.value = errorMessage;
@@ -142,7 +140,7 @@ export const useFavorites = () => {
   // 從收藏移除
   const removeFromFavorites = async (activityId: string) => {
     console.log('準備移除收藏:', activityId);
-    
+
     if (!favoriteIds.value.has(activityId)) {
       console.log('活動不在收藏中:', activityId);
       return; // 不在收藏中
@@ -154,14 +152,13 @@ export const useFavorites = () => {
     try {
       // 本地處理
       favoriteIds.value.delete(activityId);
-      favorites.value = favorites.value.filter(fav => fav.activityId !== activityId);
+      favorites.value = favorites.value.filter((fav) => fav.activityId !== activityId);
 
       console.log('已移除收藏，剩餘收藏數量:', favorites.value.length);
       saveFavoritesToStorage();
 
       // 顯示成功訊息
       ElMessage.success('已從收藏移除');
-      
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '移除收藏失敗';
       error.value = errorMessage;
@@ -193,7 +190,7 @@ export const useFavorites = () => {
 
     try {
       console.log('準備清空所有收藏');
-      
+
       // 本地處理
       favoriteIds.value.clear();
       favorites.value = [];
@@ -201,7 +198,6 @@ export const useFavorites = () => {
 
       console.log('已清空所有收藏');
       ElMessage.success('已清空所有收藏');
-      
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '清空收藏失敗';
       error.value = errorMessage;
@@ -217,14 +213,14 @@ export const useFavorites = () => {
     try {
       const exportData = {
         exportDate: new Date().toISOString(),
-        favorites: favorites.value.map(favorite => ({
+        favorites: favorites.value.map((favorite) => ({
           id: favorite.activity.id,
           name: favorite.activity.name,
           description: favorite.activity.description,
           location: favorite.activity.location,
           time: favorite.activity.time,
-          categories: favorite.activity.categories
-        }))
+          categories: favorite.activity.categories,
+        })),
       };
 
       const dataStr = JSON.stringify(exportData, null, 2);
@@ -238,7 +234,6 @@ export const useFavorites = () => {
       linkElement.click();
 
       ElMessage.success('收藏列表已匯出');
-      
     } catch (err) {
       ElMessage.error('匯出失敗');
       console.error('匯出收藏失敗:', err);
@@ -248,9 +243,9 @@ export const useFavorites = () => {
   // 收藏統計
   const getFavoritesByCategory = computed(() => {
     const categoryCounts: Record<string, number> = {};
-    
-    favorites.value.forEach(favorite => {
-      favorite.activity.categories?.forEach((category: any) => {
+
+    favorites.value.forEach((favorite) => {
+      favorite.activity.categories?.forEach((category) => {
         categoryCounts[category.name] = (categoryCounts[category.name] || 0) + 1;
       });
     });
@@ -262,8 +257,8 @@ export const useFavorites = () => {
 
   const getFavoritesByRegion = computed(() => {
     const regionCounts: Record<string, number> = {};
-    
-    favorites.value.forEach(favorite => {
+
+    favorites.value.forEach((favorite) => {
       const region = favorite.activity.location?.region;
       if (region) {
         regionCounts[region] = (regionCounts[region] || 0) + 1;
@@ -312,6 +307,6 @@ export const useFavorites = () => {
     isFavorited: isFavorite, // 別名
     clearAllFavorites,
     clearFavorites: clearAllFavorites, // 別名
-    exportFavorites
+    exportFavorites,
   };
 };

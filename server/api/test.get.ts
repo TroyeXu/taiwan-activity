@@ -17,9 +17,9 @@ export default defineEventHandler(async (event) => {
           address: '台北市信義區',
           city: '台北市',
           region: 'north',
-          latitude: 25.0330,
+          latitude: 25.033,
           longitude: 121.5654,
-          landmarks: []
+          landmarks: [],
         },
         categories: [
           {
@@ -27,10 +27,10 @@ export default defineEventHandler(async (event) => {
             name: '文化藝術',
             slug: 'culture',
             colorCode: '#ff6b6b',
-            icon: '🎨'
-          }
-        ]
-      }
-    ]
+            icon: '🎨',
+          },
+        ],
+      },
+    ],
   };
 });

@@ -27,7 +27,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<CalendarEve
     if (!start || !end) {
       throw createError({
         statusCode: 400,
-        statusMessage: '需要提供開始和結束日期'
+        statusMessage: '需要提供開始和結束日期',
       });
     }
 
@@ -40,7 +40,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<CalendarEve
         categoryNames: sql<string>`GROUP_CONCAT(${categories.name})`,
         categorySlugs: sql<string>`GROUP_CONCAT(${categories.slug})`,
         categoryColors: sql<string>`GROUP_CONCAT(${categories.colorCode})`,
-        categoryIcons: sql<string>`GROUP_CONCAT(${categories.icon})`
+        categoryIcons: sql<string>`GROUP_CONCAT(${categories.icon})`,
       })
       .from(activities)
       .innerJoin(activityTimes, eq(activities.id, activityTimes.activityId))
@@ -53,22 +53,13 @@ export default defineEventHandler(async (event): Promise<ApiResponse<CalendarEve
           // 時間範圍篩選
           or(
             // 活動在查詢範圍內開始
-            and(
-              gte(activityTimes.startDate, start),
-              lte(activityTimes.startDate, end)
-            ),
+            and(gte(activityTimes.startDate, start), lte(activityTimes.startDate, end)),
             // 活動在查詢範圍內結束
-            and(
-              gte(activityTimes.endDate, start),
-              lte(activityTimes.endDate, end)
-            ),
+            and(gte(activityTimes.endDate, start), lte(activityTimes.endDate, end)),
             // 活動跨越整個查詢範圍
             and(
               lte(activityTimes.startDate, start),
-              or(
-                gte(activityTimes.endDate, end),
-                sql`${activityTimes.endDate} IS NULL`
-              )
+              or(gte(activityTimes.endDate, end), sql`${activityTimes.endDate} IS NULL`)
             )
           )
         )
@@ -84,22 +75,24 @@ export default defineEventHandler(async (event): Promise<ApiResponse<CalendarEve
 
     // 地區篩選
     if (regionFilter) {
-      queryBuilder = (queryBuilder as any).where(
-        eq(locations.region, regionFilter)
-      );
+      queryBuilder = (queryBuilder as any).where(eq(locations.region, regionFilter));
     }
 
     const results = await queryBuilder;
 
     // 轉換為日曆事件格式
-    const calendarEvents: CalendarEvent[] = results.map(row => {
-      const activityCategories = row.categoryNames ? 
-        row.categoryNames.split(',').map((name, index) => ({
-          name: name.trim(),
-          slug: row.categorySlugs?.split(',')[index]?.trim() || '',
-          colorCode: row.categoryColors?.split(',')[index]?.trim() || '#6B7280',
-          icon: row.categoryIcons?.split(',')[index]?.trim() || ''
-        })).filter(cat => cat.name) : [];
+    const calendarEvents: CalendarEvent[] = results.map((row) => {
+      const activityCategories = row.categoryNames
+        ? row.categoryNames
+            .split(',')
+            .map((name, index) => ({
+              name: name.trim(),
+              slug: row.categorySlugs?.split(',')[index]?.trim() || '',
+              colorCode: row.categoryColors?.split(',')[index]?.trim() || '#6B7280',
+              icon: row.categoryIcons?.split(',')[index]?.trim() || '',
+            }))
+            .filter((cat) => cat.name)
+        : [];
 
       // 取得主要分類的顏色
       const primaryColor = activityCategories[0]?.colorCode || '#3B82F6';
@@ -116,9 +109,9 @@ export default defineEventHandler(async (event): Promise<ApiResponse<CalendarEve
             ...row.activity,
             location: row.location,
             time: row.time,
-            categories: activityCategories
-          }
-        }
+            categories: activityCategories,
+          },
+        },
       };
 
       // 處理結束時間
@@ -149,7 +142,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<CalendarEve
 
     // 處理重複事件（生成實例）
     const expandedEvents: CalendarEvent[] = [];
-    
+
     for (const event of calendarEvents) {
       if ((event.extendedProps as any).isRecurring) {
         // 簡化：為週期性活動生成每週實例
@@ -165,10 +158,9 @@ export default defineEventHandler(async (event): Promise<ApiResponse<CalendarEve
       data: expandedEvents,
       meta: {
         total: expandedEvents.length,
-        dateRange: { start, end }
-      }
+        dateRange: { start, end },
+      },
     };
-
   } catch (error) {
     console.error('Get calendar events failed:', error);
 
@@ -178,19 +170,19 @@ export default defineEventHandler(async (event): Promise<ApiResponse<CalendarEve
 
     throw createError({
       statusCode: 500,
-      statusMessage: '取得日曆活動失敗'
+      statusMessage: '取得日曆活動失敗',
     });
   }
 });
 
 function generateRecurringInstances(
-  event: CalendarEvent, 
-  rangeStart: string, 
+  event: CalendarEvent,
+  rangeStart: string,
   rangeEnd: string
 ): CalendarEvent[] {
   const instances: CalendarEvent[] = [];
   const rule = (event.extendedProps as any).recurrenceRule;
-  
+
   if (!rule) return [event];
 
   // 簡化的重複事件處理
@@ -206,12 +198,16 @@ function generateRecurringInstances(
         ...event,
         id: `${event.id}_${instanceCount}`,
         start: currentDate.toISOString().split('T')[0] as string,
-        end: event.end ? 
-          new Date(currentDate.getTime() + 
-            (new Date(event.end).getTime() - new Date(event.start).getTime())
-          ).toISOString().split('T')[0] : undefined
+        end: event.end
+          ? new Date(
+              currentDate.getTime() +
+                (new Date(event.end).getTime() - new Date(event.start).getTime())
+            )
+              .toISOString()
+              .split('T')[0]
+          : undefined,
       };
-      
+
       instances.push(instance);
     }
 
@@ -229,7 +225,7 @@ function generateRecurringInstances(
       default:
         return [event]; // 不支援的規則類型
     }
-    
+
     instanceCount++;
   }
 

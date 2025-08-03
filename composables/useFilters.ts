@@ -11,22 +11,22 @@ export const useFilters = () => {
     priceRange: {
       min: 0,
       max: 5000,
-      includeFreeze: true
+      includeFreeze: true,
     },
     dateRange: {
       type: 'quick',
       quickOption: 'this_week',
-      includeOngoing: true
+      includeOngoing: true,
     },
     location: {
       type: 'current',
-      radius: 10
+      radius: 10,
     },
     timeOfDay: [],
     features: [],
     accessibility: [],
     groupSize: '',
-    sorting: 'relevance'
+    sorting: 'relevance',
   });
 
   // 篩選狀態
@@ -40,7 +40,7 @@ export const useFilters = () => {
       slug,
       name: info.name,
       icon: info.icon,
-      color: info.color
+      color: info.color,
     }));
   });
 
@@ -50,7 +50,7 @@ export const useFilters = () => {
       id: slug,
       slug,
       name: info.name,
-      cities: info.cities
+      cities: info.cities,
     }));
   });
 
@@ -61,14 +61,14 @@ export const useFilters = () => {
     { value: 'this_week', label: '本週' },
     { value: 'this_weekend', label: '本週末' },
     { value: 'next_week', label: '下週' },
-    { value: 'this_month', label: '本月' }
+    { value: 'this_month', label: '本月' },
   ];
 
   // 時段選項
   const timeOfDayOptions = [
     { value: 'morning', label: '上午 (06:00-12:00)' },
     { value: 'afternoon', label: '下午 (12:00-18:00)' },
-    { value: 'evening', label: '晚上 (18:00-24:00)' }
+    { value: 'evening', label: '晚上 (18:00-24:00)' },
   ];
 
   // 活動特性選項
@@ -80,7 +80,7 @@ export const useFilters = () => {
     { value: 'family', label: '親子活動', icon: '👨‍👩‍👧‍👦' },
     { value: 'couples', label: '情侶約會', icon: '💑' },
     { value: 'indoor', label: '室內活動', icon: '🏠' },
-    { value: 'outdoor', label: '戶外活動', icon: '🌳' }
+    { value: 'outdoor', label: '戶外活動', icon: '🌳' },
   ];
 
   // 排序選項
@@ -89,7 +89,7 @@ export const useFilters = () => {
     { value: 'distance', label: '距離最近' },
     { value: 'popularity', label: '最受歡迎' },
     { value: 'date', label: '時間最近' },
-    { value: 'price', label: '價格最低' }
+    { value: 'price', label: '價格最低' },
   ];
 
   // 設定分類篩選
@@ -103,7 +103,7 @@ export const useFilters = () => {
   };
 
   const selectAllCategories = () => {
-    filters.value.categories = categoryOptions.value.map(c => c.id);
+    filters.value.categories = categoryOptions.value.map((c) => c.id);
   };
 
   const clearCategories = () => {
@@ -117,9 +117,7 @@ export const useFilters = () => {
       filters.value.regions.splice(index, 1);
       // 移除該地區的所有城市
       const regionCities = REGIONS[regionId as keyof typeof REGIONS]?.cities || [];
-      filters.value.cities = filters.value.cities.filter(
-        city => !regionCities.includes(city)
-      );
+      filters.value.cities = filters.value.cities.filter((city) => !regionCities.includes(city));
     } else {
       filters.value.regions.push(regionId);
     }
@@ -137,7 +135,7 @@ export const useFilters = () => {
   // 設定時間篩選
   const setDateRange = (type: 'quick' | 'custom', options?: any) => {
     filters.value.dateRange.type = type;
-    
+
     if (type === 'quick' && options?.quickOption) {
       filters.value.dateRange.quickOption = options.quickOption;
       filters.value.dateRange.startDate = undefined;
@@ -155,7 +153,7 @@ export const useFilters = () => {
       ...filters.value.location,
       type: 'custom',
       coordinates: location,
-      address
+      address,
     };
   };
 
@@ -166,7 +164,7 @@ export const useFilters = () => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
             enableHighAccuracy: true,
             timeout: 10000,
-            maximumAge: 300000 // 5 分鐘
+            maximumAge: 300000, // 5 分鐘
           });
         });
 
@@ -174,9 +172,9 @@ export const useFilters = () => {
           type: 'current',
           coordinates: {
             lat: position.coords.latitude,
-            lng: position.coords.longitude
+            lng: position.coords.longitude,
           },
-          radius: filters.value.location.radius
+          radius: filters.value.location.radius,
         };
 
         return true;
@@ -258,15 +256,15 @@ export const useFilters = () => {
   });
 
   const selectedCategoryNames = computed(() => {
-    return filters.value.categories.map(id => {
-      const category = categoryOptions.value.find(c => c.id === id);
+    return filters.value.categories.map((id) => {
+      const category = categoryOptions.value.find((c) => c.id === id);
       return category?.name || id;
     });
   });
 
   const selectedRegionNames = computed(() => {
-    return filters.value.regions.map(id => {
-      const region = regionOptions.value.find(r => r.id === id);
+    return filters.value.regions.map((id) => {
+      const region = regionOptions.value.find((r) => r.id === id);
       return region?.name || id;
     });
   });
@@ -274,7 +272,7 @@ export const useFilters = () => {
   // 轉換為 API 參數
   const toSearchParams = computed(() => {
     const params: any = {
-      sorting: filters.value.sorting
+      sorting: filters.value.sorting,
     };
 
     if (filters.value.categories.length > 0) {
@@ -320,7 +318,7 @@ export const useFilters = () => {
     if (filters.value.priceRange.min > 0 || filters.value.priceRange.max < 5000) {
       params.priceRange = {
         min: filters.value.priceRange.min,
-        max: filters.value.priceRange.max
+        max: filters.value.priceRange.max,
       };
     }
 
@@ -333,9 +331,13 @@ export const useFilters = () => {
   });
 
   // 監聽篩選變化並儲存
-  watch(filters, () => {
-    saveFiltersToStorage();
-  }, { deep: true });
+  watch(
+    filters,
+    () => {
+      saveFiltersToStorage();
+    },
+    { deep: true }
+  );
 
   return {
     // 狀態
@@ -372,6 +374,6 @@ export const useFilters = () => {
     resetFilters,
     clearAllFilters,
     saveFiltersToStorage,
-    loadFiltersFromStorage
+    loadFiltersFromStorage,
   };
 };

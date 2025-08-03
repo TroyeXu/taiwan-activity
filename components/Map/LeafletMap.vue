@@ -5,9 +5,8 @@
       <ElIcon class="loading-icon"><Loading /></ElIcon>
       <span>地圖載入中...</span>
     </div>
-    
+
     <div ref="mapContainer" class="leaflet-map" :class="{ 'map-hidden': !mapReady }"></div>
-    
   </div>
 </template>
 
@@ -28,7 +27,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   zoom: 8,
-  height: '400px'
+  height: '400px',
 });
 
 interface Emits {
@@ -55,12 +54,12 @@ const initMap = async () => {
   console.log('開始初始化地圖');
   console.log('mapContainer.value:', mapContainer.value);
   console.log('import.meta.client:', import.meta.client);
-  
+
   if (!mapContainer.value || !import.meta.client) {
     console.log('地圖容器不存在或不在客戶端');
     return;
   }
-  
+
   try {
     // 確保 Leaflet 已載入
     if (!L) {
@@ -68,13 +67,13 @@ const initMap = async () => {
       const leafletModule = await import('leaflet');
       L = leafletModule.default || leafletModule;
       console.log('Leaflet 載入成功:', L);
-      
+
       // 載入 Leaflet CSS
       const link = document.createElement('link');
       link.rel = 'stylesheet';
       link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
       document.head.appendChild(link);
-      
+
       // 載入 markercluster 插件
       try {
         await import('leaflet.markercluster');
@@ -82,7 +81,7 @@ const initMap = async () => {
       } catch (error) {
         console.warn('MarkerCluster 插件載入失敗:', error);
       }
-      
+
       // 修復 Leaflet 預設圖標問題
       delete (L.Icon.Default.prototype as any)._getIconUrl;
       L.Icon.Default.mergeOptions({
@@ -97,11 +96,11 @@ const initMap = async () => {
   }
 
   // 等待 CSS 載入，然後創建地圖
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
   // 創建地圖
   console.log('初始化地圖，中心點:', props.center, '縮放等級:', props.zoom);
-  
+
   map.value = L.map(mapContainer.value, {
     center: [props.center.lat, props.center.lng],
     zoom: props.zoom,
@@ -109,43 +108,45 @@ const initMap = async () => {
     preferCanvas: true, // 提升性能
     minZoom: 7, // 最小縮放級別
     maxZoom: 18, // 最大縮放級別
-    maxBounds: [ // 限制地圖邊界在台灣區域
+    maxBounds: [
+      // 限制地圖邊界在台灣區域
       [21.5, 119.5], // 西南角
-      [25.5, 122.5]  // 東北角
+      [25.5, 122.5], // 東北角
     ],
-    maxBoundsViscosity: 1.0 // 防止拖曳超出邊界
+    maxBoundsViscosity: 1.0, // 防止拖曳超出邊界
   });
 
   // 定義台灣邊界
   const taiwanBounds = L.latLngBounds(
     [21.5, 119.5], // 西南角
-    [25.5, 122.5]  // 東北角
+    [25.5, 122.5] // 東北角
   );
 
   // 自定義圖磚載入函數，只載入台灣範圍內的圖磚
   const customTileLayer = L.TileLayer.extend({
-    createTile: function(coords: any, done: any) {
+    createTile: function (coords: any, done: any) {
       const tile = document.createElement('img');
-      
+
       // 檢查圖磚是否在台灣範圍內
       const tileBounds = this._tileCoordsToBounds(coords);
       if (!taiwanBounds.intersects(tileBounds)) {
         // 圖磚在台灣範圍外，返回空白圖磚
-        tile.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+        tile.src =
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
         done(null, tile);
         return tile;
       }
-      
+
       // 正常載入圖磚
       const url = this.getTileUrl(coords);
       tile.setAttribute('role', 'presentation');
       tile.src = url;
-      
+
       tile.onload = () => done(null, tile);
       tile.onerror = () => done(new Error(`Failed to load tile at ${url}`), tile);
-      
+
       return tile;
-    }
+    },
   });
 
   // 添加圖層 - 使用自定義的 OpenStreetMap 圖層
@@ -153,28 +154,29 @@ const initMap = async () => {
     maxZoom: 18,
     minZoom: 7,
     bounds: taiwanBounds, // 設定圖層邊界
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    attribution:
+      '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     updateWhenIdle: true, // 只在地圖停止移動時更新
     updateWhenZooming: false, // 縮放時不更新
-    keepBuffer: 1 // 減少圖磚緩衝區
+    keepBuffer: 1, // 減少圖磚緩衝區
   });
-  
+
   console.log('添加瓦片圖層');
   tileLayer.addTo(map.value);
-  
+
   // 監聽瓦片載入事件
   tileLayer.on('loading', () => {
     console.log('瓦片開始載入');
   });
-  
+
   tileLayer.on('load', () => {
     console.log('瓦片載入完成');
   });
-  
+
   tileLayer.on('tileerror', (error: any) => {
     console.error('瓦片載入錯誤:', error);
   });
-  
+
   // 添加載入完成事件
   map.value.whenReady(() => {
     console.log('地圖已完全載入');
@@ -190,9 +192,11 @@ const initMap = async () => {
   });
 
   // 添加縮放控制到右下角
-  L.control.zoom({
-    position: 'bottomright'
-  }).addTo(map.value);
+  L.control
+    .zoom({
+      position: 'bottomright',
+    })
+    .addTo(map.value);
 
   // 創建標記聚合群組
   try {
@@ -248,13 +252,12 @@ const createActivityMarker = (activity: Activity): any | null => {
     className: 'custom-marker-container',
     iconSize: [40, 40],
     iconAnchor: [20, 40],
-    popupAnchor: [0, -40]
+    popupAnchor: [0, -40],
   });
 
-  const marker = L.marker(
-    [activity.location.latitude, activity.location.longitude],
-    { icon: customIcon }
-  );
+  const marker = L.marker([activity.location.latitude, activity.location.longitude], {
+    icon: customIcon,
+  });
 
   // 創建彈出窗口內容
   const popupContent = `
@@ -266,12 +269,16 @@ const createActivityMarker = (activity: Activity): any | null => {
           <i class="icon">📍</i>
           <span>${activity.location.address}</span>
         </div>
-        ${activity.time ? `
+        ${
+          activity.time
+            ? `
           <div class="popup-time">
             <i class="icon">⏰</i>
             <span>${activity.time.startDate}</span>
           </div>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
       <div class="popup-actions">
         <button class="popup-btn" onclick="window.selectActivity('${activity.id}')">
@@ -283,7 +290,7 @@ const createActivityMarker = (activity: Activity): any | null => {
 
   marker.bindPopup(popupContent, {
     maxWidth: 300,
-    className: 'custom-popup'
+    className: 'custom-popup',
   });
 
   // 點擊事件
@@ -299,13 +306,13 @@ const updateMarkers = () => {
   if (!map.value || !import.meta.client) return;
 
   console.log('更新地圖標記，活動數量:', props.activities.length);
-  
+
   // 清除現有標記
   if (markerClusterGroup.value) {
     markerClusterGroup.value.clearLayers();
   } else {
     // 如果沒有聚合群組，直接從地圖移除標記
-    markers.value.forEach(marker => {
+    markers.value.forEach((marker) => {
       if (marker && map.value) {
         map.value.removeLayer(marker);
       }
@@ -314,7 +321,7 @@ const updateMarkers = () => {
   markers.value = [];
 
   // 添加新標記
-  props.activities.forEach(activity => {
+  props.activities.forEach((activity) => {
     console.log('處理活動:', activity.name, activity.location);
     const marker = createActivityMarker(activity);
     if (marker) {
@@ -327,16 +334,14 @@ const updateMarkers = () => {
       }
     }
   });
-  
+
   console.log('成功創建標記數量:', markers.value.length);
 };
-
-
 
 // 全域函數供 popup 使用
 if (import.meta.client) {
   (window as any).selectActivity = (activityId: string) => {
-    const activity = props.activities.find(a => a.id === activityId);
+    const activity = props.activities.find((a) => a.id === activityId);
     if (activity) {
       emit('activityClick', activity);
     }
@@ -348,16 +353,22 @@ const isInternalUpdate = ref(false);
 
 // 監聽 props 變化
 watch(() => props.activities, updateMarkers, { deep: true });
-watch(() => props.center, (newCenter, oldCenter) => {
-  if (map.value && !isInternalUpdate.value) {
-    // 檢查是否真的需要更新（避免微小差異造成的循環）
-    if (!oldCenter || 
-        Math.abs(newCenter.lat - oldCenter.lat) > 0.0001 || 
-        Math.abs(newCenter.lng - oldCenter.lng) > 0.0001) {
-      map.value.setView([newCenter.lat, newCenter.lng]);
+watch(
+  () => props.center,
+  (newCenter, oldCenter) => {
+    if (map.value && !isInternalUpdate.value) {
+      // 檢查是否真的需要更新（避免微小差異造成的循環）
+      if (
+        !oldCenter ||
+        Math.abs(newCenter.lat - oldCenter.lat) > 0.0001 ||
+        Math.abs(newCenter.lng - oldCenter.lng) > 0.0001
+      ) {
+        map.value.setView([newCenter.lat, newCenter.lng]);
+      }
     }
-  }
-}, { deep: true });
+  },
+  { deep: true }
+);
 
 // 生命週期
 onMounted(() => {
@@ -366,7 +377,7 @@ onMounted(() => {
     nextTick(async () => {
       await initMap();
       updateMarkers();
-      
+
       // 添加額外的大小刷新
       setTimeout(() => {
         if (map.value) {
@@ -437,10 +448,13 @@ onUnmounted(() => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
-
 </style>
 
 <style>

@@ -6,8 +6,8 @@
       <div class="md:hidden">
         <!-- 定位按鈕 (只在未取得位置時顯示) -->
         <div v-if="!hasLocation" class="flex justify-center py-2 bg-blue-50 border-b">
-          <ElButton 
-            type="primary" 
+          <ElButton
+            type="primary"
             size="small"
             @click="getCurrentLocation"
             :loading="locationLoading"
@@ -16,19 +16,16 @@
             取得目前位置
           </ElButton>
         </div>
-        
+
         <!-- 標題區域 -->
         <div class="text-center py-3 px-4">
           <div class="flex flex-col items-center gap-1">
             <ElIcon class="text-primary-600" size="24"><LocationFilled /></ElIcon>
-            <h1 class="text-xl font-bold text-gray-900 leading-tight">
-              台灣觀光活動地圖
-            </h1>
+            <h1 class="text-xl font-bold text-gray-900 leading-tight">台灣觀光活動地圖</h1>
           </div>
         </div>
-        
       </div>
-      
+
       <!-- 桌面版標題 -->
       <div class="hidden md:block">
         <div class="px-6 py-4 flex items-center justify-between">
@@ -36,12 +33,12 @@
             <ElIcon><LocationFilled /></ElIcon>
             <h1 class="text-xl font-semibold text-gray-800">台灣觀光活動地圖</h1>
           </div>
-          
+
           <div class="flex items-center gap-3">
             <!-- 定位按鈕 (只在未取得位置時顯示) -->
-            <ElButton 
+            <ElButton
               v-if="!hasLocation"
-              type="primary" 
+              type="primary"
               @click="getCurrentLocation"
               :loading="locationLoading"
               class="px-4 py-2"
@@ -49,22 +46,15 @@
               <template #icon><Location /></template>
               取得目前位置
             </ElButton>
-            
-            <ElButton 
-              type="primary" 
-              @click="showFilter = !showFilter"
-              class="px-4 py-2"
-            >
+
+            <ElButton type="primary" @click="showFilter = !showFilter" class="px-4 py-2">
               <template #icon>
                 <component :is="showFilter ? Hide : Filter" />
               </template>
               {{ showFilter ? '隱藏篩選' : '顯示篩選' }}
             </ElButton>
-            
-            <ElButton 
-              @click="showFavorites = true"
-              class="px-4 py-2"
-            >
+
+            <ElButton @click="showFavorites = true" class="px-4 py-2">
               <template #icon><Star /></template>
               我的收藏
             </ElButton>
@@ -74,14 +64,14 @@
     </div>
 
     <!-- 主要內容區域 -->
-    <div class="flex" style="height: calc(100vh - 120px);">
+    <div class="flex" style="height: calc(100vh - 120px)">
       <!-- 篩選面板 -->
-      <ElAside 
-        v-if="showFilter" 
-        width="380px" 
+      <ElAside
+        v-if="showFilter"
+        width="380px"
         class="hidden md:block bg-white border-r border-gray-200 overflow-y-auto"
       >
-        <FilterPanel 
+        <FilterPanel
           v-model:filters="searchFilters"
           @filter-change="handleFilterChange"
           @clear-filters="clearFilters"
@@ -135,12 +125,8 @@
 
           <!-- 檢視內容區域 -->
           <div class="flex-1 relative">
-
             <!-- 地圖檢視 -->
-            <div 
-              v-show="viewMode === 'map'" 
-              class="w-full h-full"
-            >
+            <div v-show="viewMode === 'map'" class="w-full h-full">
               <ActivityMap
                 :activities="(activities as any) || []"
                 :center="mapCenter"
@@ -149,15 +135,12 @@
                 :show-stats="false"
                 @activity-click="handleMarkerClick"
                 @center-changed="(center) => handleMapMove(center)"
-                @map-ready="(map) => mapInstance = map"
+                @map-ready="(map) => (mapInstance = map)"
               />
             </div>
 
             <!-- 活動列表檢視 -->
-            <div 
-              v-show="viewMode === 'list'"
-              class="w-full h-full overflow-y-auto bg-gray-50"
-            >
+            <div v-show="viewMode === 'list'" class="w-full h-full overflow-y-auto bg-gray-50">
               <div class="p-4">
                 <!-- 載入中狀態 -->
                 <div v-if="loading" class="space-y-4">
@@ -170,9 +153,7 @@
                 <div v-else-if="activities.length > 0" class="space-y-4">
                   <!-- 排序選項 -->
                   <div class="flex justify-between items-center px-4 py-2 bg-gray-50 rounded-lg">
-                    <div class="text-sm text-gray-600">
-                      找到 {{ totalActivities }} 個活動
-                    </div>
+                    <div class="text-sm text-gray-600">找到 {{ totalActivities }} 個活動</div>
                     <ElSelect
                       v-model="currentSorting"
                       @change="handleSortingChange"
@@ -187,7 +168,7 @@
                       />
                     </ElSelect>
                   </div>
-                  
+
                   <!-- 活動卡片列表 -->
                   <div class="grid gap-4">
                     <ActivityCard
@@ -198,7 +179,7 @@
                       class="cursor-pointer hover:shadow-lg transition-shadow"
                     />
                   </div>
-                  
+
                   <!-- 載入更多按鈕 -->
                   <div v-if="hasMoreActivities" class="flex justify-center mt-6">
                     <ElButton
@@ -216,7 +197,6 @@
                 <ElEmpty v-else description="沒有找到符合條件的活動" />
               </div>
             </div>
-
           </div>
         </div>
       </ElMain>
@@ -231,7 +211,7 @@
       :show-close="false"
       class="md:hidden"
     >
-      <FilterPanel 
+      <FilterPanel
         :loading="loading"
         :result-count="totalActivities"
         @filters-change="handleFilterChange"
@@ -241,36 +221,23 @@
     </ElDrawer>
 
     <!-- 收藏頁面抽屜 -->
-    <ElDrawer
-      v-model="showFavorites"
-      title="我的收藏"
-      size="400px"
-      direction="rtl"
-    >
+    <ElDrawer v-model="showFavorites" title="我的收藏" size="400px" direction="rtl">
       <FavoritesList @activity-click="handleActivityClick" />
     </ElDrawer>
 
     <!-- 活動詳情對話框 -->
-    <ActivityDetailModal
-      v-model:visible="showActivityDetail"
-      :activity-id="selectedActivityId"
-    />
-    
+    <ActivityDetailModal v-model:visible="showActivityDetail" :activity-id="selectedActivityId" />
+
     <!-- 手機版 Footer -->
-    <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 z-50">
+    <div
+      class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 z-50"
+    >
       <div class="flex items-center justify-around">
-        <ElButton 
-          type="primary" 
-          @click="showMobileFilter = true"
-          class="flex-1 mr-2"
-        >
+        <ElButton type="primary" @click="showMobileFilter = true" class="flex-1 mr-2">
           <template #icon><Filter /></template>
           篩選
         </ElButton>
-        <ElButton 
-          @click="showFavorites = true"
-          class="flex-1 ml-2"
-        >
+        <ElButton @click="showFavorites = true" class="flex-1 ml-2">
           <template #icon><Star /></template>
           收藏
         </ElButton>
@@ -282,7 +249,17 @@
 <script setup lang="ts">
 import { useDebounceFn, useThrottleFn } from '@vueuse/core';
 import { ElMessage } from 'element-plus';
-import { LocationFilled, Search, Hide, Filter, Star, Location, List, Grid, Calendar } from '@element-plus/icons-vue';
+import {
+  LocationFilled,
+  Search,
+  Hide,
+  Filter,
+  Star,
+  Location,
+  List,
+  Grid,
+  Calendar,
+} from '@element-plus/icons-vue';
 import type { Activity, SearchFilters, MapCenter } from '~/types';
 
 // 導入缺失的組件
@@ -299,8 +276,11 @@ const route = useRoute();
 useHead({
   title: '台灣觀光活動地圖',
   meta: [
-    { name: 'description', content: '探索台灣各地精彩的觀光活動，使用互動地圖尋找附近的景點和活動' }
-  ]
+    {
+      name: 'description',
+      content: '探索台灣各地精彩的觀光活動，使用互動地圖尋找附近的景點和活動',
+    },
+  ],
 });
 
 // 響應式狀態
@@ -319,7 +299,7 @@ const sortingOptions = [
   { value: 'distance', label: '距離：近到遠' },
   { value: 'popularity', label: '熱門度：高到低' },
   { value: 'date', label: '日期：近到遠' },
-  { value: 'price', label: '價格：低到高' }
+  { value: 'price', label: '價格：低到高' },
 ];
 
 // 搜尋篩選
@@ -331,13 +311,13 @@ const searchFilters = ref<SearchFilters>({
   location: undefined,
   radius: 10,
   features: [],
-  sorting: 'relevance'
+  sorting: 'relevance',
 });
 
 // 地圖狀態
 const mapCenter = ref<MapCenter>({
   lat: 23.8103,
-  lng: 120.9605
+  lng: 120.9605,
 });
 const mapZoom = ref(7);
 
@@ -349,10 +329,10 @@ const {
   hasMoreActivities,
   searchActivities,
   loadMoreActivities,
-  refreshActivities
+  refreshActivities,
 } = useActivitiesClient({
   autoLoad: false, // 不自動載入，讓地圖先顯示
-  pageSize: 20
+  pageSize: 20,
 });
 
 const { getCurrentPosition, hasLocation, coordinates } = useGeolocation();
@@ -368,19 +348,19 @@ const getCurrentLocation = async () => {
     if (location) {
       mapCenter.value = {
         lat: location.lat,
-        lng: location.lng
+        lng: location.lng,
       };
       mapZoom.value = 14;
-      
+
       // 設定位置篩選
       searchFilters.value.location = {
         lat: location.lat,
-        lng: location.lng
+        lng: location.lng,
       };
-      
+
       // 重新搜尋附近活動
       await handleSearch();
-      
+
       ElMessage.success('已取得您的位置並更新搜尋結果');
     }
   } catch (error) {
@@ -392,20 +372,24 @@ const getCurrentLocation = async () => {
 };
 
 // 監聽位置狀態變化，自動更新地圖中心
-watch(coordinates, (newCoords) => {
-  if (newCoords) {
-    mapCenter.value = {
-      lat: newCoords.lat,
-      lng: newCoords.lng
-    };
-    
-    // 更新篩選條件
-    searchFilters.value.location = {
-      lat: newCoords.lat,
-      lng: newCoords.lng
-    };
-  }
-}, { immediate: true });
+watch(
+  coordinates,
+  (newCoords) => {
+    if (newCoords) {
+      mapCenter.value = {
+        lat: newCoords.lat,
+        lng: newCoords.lng,
+      };
+
+      // 更新篩選條件
+      searchFilters.value.location = {
+        lat: newCoords.lat,
+        lng: newCoords.lng,
+      };
+    }
+  },
+  { immediate: true }
+);
 
 // 頁面載入時取得使用者位置
 onMounted(async () => {
@@ -415,22 +399,22 @@ onMounted(async () => {
   } catch (error) {
     console.warn('載入初始活動失敗:', error);
   }
-  
+
   try {
     const location = await getCurrentPosition();
     if (location) {
       mapCenter.value = {
         lat: location.lat,
-        lng: location.lng
+        lng: location.lng,
       };
       mapZoom.value = 12;
-      
+
       // 設定位置篩選
       searchFilters.value.location = {
         lat: location.lat,
-        lng: location.lng
+        lng: location.lng,
       };
-      
+
       // 重新搜尋附近活動
       await handleSearch();
     }
@@ -451,7 +435,7 @@ const handleSearch = useDebounceFn(async () => {
     query: searchQuery.value,
     filters: searchFilters.value,
     location: searchFilters.value.location,
-    radius: searchFilters.value.radius
+    radius: searchFilters.value.radius,
   });
 }, 300);
 
@@ -477,7 +461,7 @@ const clearFilters = () => {
     location: searchFilters.value.location, // 保留位置資訊
     radius: 10,
     features: [],
-    sorting: 'relevance'
+    sorting: 'relevance',
   };
   handleSearch();
 };
@@ -496,7 +480,6 @@ const handleActivityClick = (activity: Activity) => {
   console.log('設定 selectedActivityId:', selectedActivityId.value);
   console.log('設定 showActivityDetail:', showActivityDetail.value);
 };
-
 
 // 手機版篩選套用
 const handleMobileFilterApply = () => {
@@ -517,19 +500,18 @@ const handleSortingChange = (sorting: string) => {
 const handleMapMove = useThrottleFn((center: MapCenter, zoom?: number) => {
   // 防止微小差異造成不必要的更新
   const currentCenter = mapCenter.value;
-  const hasSignificantChange = 
-    Math.abs(center.lat - currentCenter.lat) > 0.0001 || 
+  const hasSignificantChange =
+    Math.abs(center.lat - currentCenter.lat) > 0.0001 ||
     Math.abs(center.lng - currentCenter.lng) > 0.0001;
-  
+
   if (hasSignificantChange) {
     mapCenter.value = center;
   }
-  
+
   if (zoom !== undefined && Math.abs(zoom - mapZoom.value) > 0.1) {
     mapZoom.value = zoom;
   }
 }, 100);
-
 
 // 響應式佈局
 const isMobile = ref(false);
@@ -541,22 +523,24 @@ onMounted(() => {
       showFilter.value = false;
     }
   };
-  
+
   checkMobile();
   window.addEventListener('resize', checkMobile);
-  
 });
 
-
 // 監聽查詢參數
-watch(() => route.query, (newQuery) => {
-  if (newQuery.category) {
-    searchFilters.value.categories = Array.isArray(newQuery.category) 
-      ? newQuery.category as string[]
-      : [newQuery.category as string];
-    handleSearch();
-  }
-}, { immediate: true });
+watch(
+  () => route.query,
+  (newQuery) => {
+    if (newQuery.category) {
+      searchFilters.value.categories = Array.isArray(newQuery.category)
+        ? (newQuery.category as string[])
+        : [newQuery.category as string];
+      handleSearch();
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped>
@@ -655,7 +639,7 @@ watch(() => route.query, (newQuery) => {
     font-size: 14px;
     margin: 0;
   }
-  
+
   .el-button + .el-button {
     margin-left: 6px;
   }

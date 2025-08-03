@@ -10,7 +10,7 @@
         <h3 class="font-semibold text-base text-gray-900 flex-1 mr-2">
           {{ activity.name }}
         </h3>
-        
+
         <!-- 收藏按鈕 -->
         <button
           class="p-1 rounded-full hover:bg-gray-100 transition-colors focus-outline"
@@ -30,13 +30,10 @@
       <div class="flex items-center justify-between mb-2">
         <!-- 狀態和地點 -->
         <div class="flex items-center space-x-3 text-sm text-gray-600">
-          <el-tag
-            :type="getStatusTagType(activity.status)"
-            size="small"
-          >
+          <el-tag :type="getStatusTagType(activity.status)" size="small">
             {{ getStatusText(activity.status) }}
           </el-tag>
-          
+
           <span v-if="activity.location" class="flex items-center">
             <el-icon class="mr-1 text-gray-400"><Location /></el-icon>
             {{ activity.location.city || activity.location.address }}
@@ -54,13 +51,12 @@
           >
             {{ activity.categories[0].icon }} {{ activity.categories[0].name }}
           </span>
-          
+
           <span v-if="activity.time" class="text-xs text-gray-500 flex items-center">
             <el-icon class="mr-1"><Clock /></el-icon>
             {{ formatActivityTime(activity.time) }}
           </span>
         </div>
-
       </div>
     </div>
 
@@ -77,9 +73,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { ElMessage } from 'element-plus';
-import { 
-  StarFilled, Star, Clock, Location 
-} from '@element-plus/icons-vue';
+import { StarFilled, Star, Clock, Location } from '@element-plus/icons-vue';
 import type { Activity } from '~/types';
 
 interface Props {
@@ -88,7 +82,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  loading: false
+  loading: false,
 });
 
 const emit = defineEmits<{
@@ -103,13 +97,15 @@ const { isFavorite, toggleFavorite: toggleFav } = useFavorites();
 const isFavorited = computed(() => isFavorite(props.activity.id));
 
 // 活動狀態映射
-const getStatusTagType = (status: string): 'success' | 'warning' | 'info' | 'danger' | 'primary' => {
+const getStatusTagType = (
+  status: string
+): 'success' | 'warning' | 'info' | 'danger' | 'primary' => {
   const statusMap: Record<string, 'success' | 'warning' | 'info' | 'danger' | 'primary'> = {
     active: 'success',
     upcoming: 'warning',
     ended: 'info',
     cancelled: 'danger',
-    pending: 'info'
+    pending: 'info',
   };
   return statusMap[status] || 'info';
 };
@@ -120,7 +116,7 @@ const getStatusText = (status: string) => {
     upcoming: '即將開始',
     ended: '已結束',
     cancelled: '已取消',
-    pending: '待確認'
+    pending: '待確認',
   };
   return statusTextMap[status as keyof typeof statusTextMap] || '未知';
 };
@@ -128,14 +124,14 @@ const getStatusText = (status: string) => {
 // 格式化活動時間
 const formatActivityTime = (time: any) => {
   if (!time) return '';
-  
+
   const startDate = new Date(time.startDate);
   const endDate = time.endDate ? new Date(time.endDate) : null;
-  
+
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('zh-TW', {
       month: 'numeric',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
@@ -144,18 +140,18 @@ const formatActivityTime = (time: any) => {
   };
 
   let timeText = formatDate(startDate);
-  
+
   if (endDate && endDate.getTime() !== startDate.getTime()) {
     timeText += ` - ${formatDate(endDate)}`;
   }
-  
+
   if (time.startTime) {
     timeText += ` ${formatTime(time.startTime)}`;
     if (time.endTime) {
       timeText += `-${formatTime(time.endTime)}`;
     }
   }
-  
+
   return timeText;
 };
 
@@ -177,7 +173,6 @@ const toggleFavorite = async () => {
     console.error('切換收藏失敗:', error);
   }
 };
-
 </script>
 
 <style scoped>

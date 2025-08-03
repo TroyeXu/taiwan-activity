@@ -7,11 +7,11 @@ import type { ApiResponse } from '~/types';
 
 export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
   const startTime = Date.now();
-  
+
   try {
     // 生成快取鍵
     const cacheKey = CacheManager.generateKey('admin', 'dashboard', 'summary');
-    
+
     // 嘗試從快取取得資料
     const cachedData = await CacheManager.getOrSet(
       cacheKey,
@@ -24,7 +24,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
           recentActivities,
           validationSummary,
           popularActivities,
-          systemHealth
+          systemHealth,
         ] = await Promise.all([
           getOverviewStats(),
           getQualityStats(),
@@ -32,7 +32,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
           getRecentActivities(),
           getValidationSummary(),
           getPopularActivities(),
-          getSystemHealth()
+          getSystemHealth(),
         ]);
 
         return {
@@ -43,18 +43,18 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
           validation: validationSummary,
           popular: popularActivities,
           system: systemHealth,
-          lastUpdated: new Date().toISOString()
+          lastUpdated: new Date().toISOString(),
         };
       },
       2 * 60 * 1000 // 快取 2 分鐘
     );
 
     const duration = Date.now() - startTime;
-    
+
     // 記錄效能日誌
     logger.performance('admin-dashboard', duration, {
       cached: !!cachedData,
-      dataSize: JSON.stringify(cachedData).length
+      dataSize: JSON.stringify(cachedData).length,
     });
 
     return {
@@ -62,16 +62,15 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
       data: {
         ...cachedData,
         responseTime: duration,
-        cached: true
-      }
+        cached: true,
+      },
     };
-
   } catch (error) {
     logger.error('Admin dashboard failed', error, { source: 'ADMIN' });
 
     throw createError({
       statusCode: 500,
-      statusMessage: '取得管理面板資料失敗'
+      statusMessage: '取得管理面板資料失敗',
     });
   }
 });
@@ -116,10 +115,11 @@ async function getQualityStats() {
     `);
 
     const stats = (result as any).rows?.[0] || {};
-    
+
     // 計算分佈百分比
-    const total = (stats.excellent || 0) + (stats.good || 0) + (stats.fair || 0) + (stats.poor || 0);
-    
+    const total =
+      (stats.excellent || 0) + (stats.good || 0) + (stats.fair || 0) + (stats.poor || 0);
+
     if (total > 0) {
       return {
         ...stats,
@@ -127,8 +127,8 @@ async function getQualityStats() {
           excellent: Math.round((stats.excellent / total) * 100),
           good: Math.round((stats.good / total) * 100),
           fair: Math.round((stats.fair / total) * 100),
-          poor: Math.round((stats.poor / total) * 100)
-        }
+          poor: Math.round((stats.poor / total) * 100),
+        },
       };
     }
 
@@ -214,12 +214,14 @@ async function getValidationSummary() {
     `);
 
     const stats = (result as any).rows?.[0] || {};
-    
+
     return {
       enabled: true,
       ...stats,
-      success_rate: stats.total_validations > 0 ? 
-        Math.round((stats.passed / stats.total_validations) * 100) : 0
+      success_rate:
+        stats.total_validations > 0
+          ? Math.round((stats.passed / stats.total_validations) * 100)
+          : 0,
     };
   } catch (error) {
     logger.error('Failed to get validation summary', error);
@@ -256,40 +258,40 @@ async function getSystemHealth() {
   try {
     const dbHealth = await checkDatabaseHealth();
     const cacheStats = CacheManager.getStats();
-    
+
     return {
       database: dbHealth,
       cache: cacheStats,
       uptime: process.uptime(),
       memory: process.memoryUsage(),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   } catch (error) {
     logger.error('Failed to get system health', error);
     return {
       status: 'error',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
 
 async function checkDatabaseHealth() {
   const startTime = Date.now();
-  
+
   try {
     const db = getDatabase();
     await db.get(sql`SELECT 1`);
     const responseTime = Date.now() - startTime;
-    
+
     return {
       status: 'healthy',
-      responseTime
+      responseTime,
     };
   } catch (error) {
     return {
       status: 'unhealthy',
       error: error instanceof Error ? error.message : String(error),
-      responseTime: Date.now() - startTime
+      responseTime: Date.now() - startTime,
     };
   }
 }

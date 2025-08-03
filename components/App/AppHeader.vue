@@ -10,9 +10,7 @@
                 <LocationFilled />
               </ElIcon>
             </div>
-            <h1 class="text-xl font-semibold text-gray-800 hidden sm:block">
-              台灣觀光活動地圖
-            </h1>
+            <h1 class="text-xl font-semibold text-gray-800 hidden sm:block">台灣觀光活動地圖</h1>
           </NuxtLink>
         </div>
 
@@ -32,12 +30,7 @@
           >
             <ElIcon><Star /></ElIcon>
             我的收藏
-            <ElBadge 
-              v-if="favoriteCount > 0" 
-              :value="favoriteCount" 
-              :max="99" 
-              class="ml-1"
-            />
+            <ElBadge v-if="favoriteCount > 0" :value="favoriteCount" :max="99" class="ml-1" />
           </NuxtLink>
         </nav>
 
@@ -62,21 +55,13 @@
 
           <!-- 位置按鈕 -->
           <ElTooltip content="取得我的位置" placement="bottom">
-            <ElButton
-              circle
-              :loading="locationLoading"
-              @click="getCurrentLocation"
-            >
+            <ElButton circle :loading="locationLoading" @click="getCurrentLocation">
               <ElIcon><Aim /></ElIcon>
             </ElButton>
           </ElTooltip>
 
           <!-- 手機版選單按鈕 -->
-          <ElButton
-            class="md:hidden"
-            circle
-            @click="showMobileMenu = true"
-          >
+          <ElButton class="md:hidden" circle @click="showMobileMenu = true">
             <ElIcon><Menu /></ElIcon>
           </ElButton>
         </div>
@@ -100,12 +85,7 @@
     </div>
 
     <!-- 手機版選單抽屜 -->
-    <ElDrawer
-      v-model="showMobileMenu"
-      title="選單"
-      direction="rtl"
-      size="280px"
-    >
+    <ElDrawer v-model="showMobileMenu" title="選單" direction="rtl" size="280px">
       <div class="space-y-4">
         <NuxtLink
           to="/"
@@ -127,19 +107,11 @@
             <ElIcon><Star /></ElIcon>
             我的收藏
           </div>
-          <ElBadge 
-            v-if="favoriteCount > 0" 
-            :value="favoriteCount" 
-            :max="99"
-          />
+          <ElBadge v-if="favoriteCount > 0" :value="favoriteCount" :max="99" />
         </NuxtLink>
 
         <div class="border-t border-gray-200 pt-4">
-          <ElButton
-            class="w-full"
-            :loading="locationLoading"
-            @click="getCurrentLocation"
-          >
+          <ElButton class="w-full" :loading="locationLoading" @click="getCurrentLocation">
             <ElIcon><Aim /></ElIcon>
             取得我的位置
           </ElButton>
@@ -150,14 +122,7 @@
 </template>
 
 <script setup lang="ts">
-import { 
-  LocationFilled, 
-  Search, 
-  Star, 
-  Aim, 
-  Menu,
-  HomeFilled
-} from '@element-plus/icons-vue';
+import { LocationFilled, Search, Star, Aim, Menu, HomeFilled } from '@element-plus/icons-vue';
 
 // 路由
 const router = useRouter();
@@ -176,7 +141,7 @@ const handleSearch = () => {
   if (searchQuery.value.trim()) {
     router.push({
       path: '/',
-      query: { q: searchQuery.value.trim() }
+      query: { q: searchQuery.value.trim() },
     });
     searchQuery.value = '';
   }
@@ -190,7 +155,7 @@ const clearSearch = () => {
 // 取得使用者位置
 const getCurrentLocation = async () => {
   locationLoading.value = true;
-  
+
   try {
     const location = await getUserLocation();
     if (location) {
@@ -200,8 +165,8 @@ const getCurrentLocation = async () => {
         query: {
           lat: location.lat.toString(),
           lng: location.lng.toString(),
-          locate: 'true'
-        }
+          locate: 'true',
+        },
       });
       ElMessage.success('已取得您的位置');
     }
@@ -213,9 +178,12 @@ const getCurrentLocation = async () => {
 };
 
 // 監聽路由變化，關閉手機版選單
-watch(() => router.currentRoute.value.path, () => {
-  showMobileMenu.value = false;
-});
+watch(
+  () => router.currentRoute.value.path,
+  () => {
+    showMobileMenu.value = false;
+  }
+);
 </script>
 
 <style scoped>

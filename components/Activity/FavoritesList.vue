@@ -44,7 +44,7 @@
             <h3 class="font-medium text-sm line-clamp-2 mb-1">
               {{ activity.activity.name }}
             </h3>
-            
+
             <p class="text-xs text-gray-600 line-clamp-2 mb-2">
               {{ activity.activity.summary }}
             </p>
@@ -55,7 +55,7 @@
                 <ElIcon><LocationFilled /></ElIcon>
                 {{ activity.activity.location.city }}
               </span>
-              
+
               <span v-if="activity.activity.time" class="flex items-center gap-1">
                 <ElIcon><Calendar /></ElIcon>
                 {{ formatDate(activity.activity.time.startDate) }}
@@ -63,7 +63,10 @@
             </div>
 
             <!-- 分類標籤 -->
-            <div v-if="activity.activity.categories && activity.activity.categories.length > 0" class="mt-2">
+            <div
+              v-if="activity.activity.categories && activity.activity.categories.length > 0"
+              class="mt-2"
+            >
               <ElTag
                 v-for="category in activity.activity.categories.slice(0, 2)"
                 :key="category.id"
@@ -87,21 +90,15 @@
             >
               <ElIcon><Delete /></ElIcon>
             </ElButton>
-            
-            <div class="text-xs text-gray-400">
-              已收藏
-            </div>
+
+            <div class="text-xs text-gray-400">已收藏</div>
           </div>
         </div>
       </ElCard>
 
       <!-- 查看更多 -->
       <div v-if="favorites.length >= 5" class="text-center pt-4">
-        <ElButton 
-          type="primary" 
-          plain
-          @click="goToFavoritesPage"
-        >
+        <ElButton type="primary" plain @click="goToFavoritesPage">
           查看所有收藏 ({{ favorites.length }})
         </ElButton>
       </div>
@@ -124,12 +121,7 @@ const emit = defineEmits<{
 const router = useRouter();
 
 // 使用收藏功能
-const { 
-  favorites, 
-  loading,
-  removeFavorite: removeFav,
-  refreshFavorites
-} = useFavorites();
+const { favorites, loading, removeFavorite: removeFav, refreshFavorites } = useFavorites();
 
 // 頁面載入時載入收藏
 onMounted(() => {
@@ -140,7 +132,7 @@ onMounted(() => {
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('zh-TW', {
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
   });
 };
 

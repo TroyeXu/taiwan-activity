@@ -11,16 +11,16 @@ export function getDatabase() {
     // 初始化資料庫
     _sqlite = new Database('./database/tourism.sqlite', {
       readonly: false,
-      fileMustExist: true
+      fileMustExist: true,
     });
-    
+
     // 啟用外鍵約束
     _sqlite.pragma('foreign_keys = ON');
-    
+
     // 建立 Drizzle 實例
     _db = drizzle(_sqlite, { schema });
   }
-  
+
   return _db;
 }
 

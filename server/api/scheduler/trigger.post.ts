@@ -11,14 +11,14 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
     if (!job) {
       throw createError({
         statusCode: 400,
-        statusMessage: '缺少任務名稱'
+        statusMessage: '缺少任務名稱',
       });
     }
 
     if (!schedulerInstance) {
       throw createError({
         statusCode: 503,
-        statusMessage: '排程器尚未初始化'
+        statusMessage: '排程器尚未初始化',
       });
     }
 
@@ -27,7 +27,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
     if (!(job in status)) {
       throw createError({
         statusCode: 404,
-        statusMessage: `未找到任務: ${job}`
+        statusMessage: `未找到任務: ${job}`,
       });
     }
 
@@ -35,7 +35,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
     if (status[job].running && !force) {
       throw createError({
         statusCode: 409,
-        statusMessage: `任務 ${job} 正在運行中，使用 force=true 強制執行`
+        statusMessage: `任務 ${job} 正在運行中，使用 force=true 強制執行`,
       });
     }
 
@@ -52,11 +52,10 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
         job,
         triggered: true,
         force,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
-      message: `任務 ${job} 已觸發執行`
+      message: `任務 ${job} 已觸發執行`,
     };
-
   } catch (error) {
     console.error('觸發任務失敗:', error);
 
@@ -67,7 +66,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: '觸發任務失敗'
+      statusMessage: '觸發任務失敗',
     });
   }
 });

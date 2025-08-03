@@ -1,15 +1,21 @@
 import { nanoid } from 'nanoid';
-import type { NewActivity, NewLocation, NewActivityTime, NewDataSource, NewActivityCategory } from '../schema';
+import type {
+  NewActivity,
+  NewLocation,
+  NewActivityTime,
+  NewDataSource,
+  NewActivityCategory,
+} from '../schema';
 
 // 範例活動資料
 export const sampleActivities = () => {
   const now = new Date();
   const tomorrow = new Date(now);
   tomorrow.setDate(now.getDate() + 1);
-  
+
   const nextWeek = new Date(now);
   nextWeek.setDate(now.getDate() + 7);
-  
+
   const nextMonth = new Date(now);
   nextMonth.setMonth(now.getMonth() + 1);
 
@@ -17,7 +23,8 @@ export const sampleActivities = () => {
     {
       id: nanoid(),
       name: '2025 台北燈節',
-      description: '台北燈節是台北市年度盛大活動，結合傳統燈藝與現代科技，打造璀璨燈海，展現台北獨特魅力。',
+      description:
+        '台北燈節是台北市年度盛大活動，結合傳統燈藝與現代科技，打造璀璨燈海，展現台北獨特魅力。',
       summary: '台北年度燈節盛會，璀璨燈海迎新年',
       status: 'active',
       qualityScore: 95,
@@ -27,7 +34,8 @@ export const sampleActivities = () => {
     {
       id: nanoid(),
       name: '阿里山櫻花季',
-      description: '阿里山國家森林遊樂區春季櫻花盛開，吉野櫻、山櫻花等多品種櫻花競相綻放，是賞櫻的絕佳去處。',
+      description:
+        '阿里山國家森林遊樂區春季櫻花盛開，吉野櫻、山櫻花等多品種櫻花競相綻放，是賞櫻的絕佳去處。',
       summary: '阿里山春季櫻花盛開，賞櫻勝地',
       status: 'upcoming',
       qualityScore: 98,
@@ -37,7 +45,8 @@ export const sampleActivities = () => {
     {
       id: nanoid(),
       name: '墾丁音樂季',
-      description: '南台灣最大型戶外音樂節，集結國內外知名樂團，在墾丁海邊享受音樂與海風的完美結合。',
+      description:
+        '南台灣最大型戶外音樂節，集結國內外知名樂團，在墾丁海邊享受音樂與海風的完美結合。',
       summary: '墾丁海邊音樂盛會，國內外樂團齊聚',
       status: 'active',
       qualityScore: 92,
@@ -113,7 +122,7 @@ export const sampleActivities = () => {
       qualityScore: 93,
       createdAt: now,
       updatedAt: now,
-    }
+    },
   ];
 
   const locations: NewLocation[] = [
@@ -124,7 +133,7 @@ export const sampleActivities = () => {
       district: '中正區',
       city: '台北市',
       region: 'north',
-      latitude: 25.0330,
+      latitude: 25.033,
       longitude: 121.5654,
       venue: '中正紀念堂',
       landmarks: JSON.stringify(['自由廣場', '國家戲劇院', '國家音樂廳']),
@@ -236,7 +245,7 @@ export const sampleActivities = () => {
       longitude: 119.5796,
       venue: '澎湖灣',
       landmarks: JSON.stringify(['澎湖天后宮', '篤行十村', '跨海大橋']),
-    }
+    },
   ];
 
   const activityTimes: NewActivityTime[] = [
@@ -301,7 +310,7 @@ export const sampleActivities = () => {
       isRecurring: true,
       recurrenceRule: JSON.stringify({
         type: 'weekly',
-        daysOfWeek: [0, 1, 2, 3, 4, 5, 6]
+        daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
       }),
     },
     {
@@ -343,10 +352,10 @@ export const sampleActivities = () => {
       endTime: '21:30',
       timezone: 'Asia/Taipei',
       isRecurring: false,
-    }
+    },
   ];
 
-  const dataSources: NewDataSource[] = activities.map(activity => ({
+  const dataSources: NewDataSource[] = activities.map((activity) => ({
     id: nanoid(),
     activityId: activity.id,
     website: 'sample-data',
@@ -364,27 +373,30 @@ export const sampleActivities = () => {
 };
 
 // 活動分類關聯
-export const getActivityCategoriesRelations = (activities: NewActivity[], categories: any[]): NewActivityCategory[] => {
+export const getActivityCategoriesRelations = (
+  activities: NewActivity[],
+  categories: any[]
+): NewActivityCategory[] => {
   const relations: NewActivityCategory[] = [];
-  
+
   // 為每個活動分配合適的分類
   const categoryMap: { [key: string]: string[] } = {
     '2025 台北燈節': ['traditional'],
-    '阿里山櫻花季': ['nature', 'romantic'],
-    '墾丁音樂季': ['art_culture'],
-    '台中花毯節': ['nature', 'romantic'],
-    '平溪天燈節': ['traditional'],
-    '台南古蹟巡禮': ['art_culture'],
-    '花蓮太魯閣健行': ['nature', 'wellness'],
-    '宜蘭綠色博覽會': ['nature'],
-    '高雄愛河燈會': ['romantic', 'art_culture'],
-    '澎湖花火節': ['traditional', 'romantic'],
+    阿里山櫻花季: ['nature', 'romantic'],
+    墾丁音樂季: ['art_culture'],
+    台中花毯節: ['nature', 'romantic'],
+    平溪天燈節: ['traditional'],
+    台南古蹟巡禮: ['art_culture'],
+    花蓮太魯閣健行: ['nature', 'wellness'],
+    宜蘭綠色博覽會: ['nature'],
+    高雄愛河燈會: ['romantic', 'art_culture'],
+    澎湖花火節: ['traditional', 'romantic'],
   };
 
-  activities.forEach(activity => {
+  activities.forEach((activity) => {
     const categoryNames = categoryMap[activity.name] || ['nature'];
     categoryNames.forEach((categorySlug: string) => {
-      const category = categories.find(c => c.slug === categorySlug);
+      const category = categories.find((c) => c.slug === categorySlug);
       if (category) {
         relations.push({
           id: nanoid(),

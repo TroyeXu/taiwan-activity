@@ -18,8 +18,8 @@
       <div v-if="activity.images && activity.images.length > 0" class="mb-4">
         <ElCarousel height="200px" indicator-position="outside">
           <ElCarouselItem v-for="image in activity.images" :key="image.id">
-            <img 
-              :src="image.url" 
+            <img
+              :src="image.url"
               :alt="image.alt || activity.name"
               class="w-full h-full object-cover"
             />
@@ -66,20 +66,18 @@
 
           <!-- 驗證狀態 -->
           <div v-if="activity.validation" class="flex items-center gap-2">
-            <ElIcon 
-              :color="activity.validation.verified ? '#67C23A' : '#F56C6C'"
-            >
-              <component :is="activity.validation.verified ? 'CircleCheckFilled' : 'CircleCloseFilled'" />
+            <ElIcon :color="activity.validation.verified ? '#67C23A' : '#F56C6C'">
+              <component
+                :is="activity.validation.verified ? 'CircleCheckFilled' : 'CircleCloseFilled'"
+              />
             </ElIcon>
-            <span 
+            <span
               :class="activity.validation.verified ? 'text-green-600' : 'text-red-600'"
               class="text-sm"
             >
               {{ activity.validation.verified ? '已驗證' : '未驗證' }}
             </span>
-            <ElTag size="small">
-              品質: {{ activity.validation.qualityScore }}%
-            </ElTag>
+            <ElTag size="small"> 品質: {{ activity.validation.qualityScore }}% </ElTag>
           </div>
         </div>
 
@@ -98,9 +96,7 @@
               <div v-if="activity.time.startTime || activity.time.endTime">
                 {{ formatTimeRange(activity.time.startTime, activity.time.endTime) }}
               </div>
-              <div v-if="activity.time.isRecurring" class="text-blue-600">
-                定期活動
-              </div>
+              <div v-if="activity.time.isRecurring" class="text-blue-600">定期活動</div>
             </div>
           </div>
 
@@ -113,7 +109,8 @@
             <div class="space-y-1 text-sm text-gray-700">
               <div>{{ activity.location.address }}</div>
               <div class="text-gray-500">
-                {{ activity.location.district }}, {{ activity.location.city }}, {{ activity.location.region }}
+                {{ activity.location.district }}, {{ activity.location.city }},
+                {{ activity.location.region }}
               </div>
               <div v-if="activity.location.venue" class="text-blue-600">
                 {{ activity.location.venue }}
@@ -125,8 +122,8 @@
           <div v-if="activity.location?.landmarks && activity.location.landmarks.length > 0">
             <h3 class="font-medium mb-2">鄰近地標</h3>
             <ElSpace wrap>
-              <ElTag 
-                v-for="landmark in activity.location.landmarks" 
+              <ElTag
+                v-for="landmark in activity.location.landmarks"
                 :key="landmark"
                 type="info"
                 size="small"
@@ -144,7 +141,14 @@
       </div>
 
       <!-- 小地圖 -->
-      <div v-if="activity.location && activity.location.latitude != null && activity.location.longitude != null" class="h-48 bg-gray-100 rounded-lg">
+      <div
+        v-if="
+          activity.location &&
+          activity.location.latitude != null &&
+          activity.location.longitude != null
+        "
+        class="h-48 bg-gray-100 rounded-lg"
+      >
         <ActivityMap
           :activities="[activity]"
           :center="{ lat: activity.location.latitude, lng: activity.location.longitude }"
@@ -157,11 +161,7 @@
 
     <!-- 錯誤狀態 -->
     <div v-else-if="error" class="text-center py-8">
-      <ElResult
-        icon="error"
-        title="載入失敗"
-        :sub-title="error.message || '無法載入活動詳情'"
-      >
+      <ElResult icon="error" title="載入失敗" :sub-title="error.message || '無法載入活動詳情'">
         <template #extra>
           <ElButton type="primary" @click="fetchActivity">重試</ElButton>
         </template>
@@ -173,30 +173,14 @@
       <div class="flex justify-between items-center">
         <!-- 左側操作 -->
         <div class="flex gap-2">
-          <FavoriteButton 
-            v-if="activity"
-            :activity-id="activity.id" 
-            size="default"
-          />
-          <ElButton 
-            v-if="activity"
-            @click="shareActivity"
-            :icon="Share"
-          >
-            分享
-          </ElButton>
+          <FavoriteButton v-if="activity" :activity-id="activity.id" size="default" />
+          <ElButton v-if="activity" @click="shareActivity" :icon="Share"> 分享 </ElButton>
         </div>
 
         <!-- 右側操作 -->
         <div class="flex gap-2">
           <ElButton @click="handleClose">關閉</ElButton>
-          <ElButton 
-            v-if="activity"
-            type="primary" 
-            @click="goToDetail"
-          >
-            查看完整詳情
-          </ElButton>
+          <ElButton v-if="activity" type="primary" @click="goToDetail"> 查看完整詳情 </ElButton>
         </div>
       </div>
     </template>
@@ -204,7 +188,13 @@
 </template>
 
 <script setup lang="ts">
-import { Calendar, LocationFilled, Share, CircleCheckFilled, CircleCloseFilled } from '@element-plus/icons-vue';
+import {
+  Calendar,
+  LocationFilled,
+  Share,
+  CircleCheckFilled,
+  CircleCloseFilled,
+} from '@element-plus/icons-vue';
 import type { Activity } from '~/types';
 
 // 導入缺失的組件
@@ -219,7 +209,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   visible: false,
-  activityId: ''
+  activityId: '',
 });
 
 // Emits
@@ -230,7 +220,7 @@ const emit = defineEmits<{
 // 響應式狀態
 const dialogVisible = computed({
   get: () => props.visible,
-  set: (value) => emit('update:visible', value)
+  set: (value) => emit('update:visible', value),
 });
 
 const activity = ref<Activity | null>(null);
@@ -241,18 +231,25 @@ const error = ref<Error | null>(null);
 const router = useRouter();
 
 // 監聽 activityId 變化
-watch(() => props.activityId, (newId) => {
-  if (newId && props.visible) {
-    fetchActivity();
-  }
-}, { immediate: true });
+watch(
+  () => props.activityId,
+  (newId) => {
+    if (newId && props.visible) {
+      fetchActivity();
+    }
+  },
+  { immediate: true }
+);
 
 // 監聽對話框顯示
-watch(() => props.visible, (visible) => {
-  if (visible && props.activityId) {
-    fetchActivity();
+watch(
+  () => props.visible,
+  (visible) => {
+    if (visible && props.activityId) {
+      fetchActivity();
+    }
   }
-});
+);
 
 // 使用客戶端 SQLite
 import { useSqlite } from '~/composables/useSqlite';
@@ -268,7 +265,7 @@ const fetchActivity = async () => {
   try {
     await initDatabase();
     const data = await getActivity(props.activityId);
-    
+
     if (data) {
       // 格式化活動資料
       activity.value = {
@@ -280,37 +277,46 @@ const fetchActivity = async () => {
         qualityScore: data.qualityScore || 0,
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
-        location: data.latitude && data.longitude ? {
-          id: data.locationId || '',
-          activityId: data.id,
-          address: data.address,
-          district: data.district || undefined,
-          city: data.city,
-          region: data.region || 'north',
-          latitude: data.latitude,
-          longitude: data.longitude,
-          venue: data.venue || undefined,
-          landmarks: data.landmarks ? JSON.parse(data.landmarks) : []
-        } : undefined,
-        time: data.startDate ? {
-          id: data.timeId || '',
-          activityId: data.id,
-          startDate: data.startDate,
-          endDate: data.endDate,
-          startTime: data.startTime,
-          endTime: data.endTime,
-          timezone: data.timezone || 'Asia/Taipei',
-          isRecurring: data.isRecurring || false,
-          recurrenceRule: data.recurrenceRule ? JSON.parse(data.recurrenceRule) : undefined
-        } : undefined,
-        categories: data.categories ? 
-          data.categories.split(',').map((name: string) => ({
-            id: '',
-            name: name.trim(),
-            slug: name.trim().toLowerCase(),
-            colorCode: '#3B82F6',
-            icon: '📍'
-          })).filter((cat: any) => cat.name) : []
+        location:
+          data.latitude && data.longitude
+            ? {
+                id: data.locationId || '',
+                activityId: data.id,
+                address: data.address,
+                district: data.district || undefined,
+                city: data.city,
+                region: data.region || 'north',
+                latitude: data.latitude,
+                longitude: data.longitude,
+                venue: data.venue || undefined,
+                landmarks: data.landmarks ? JSON.parse(data.landmarks) : [],
+              }
+            : undefined,
+        time: data.startDate
+          ? {
+              id: data.timeId || '',
+              activityId: data.id,
+              startDate: data.startDate,
+              endDate: data.endDate,
+              startTime: data.startTime,
+              endTime: data.endTime,
+              timezone: data.timezone || 'Asia/Taipei',
+              isRecurring: data.isRecurring || false,
+              recurrenceRule: data.recurrenceRule ? JSON.parse(data.recurrenceRule) : undefined,
+            }
+          : undefined,
+        categories: data.categories
+          ? data.categories
+              .split(',')
+              .map((name: string) => ({
+                id: '',
+                name: name.trim(),
+                slug: name.trim().toLowerCase(),
+                colorCode: '#3B82F6',
+                icon: '📍',
+              }))
+              .filter((cat: any) => cat.name)
+          : [],
       };
     } else {
       throw new Error('找不到活動');
@@ -341,11 +347,11 @@ const goToDetail = () => {
 // 分享活動
 const shareActivity = async () => {
   if (!activity.value) return;
-  
+
   const shareData = {
     title: activity.value.name,
     text: activity.value.summary || activity.value.description,
-    url: `${window.location.origin}/activity/${activity.value.id}`
+    url: `${window.location.origin}/activity/${activity.value.id}`,
   };
 
   try {
@@ -361,23 +367,26 @@ const shareActivity = async () => {
 };
 
 // 格式化函數
-const formatDateRange = (startDate: string | null | undefined, endDate?: string | null | undefined) => {
+const formatDateRange = (
+  startDate: string | null | undefined,
+  endDate?: string | null | undefined
+) => {
   if (!startDate) return '';
-  
+
   const start = new Date(startDate).toLocaleDateString('zh-TW', {
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
   });
-  
+
   if (!endDate || endDate === startDate) {
     return start;
   }
-  
+
   const end = new Date(endDate).toLocaleDateString('zh-TW', {
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
   });
-  
+
   return `${start} - ${end}`;
 };
 

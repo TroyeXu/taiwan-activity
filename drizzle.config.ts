@@ -5,8 +5,8 @@ export default defineConfig({
   schema: './db/schema.ts',
   out: './db/migrations',
   dbCredentials: {
-    url: './database/tourism.sqlite'
+    url: './database/tourism.sqlite',
   },
   verbose: true,
-  strict: true
+  strict: true,
 });

@@ -1,12 +1,12 @@
 import { getDatabase } from '~/server/utils/database';
-import { 
-  activities, 
-  locations, 
-  categories, 
-  activityCategories, 
+import {
+  activities,
+  locations,
+  categories,
+  activityCategories,
   activityTimes,
   dataSources,
-  validationLogs
+  validationLogs,
 } from '~/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import type { ApiResponse, Activity } from '~/types';
@@ -19,7 +19,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity>> 
     if (!activityId) {
       throw createError({
         statusCode: 400,
-        statusMessage: '缺少活動 ID'
+        statusMessage: '缺少活動 ID',
       });
     }
 
@@ -34,7 +34,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity>> 
         categoryNames: sql<string>`GROUP_CONCAT(${categories.name})`.as('category_names'),
         categorySlugs: sql<string>`GROUP_CONCAT(${categories.slug})`.as('category_slugs'),
         categoryIcons: sql<string>`GROUP_CONCAT(${categories.icon})`.as('category_icons'),
-        categoryColors: sql<string>`GROUP_CONCAT(${categories.colorCode})`.as('category_colors')
+        categoryColors: sql<string>`GROUP_CONCAT(${categories.colorCode})`.as('category_colors'),
       })
       .from(activities)
       .leftJoin(locations, eq(activities.id, locations.activityId))
@@ -44,18 +44,12 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity>> 
       .leftJoin(activityCategories, eq(activities.id, activityCategories.activityId))
       .leftJoin(categories, eq(activityCategories.categoryId, categories.id))
       .where(eq(activities.id, activityId))
-      .groupBy(
-        activities.id, 
-        locations.id, 
-        activityTimes.id, 
-        dataSources.id, 
-        validationLogs.id
-      );
+      .groupBy(activities.id, locations.id, activityTimes.id, dataSources.id, validationLogs.id);
 
     if (result.length === 0) {
       throw createError({
         statusCode: 404,
-        statusMessage: '找不到指定的活動'
+        statusMessage: '找不到指定的活動',
       });
     }
 
@@ -63,8 +57,8 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity>> 
     if (!row) {
       throw createError({
         statusCode: 404,
-        statusMessage: 'Activity not found'
-      })
+        statusMessage: 'Activity not found',
+      });
     }
 
     // 格式化回應資料
@@ -77,44 +71,53 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity>> 
       qualityScore: row.activity.qualityScore,
       createdAt: row.activity.createdAt,
       updatedAt: row.activity.updatedAt,
-      location: row.location ? {
-        id: row.location.id,
-        activityId: row.location.activityId,
-        address: row.location.address,
-        district: row.location.district || undefined,
-        city: row.location.city,
-        region: row.location.region as any,
-        latitude: row.location.latitude,
-        longitude: row.location.longitude,
-        venue: row.location.venue || undefined,
-        landmarks: row.location.landmarks ? JSON.parse(row.location.landmarks) : []
-      } : undefined,
-      time: row.time ? {
-        id: row.time.id,
-        activityId: row.time.activityId,
-        startDate: row.time.startDate,
-        endDate: row.time.endDate || undefined,
-        startTime: row.time.startTime || undefined,
-        endTime: row.time.endTime || undefined,
-        timezone: row.time.timezone,
-        isRecurring: row.time.isRecurring,
-        recurrenceRule: row.time.recurrenceRule ? JSON.parse(row.time.recurrenceRule) : undefined
-      } : undefined,
-      categories: row.categoryNames ? 
-        row.categoryNames.split(',').map((name, index) => ({
-          id: '',
-          name: name.trim(),
-          slug: row.categorySlugs?.split(',')[index]?.trim() || '',
-          colorCode: row.categoryColors?.split(',')[index]?.trim() || '',
-          icon: row.categoryIcons?.split(',')[index]?.trim() || ''
-        })).filter(cat => cat.name) : []
+      location: row.location
+        ? {
+            id: row.location.id,
+            activityId: row.location.activityId,
+            address: row.location.address,
+            district: row.location.district || undefined,
+            city: row.location.city,
+            region: row.location.region as any,
+            latitude: row.location.latitude,
+            longitude: row.location.longitude,
+            venue: row.location.venue || undefined,
+            landmarks: row.location.landmarks ? JSON.parse(row.location.landmarks) : [],
+          }
+        : undefined,
+      time: row.time
+        ? {
+            id: row.time.id,
+            activityId: row.time.activityId,
+            startDate: row.time.startDate,
+            endDate: row.time.endDate || undefined,
+            startTime: row.time.startTime || undefined,
+            endTime: row.time.endTime || undefined,
+            timezone: row.time.timezone,
+            isRecurring: row.time.isRecurring,
+            recurrenceRule: row.time.recurrenceRule
+              ? JSON.parse(row.time.recurrenceRule)
+              : undefined,
+          }
+        : undefined,
+      categories: row.categoryNames
+        ? row.categoryNames
+            .split(',')
+            .map((name, index) => ({
+              id: '',
+              name: name.trim(),
+              slug: row.categorySlugs?.split(',')[index]?.trim() || '',
+              colorCode: row.categoryColors?.split(',')[index]?.trim() || '',
+              icon: row.categoryIcons?.split(',')[index]?.trim() || '',
+            }))
+            .filter((cat) => cat.name)
+        : [],
     };
 
     return {
       success: true,
-      data: activity
+      data: activity,
     };
-
   } catch (error) {
     console.error('取得活動詳情失敗:', error);
 
@@ -124,7 +127,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity>> 
 
     throw createError({
       statusCode: 500,
-      statusMessage: '取得活動詳情失敗'
+      statusMessage: '取得活動詳情失敗',
     });
   }
 });

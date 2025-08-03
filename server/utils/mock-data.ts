@@ -1,4 +1,4 @@
-import type { Activity, Category, Location } from '~/types';
+import type { Activity, Category } from '~/types';
 import { ActivityStatus, Region } from '~/types';
 
 // Mock 分類資料
@@ -10,7 +10,7 @@ export const mockCategories: Category[] = [
   { id: '5', name: '節慶活動', slug: 'festival', colorCode: '#f59f00', icon: '🎉' },
   { id: '6', name: '運動健身', slug: 'sports', colorCode: '#94d82d', icon: '⚽' },
   { id: '7', name: '教育學習', slug: 'education', colorCode: '#5c7cfa', icon: '📚' },
-  { id: '8', name: '夜生活', slug: 'nightlife', colorCode: '#c92a2a', icon: '🌃' }
+  { id: '8', name: '夜生活', slug: 'nightlife', colorCode: '#c92a2a', icon: '🌃' },
 ];
 
 // Mock 活動資料
@@ -33,7 +33,7 @@ export const mockActivities: Activity[] = [
       latitude: 25.0375,
       longitude: 121.5637,
       venue: '台北市政府廣場',
-      landmarks: ['台北101', '信義商圈']
+      landmarks: ['台北101', '信義商圈'],
     },
     time: {
       id: '1',
@@ -43,9 +43,9 @@ export const mockActivities: Activity[] = [
       startTime: '18:00',
       endTime: '22:00',
       timezone: 'Asia/Taipei',
-      isRecurring: false
+      isRecurring: false,
     },
-    categories: mockCategories.length >= 8 ? [mockCategories[4]!, mockCategories[0]!] : []
+    categories: mockCategories.length >= 8 ? [mockCategories[4]!, mockCategories[0]!] : [],
   },
   {
     id: '2',
@@ -65,7 +65,7 @@ export const mockActivities: Activity[] = [
       latitude: 25.1667,
       longitude: 121.5333,
       venue: '陽明山國家公園',
-      landmarks: ['竹子湖', '小油坑']
+      landmarks: ['竹子湖', '小油坑'],
     },
     time: {
       id: '2',
@@ -75,9 +75,9 @@ export const mockActivities: Activity[] = [
       startTime: '08:00',
       endTime: '17:00',
       timezone: 'Asia/Taipei',
-      isRecurring: false
+      isRecurring: false,
     },
-    categories: mockCategories.length >= 8 ? [mockCategories[1]!, mockCategories[0]!] : []
+    categories: mockCategories.length >= 8 ? [mockCategories[1]!, mockCategories[0]!] : [],
   },
   {
     id: '3',
@@ -95,11 +95,11 @@ export const mockActivities: Activity[] = [
       city: '新北市',
       region: Region.NORTH,
       latitude: 25.1095,
-      longitude: 121.8450,
+      longitude: 121.845,
       venue: '九份老街',
-      landmarks: ['昇平戲院', '阿妹茶樓']
+      landmarks: ['昇平戲院', '阿妹茶樓'],
     },
-    categories: mockCategories.length >= 8 ? [mockCategories[2]!, mockCategories[0]!] : []
+    categories: mockCategories.length >= 8 ? [mockCategories[2]!, mockCategories[0]!] : [],
   },
   {
     id: '4',
@@ -119,9 +119,9 @@ export const mockActivities: Activity[] = [
       latitude: 23.8647,
       longitude: 120.9116,
       venue: '日月潭國家風景區',
-      landmarks: ['向山遊客中心', '水社碼頭']
+      landmarks: ['向山遊客中心', '水社碼頭'],
     },
-    categories: mockCategories.length >= 8 ? [mockCategories[1]!, mockCategories[5]!] : []
+    categories: mockCategories.length >= 8 ? [mockCategories[1]!, mockCategories[5]!] : [],
   },
   {
     id: '5',
@@ -141,7 +141,7 @@ export const mockActivities: Activity[] = [
       latitude: 21.9483,
       longitude: 120.7797,
       venue: '墾丁大街',
-      landmarks: ['墾丁國家公園', '鵝鑾鼻燈塔']
+      landmarks: ['墾丁國家公園', '鵝鑾鼻燈塔'],
     },
     time: {
       id: '5',
@@ -151,9 +151,9 @@ export const mockActivities: Activity[] = [
       startTime: '14:00',
       endTime: '23:00',
       timezone: 'Asia/Taipei',
-      isRecurring: false
+      isRecurring: false,
     },
-    categories: mockCategories.length >= 8 ? [mockCategories[0]!, mockCategories[7]!] : []
+    categories: mockCategories.length >= 8 ? [mockCategories[0]!, mockCategories[7]!] : [],
   },
   {
     id: '6',
@@ -173,9 +173,9 @@ export const mockActivities: Activity[] = [
       latitude: 24.1939,
       longitude: 121.4906,
       venue: '太魯閣國家公園',
-      landmarks: ['燕子口', '九曲洞']
+      landmarks: ['燕子口', '九曲洞'],
     },
-    categories: mockCategories.length >= 8 ? [mockCategories[1]!, mockCategories[5]!] : []
+    categories: mockCategories.length >= 8 ? [mockCategories[1]!, mockCategories[5]!] : [],
   },
   {
     id: '7',
@@ -195,9 +195,9 @@ export const mockActivities: Activity[] = [
       latitude: 22.9976,
       longitude: 120.2024,
       venue: '赤崁樓',
-      landmarks: ['孔廟', '神農街']
+      landmarks: ['孔廟', '神農街'],
     },
-    categories: mockCategories.length >= 8 ? [mockCategories[0]!, mockCategories[6]!] : []
+    categories: mockCategories.length >= 8 ? [mockCategories[0]!, mockCategories[6]!] : [],
   },
   {
     id: '8',
@@ -217,7 +217,7 @@ export const mockActivities: Activity[] = [
       latitude: 24.6748,
       longitude: 121.8016,
       venue: '冬山河親水公園',
-      landmarks: ['國立傳統藝術中心']
+      landmarks: ['國立傳統藝術中心'],
     },
     time: {
       id: '8',
@@ -227,10 +227,10 @@ export const mockActivities: Activity[] = [
       startTime: '09:00',
       endTime: '18:00',
       timezone: 'Asia/Taipei',
-      isRecurring: false
+      isRecurring: false,
     },
-    categories: mockCategories.length >= 8 ? [mockCategories[3]!, mockCategories[1]!] : []
-  }
+    categories: mockCategories.length >= 8 ? [mockCategories[3]!, mockCategories[1]!] : [],
+  },
 ];
 
 // 輔助函數：根據條件篩選活動
@@ -248,56 +248,58 @@ export function filterActivities(options: {
 
   // 分類篩選
   if (options.categories && options.categories.length > 0) {
-    filtered = filtered.filter(activity => 
-      activity.categories?.some(cat => 
-        options.categories!.includes(cat.slug)
-      )
+    filtered = filtered.filter((activity) =>
+      activity.categories?.some((cat) => options.categories!.includes(cat.slug))
     );
   }
 
   // 地區篩選
   if (options.regions && options.regions.length > 0) {
-    filtered = filtered.filter(activity => 
-      activity.location && options.regions!.includes(activity.location.region)
+    filtered = filtered.filter(
+      (activity) => activity.location && options.regions!.includes(activity.location.region)
     );
   }
 
   // 城市篩選
   if (options.cities && options.cities.length > 0) {
-    filtered = filtered.filter(activity => 
-      activity.location && options.cities!.includes(activity.location.city)
+    filtered = filtered.filter(
+      (activity) => activity.location && options.cities!.includes(activity.location.city)
     );
   }
 
   // 日期篩選
   if (options.startDate || options.endDate) {
-    filtered = filtered.filter(activity => {
+    filtered = filtered.filter((activity) => {
       if (!activity.time) return true;
-      
+
       if (options.startDate && activity.time.endDate) {
         if (activity.time.endDate < options.startDate) return false;
       }
-      
+
       if (options.endDate && activity.time.startDate) {
         if (activity.time.startDate > options.endDate) return false;
       }
-      
+
       return true;
     });
   }
 
   // 距離篩選（簡單的實現）
   if (options.lat && options.lng && options.radius) {
-    filtered = filtered.filter(activity => {
-      if (!activity.location || activity.location.latitude == null || activity.location.longitude == null) {
+    filtered = filtered.filter((activity) => {
+      if (
+        !activity.location ||
+        activity.location.latitude == null ||
+        activity.location.longitude == null
+      ) {
         return false;
       }
-      
+
       // 簡單的距離計算（不精確，僅用於演示）
       const latDiff = Math.abs(activity.location.latitude - options.lat!);
       const lngDiff = Math.abs(activity.location.longitude - options.lng!);
       const distance = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff) * 111; // 轉換為公里
-      
+
       return distance <= options.radius!;
     });
   }
@@ -307,16 +309,17 @@ export function filterActivities(options: {
 
 // 輔助函數：取得單一活動
 export function getActivityById(id: string): Activity | undefined {
-  return mockActivities.find(activity => activity.id === id);
+  return mockActivities.find((activity) => activity.id === id);
 }
 
 // 輔助函數：搜尋活動
 export function searchActivities(keyword: string): Activity[] {
   const lowerKeyword = keyword.toLowerCase();
-  return mockActivities.filter(activity => 
-    activity.name.toLowerCase().includes(lowerKeyword) ||
-    activity.description?.toLowerCase().includes(lowerKeyword) ||
-    activity.location?.city.includes(keyword) ||
-    activity.location?.venue?.toLowerCase().includes(lowerKeyword)
+  return mockActivities.filter(
+    (activity) =>
+      activity.name.toLowerCase().includes(lowerKeyword) ||
+      activity.description?.toLowerCase().includes(lowerKeyword) ||
+      activity.location?.city.includes(keyword) ||
+      activity.location?.venue?.toLowerCase().includes(lowerKeyword)
   );
 }

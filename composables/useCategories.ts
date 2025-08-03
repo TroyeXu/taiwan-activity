@@ -19,7 +19,7 @@ export const useCategories = () => {
 
     try {
       const response = await $fetch<ApiResponse<Category[]>>('/api/categories');
-      
+
       if (response.success) {
         categories.value = response.data;
       } else {
@@ -29,14 +29,14 @@ export const useCategories = () => {
       const errorMessage = err instanceof Error ? err.message : '載入分類時發生錯誤';
       error.value = errorMessage;
       console.error('載入分類失敗:', err);
-      
+
       // 載入失敗時使用預設分類
       categories.value = Object.entries(CATEGORIES).map(([slug, info]) => ({
         id: slug,
         name: info.name,
         slug,
         colorCode: info.color,
-        icon: info.icon
+        icon: info.icon,
       }));
     } finally {
       loading.value = false;
@@ -45,12 +45,12 @@ export const useCategories = () => {
 
   // 根據 slug 取得分類
   const getCategoryBySlug = (slug: string): Category | undefined => {
-    return categories.value.find(category => category.slug === slug);
+    return categories.value.find((category) => category.slug === slug);
   };
 
   // 根據 ID 取得分類
   const getCategoryById = (id: string): Category | undefined => {
-    return categories.value.find(category => category.id === id);
+    return categories.value.find((category) => category.id === id);
   };
 
   // 取得分類顏色
@@ -67,32 +67,31 @@ export const useCategories = () => {
 
   // 格式化分類顯示
   const formatCategories = (activityCategories: Category[]): string => {
-    return activityCategories.map(cat => cat.name).join('、');
+    return activityCategories.map((cat) => cat.name).join('、');
   };
 
   // 分類統計
   const getCategoryStats = (activities: any[]) => {
     const stats: Record<string, { count: number; category: Category }> = {};
 
-    activities.forEach(activity => {
+    activities.forEach((activity) => {
       activity.categories?.forEach((category: Category) => {
         if (!stats[category.slug]) {
           stats[category.slug] = {
             count: 0,
-            category
+            category,
           };
         }
         stats[category.slug]!.count++;
       });
     });
 
-    return Object.values(stats)
-      .sort((a, b) => b.count - a.count);
+    return Object.values(stats).sort((a, b) => b.count - a.count);
   };
 
   // 分類篩選幫助函數
   const filterActivitiesByCategory = (activities: any[], categorySlug: string) => {
-    return activities.filter(activity =>
+    return activities.filter((activity) =>
       activity.categories?.some((cat: Category) => cat.slug === categorySlug)
     );
   };
@@ -107,14 +106,12 @@ export const useCategories = () => {
       spring: ['nature', 'romantic', 'art_culture'],
       summer: ['nature', 'cuisine', 'indigenous'],
       autumn: ['traditional', 'art_culture', 'wellness'],
-      winter: ['traditional', 'cuisine', 'hakka']
+      winter: ['traditional', 'cuisine', 'hakka'],
     };
 
     const recommendedSlugs = seasonalRecommendations[season] || ['nature', 'art_culture'];
-    
-    return categories.value.filter(cat => 
-      recommendedSlugs.includes(cat.slug)
-    );
+
+    return categories.value.filter((cat) => recommendedSlugs.includes(cat.slug));
   };
 
   // 取得季節
@@ -130,9 +127,10 @@ export const useCategories = () => {
     if (!query.trim()) return categories.value;
 
     const searchTerm = query.toLowerCase().trim();
-    return categories.value.filter(category =>
-      category.name.toLowerCase().includes(searchTerm) ||
-      category.slug.toLowerCase().includes(searchTerm)
+    return categories.value.filter(
+      (category) =>
+        category.name.toLowerCase().includes(searchTerm) ||
+        category.slug.toLowerCase().includes(searchTerm)
     );
   };
 
@@ -143,17 +141,17 @@ export const useCategories = () => {
 
   // 分類選項 (用於表單)
   const categoryOptions = computed(() => {
-    return categories.value.map(category => ({
+    return categories.value.map((category) => ({
       label: `${category.icon} ${category.name}`,
       value: category.slug,
-      color: category.colorCode
+      color: category.colorCode,
     }));
   });
 
   // 分類映射 (用於快速查找)
   const categoryMap = computed(() => {
     const map: Record<string, Category> = {};
-    categories.value.forEach(category => {
+    categories.value.forEach((category) => {
       map[category.slug] = category;
       map[category.id] = category;
     });
@@ -166,7 +164,7 @@ export const useCategories = () => {
     const popular: Category[] = [];
     const others: Category[] = [];
 
-    categories.value.forEach(category => {
+    categories.value.forEach((category) => {
       const index = popularOrder.indexOf(category.slug);
       if (index !== -1) {
         popular[index] = category;
@@ -207,6 +205,6 @@ export const useCategories = () => {
     getCategoryStats,
     filterActivitiesByCategory,
     getRecommendedCategories,
-    searchCategories
+    searchCategories,
   };
 };

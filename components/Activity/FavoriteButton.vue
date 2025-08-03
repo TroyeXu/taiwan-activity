@@ -24,21 +24,19 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  size: 'default'
+  size: 'default',
 });
 
 // 使用收藏功能
-const { 
-  isFavorite: checkIsFavorite, 
-  addToFavorites, 
+const {
+  isFavorite: checkIsFavorite,
+  addToFavorites,
   removeFromFavorites,
-  loading 
+  loading,
 } = useFavorites();
 
 // 檢查是否已收藏
-const isCurrentlyFavorited = computed(() => 
-  checkIsFavorite(props.activityId)
-);
+const isCurrentlyFavorited = computed(() => checkIsFavorite(props.activityId));
 
 // 切換收藏狀態
 const toggleFavorite = async () => {
@@ -57,7 +55,7 @@ const toggleFavorite = async () => {
         status: 'active' as any,
         qualityScore: 0,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
       await addToFavorites(basicActivity);
       ElMessage.success('已加入收藏');

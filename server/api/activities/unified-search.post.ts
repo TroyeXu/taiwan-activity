@@ -4,7 +4,7 @@ import type { ApiResponse, Activity } from '~/types';
 interface UnifiedSearchParams {
   // 文字搜尋
   keyword?: string;
-  
+
   // 篩選條件
   filters?: {
     categories?: string[];
@@ -13,17 +13,17 @@ interface UnifiedSearchParams {
     startDate?: string;
     endDate?: string;
   };
-  
+
   // 位置搜尋
   location?: {
     lat: number;
     lng: number;
     radius?: number; // 公里
   };
-  
+
   // 排序
   sortBy?: 'relevance' | 'distance' | 'popularity' | 'date';
-  
+
   // 分頁
   page?: number;
   limit?: number;
@@ -31,15 +31,8 @@ interface UnifiedSearchParams {
 
 export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>> => {
   try {
-    const body = await readBody(event) as UnifiedSearchParams;
-    const {
-      keyword,
-      filters = {},
-      location,
-      sortBy = 'relevance',
-      page = 1,
-      limit = 20
-    } = body;
+    const body = (await readBody(event)) as UnifiedSearchParams;
+    const { keyword, filters = {}, location, sortBy = 'relevance', page = 1, limit = 20 } = body;
 
     let results: Activity[] = [];
 
@@ -61,10 +54,11 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
         endDate: filters.endDate,
         lat: location?.lat,
         lng: location?.lng,
-        radius: location?.radius || 10
-      }).filter(activity => 
-        // 如果有關鍵字搜尋，只保留搜尋結果中的活動
-        !keyword || results.some(r => r.id === activity.id)
+        radius: location?.radius || 10,
+      }).filter(
+        (activity) =>
+          // 如果有關鍵字搜尋，只保留搜尋結果中的活動
+          !keyword || results.some((r) => r.id === activity.id)
       );
     }
 
@@ -74,15 +68,20 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
         if (location) {
           results.sort((a, b) => {
             if (!a.location || !b.location) return 0;
-            if (a.location.latitude == null || a.location.longitude == null || 
-                b.location.latitude == null || b.location.longitude == null) return 0;
+            if (
+              a.location.latitude == null ||
+              a.location.longitude == null ||
+              b.location.latitude == null ||
+              b.location.longitude == null
+            )
+              return 0;
             const distA = Math.sqrt(
               Math.pow(a.location.latitude! - location.lat, 2) +
-              Math.pow(a.location.longitude! - location.lng, 2)
+                Math.pow(a.location.longitude! - location.lng, 2)
             );
             const distB = Math.sqrt(
               Math.pow(b.location.latitude! - location.lat, 2) +
-              Math.pow(b.location.longitude! - location.lng, 2)
+                Math.pow(b.location.longitude! - location.lng, 2)
             );
             return distA - distB;
           });
@@ -113,16 +112,15 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
         page,
         limit,
         total: results.length,
-        totalPages: Math.ceil(results.length / limit)
-      }
+        totalPages: Math.ceil(results.length / limit),
+      },
     };
-
   } catch (error: any) {
     console.error('統一搜尋失敗:', error);
-    
+
     throw createError({
       statusCode: error.statusCode || 500,
-      statusMessage: error.statusMessage || '搜尋失敗'
+      statusMessage: error.statusMessage || '搜尋失敗',
     });
   }
 });

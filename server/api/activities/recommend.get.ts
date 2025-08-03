@@ -1,5 +1,12 @@
 import { getDatabase } from '~/server/utils/database';
-import { activities, locations, activityTimes, categories, activityCategories, userFavorites } from '~/db/schema';
+import {
+  activities,
+  locations,
+  activityTimes,
+  categories,
+  activityCategories,
+  userFavorites,
+} from '~/db/schema';
 import { eq, and, or, desc, sql, inArray, ne } from 'drizzle-orm';
 import type { ApiResponse, Activity } from '~/types';
 
@@ -34,18 +41,21 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
       success: true,
       data: recommendations,
       meta: {
-        strategy: userId ? 'user-based' : 
-                 activityId ? 'activity-based' : 
-                 (lat && lng) ? 'location-based' : 'popular'
-      }
+        strategy: userId
+          ? 'user-based'
+          : activityId
+            ? 'activity-based'
+            : lat && lng
+              ? 'location-based'
+              : 'popular',
+      },
     };
-
   } catch (error) {
     console.error('Get recommendations failed:', error);
 
     throw createError({
       statusCode: 500,
-      statusMessage: '取得推薦活動失敗'
+      statusMessage: '取得推薦活動失敗',
     });
   }
 });
@@ -58,7 +68,7 @@ async function getUserBasedRecommendations(userId: string, limit: number): Promi
       .select({
         categoryId: categories.id,
         categorySlug: categories.slug,
-        count: sql<number>`COUNT(*)`.as('count')
+        count: sql<number>`COUNT(*)`.as('count'),
       })
       .from(userFavorites)
       .innerJoin(activities, eq(userFavorites.activityId, activities.id))
@@ -74,8 +84,8 @@ async function getUserBasedRecommendations(userId: string, limit: number): Promi
     }
 
     // 獲取使用者尚未收藏的相似分類活動
-    const categoryIds = userCategories.map(c => c.categoryId);
-    
+    const categoryIds = userCategories.map((c) => c.categoryId);
+
     const result = await db
       .select({
         activity: activities,
@@ -91,7 +101,7 @@ async function getUserBasedRecommendations(userId: string, limit: number): Promi
             THEN 10 
             ELSE 0 
           END + ${activities.popularityScore}
-        `.as('match_score')
+        `.as('match_score'),
       })
       .from(activities)
       .leftJoin(locations, eq(activities.id, locations.activityId))
@@ -100,10 +110,7 @@ async function getUserBasedRecommendations(userId: string, limit: number): Promi
       .leftJoin(categories, eq(activityCategories.categoryId, categories.id))
       .leftJoin(
         userFavorites,
-        and(
-          eq(userFavorites.activityId, activities.id),
-          eq(userFavorites.userId, userId)
-        )
+        and(eq(userFavorites.activityId, activities.id), eq(userFavorites.userId, userId))
       )
       .where(
         and(
@@ -116,14 +123,16 @@ async function getUserBasedRecommendations(userId: string, limit: number): Promi
       .limit(limit);
 
     return formatActivities(result);
-
   } catch (error) {
     console.error('User-based recommendations failed:', error);
     return await getPopularRecommendations(limit);
   }
 }
 
-async function getActivityBasedRecommendations(activityId: string, limit: number): Promise<Activity[]> {
+async function getActivityBasedRecommendations(
+  activityId: string,
+  limit: number
+): Promise<Activity[]> {
   try {
     const db = getDatabase();
     // 獲取目標活動的資訊
@@ -131,7 +140,7 @@ async function getActivityBasedRecommendations(activityId: string, limit: number
       .select({
         categoryIds: sql<string>`GROUP_CONCAT(${activityCategories.categoryId})`,
         city: locations.city,
-        region: locations.region
+        region: locations.region,
       })
       .from(activities)
       .leftJoin(locations, eq(activities.id, locations.activityId))
@@ -148,7 +157,7 @@ async function getActivityBasedRecommendations(activityId: string, limit: number
     if (!target) {
       throw createError({
         statusCode: 404,
-        statusMessage: '找不到指定的活動'
+        statusMessage: '找不到指定的活動',
       });
     }
     const categoryIds = target.categoryIds ? target.categoryIds.split(',') : [];
@@ -168,32 +177,30 @@ async function getActivityBasedRecommendations(activityId: string, limit: number
           (CASE WHEN ${locations.region} = ${target.region} THEN 3 ELSE 0 END) +
           (CASE WHEN ${activityCategories.categoryId} IN (${categoryIds.length ? categoryIds.join(',') : '0'}) THEN 10 ELSE 0 END) +
           ${activities.qualityScore} * 0.1
-        `.as('similarity_score')
+        `.as('similarity_score'),
       })
       .from(activities)
       .leftJoin(locations, eq(activities.id, locations.activityId))
       .leftJoin(activityTimes, eq(activities.id, activityTimes.activityId))
       .leftJoin(activityCategories, eq(activities.id, activityCategories.activityId))
       .leftJoin(categories, eq(activityCategories.categoryId, categories.id))
-      .where(
-        and(
-          eq(activities.status, 'active'),
-          ne(activities.id, activityId)
-        )
-      )
+      .where(and(eq(activities.status, 'active'), ne(activities.id, activityId)))
       .groupBy(activities.id)
       .orderBy(desc(sql`similarity_score`))
       .limit(limit);
 
     return formatActivities(result);
-
   } catch (error) {
     console.error('Activity-based recommendations failed:', error);
     return await getPopularRecommendations(limit);
   }
 }
 
-async function getLocationBasedRecommendations(lat: number, lng: number, limit: number): Promise<Activity[]> {
+async function getLocationBasedRecommendations(
+  lat: number,
+  lng: number,
+  limit: number
+): Promise<Activity[]> {
   try {
     const db = getDatabase();
     const result = await db
@@ -213,7 +220,7 @@ async function getLocationBasedRecommendations(lat: number, lng: number, limit: 
             sin(radians(${lat})) * 
             sin(radians(${locations.latitude}))
           )
-        `.as('distance')
+        `.as('distance'),
       })
       .from(activities)
       .innerJoin(locations, eq(activities.id, locations.activityId))
@@ -229,14 +236,10 @@ async function getLocationBasedRecommendations(lat: number, lng: number, limit: 
       )
       .groupBy(activities.id)
       .having(sql`distance <= 50`) // 50公里內
-      .orderBy(
-        desc(activities.popularityScore),
-        sql`distance`
-      )
+      .orderBy(desc(activities.popularityScore), sql`distance`)
       .limit(limit);
 
     return formatActivities(result);
-
   } catch (error) {
     console.error('Location-based recommendations failed:', error);
     return await getPopularRecommendations(limit);
@@ -254,7 +257,7 @@ async function getPopularRecommendations(limit: number): Promise<Activity[]> {
         categoryNames: sql<string>`GROUP_CONCAT(${categories.name})`,
         categorySlugs: sql<string>`GROUP_CONCAT(${categories.slug})`,
         categoryColors: sql<string>`GROUP_CONCAT(${categories.colorCode})`,
-        categoryIcons: sql<string>`GROUP_CONCAT(${categories.icon})`
+        categoryIcons: sql<string>`GROUP_CONCAT(${categories.icon})`,
       })
       .from(activities)
       .leftJoin(locations, eq(activities.id, locations.activityId))
@@ -263,14 +266,10 @@ async function getPopularRecommendations(limit: number): Promise<Activity[]> {
       .leftJoin(categories, eq(activityCategories.categoryId, categories.id))
       .where(eq(activities.status, 'active'))
       .groupBy(activities.id)
-      .orderBy(
-        desc(activities.popularityScore),
-        desc(activities.qualityScore)
-      )
+      .orderBy(desc(activities.popularityScore), desc(activities.qualityScore))
       .limit(limit);
 
     return formatActivities(result);
-
   } catch (error) {
     console.error('Popular recommendations failed:', error);
     return [];
@@ -278,7 +277,7 @@ async function getPopularRecommendations(limit: number): Promise<Activity[]> {
 }
 
 function formatActivities(rows: any[]): Activity[] {
-  return rows.map(row => ({
+  return rows.map((row) => ({
     id: row.activity.id,
     name: row.activity.name,
     description: row.activity.description || undefined,
@@ -292,36 +291,44 @@ function formatActivities(rows: any[]): Activity[] {
     favoriteCount: row.activity.favoriteCount || 0,
     createdAt: row.activity.createdAt,
     updatedAt: row.activity.updatedAt,
-    location: row.location ? {
-      id: row.location.id,
-      activityId: row.location.activityId,
-      address: row.location.address,
-      district: row.location.district || undefined,
-      city: row.location.city,
-      region: row.location.region as any,
-      latitude: row.location.latitude,
-      longitude: row.location.longitude,
-      venue: row.location.venue || undefined,
-      landmarks: row.location.landmarks ? JSON.parse(row.location.landmarks) : []
-    } : undefined,
-    time: row.time ? {
-      id: row.time.id,
-      activityId: row.time.activityId,
-      startDate: row.time.startDate,
-      endDate: row.time.endDate,
-      startTime: row.time.startTime,
-      endTime: row.time.endTime,
-      timezone: row.time.timezone,
-      isRecurring: row.time.isRecurring
-    } : undefined,
-    categories: row.categoryNames ? 
-      row.categoryNames.split(',').map((name: string, index: number) => ({
-        id: '',
-        name: name.trim(),
-        slug: row.categorySlugs?.split(',')[index]?.trim() || '',
-        colorCode: row.categoryColors?.split(',')[index]?.trim() || '',
-        icon: row.categoryIcons?.split(',')[index]?.trim() || ''
-      })).filter((cat: any) => cat.name) : [],
-    ...(row.distance !== undefined && { distance: Math.round(row.distance * 100) / 100 })
+    location: row.location
+      ? {
+          id: row.location.id,
+          activityId: row.location.activityId,
+          address: row.location.address,
+          district: row.location.district || undefined,
+          city: row.location.city,
+          region: row.location.region as any,
+          latitude: row.location.latitude,
+          longitude: row.location.longitude,
+          venue: row.location.venue || undefined,
+          landmarks: row.location.landmarks ? JSON.parse(row.location.landmarks) : [],
+        }
+      : undefined,
+    time: row.time
+      ? {
+          id: row.time.id,
+          activityId: row.time.activityId,
+          startDate: row.time.startDate,
+          endDate: row.time.endDate,
+          startTime: row.time.startTime,
+          endTime: row.time.endTime,
+          timezone: row.time.timezone,
+          isRecurring: row.time.isRecurring,
+        }
+      : undefined,
+    categories: row.categoryNames
+      ? row.categoryNames
+          .split(',')
+          .map((name: string, index: number) => ({
+            id: '',
+            name: name.trim(),
+            slug: row.categorySlugs?.split(',')[index]?.trim() || '',
+            colorCode: row.categoryColors?.split(',')[index]?.trim() || '',
+            icon: row.categoryIcons?.split(',')[index]?.trim() || '',
+          }))
+          .filter((cat: any) => cat.name)
+      : [],
+    ...(row.distance !== undefined && { distance: Math.round(row.distance * 100) / 100 }),
   }));
 }

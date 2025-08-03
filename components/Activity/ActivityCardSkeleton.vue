@@ -6,23 +6,23 @@
         <ElSkeleton style="width: 30%; height: 24px" animated />
       </div>
     </template>
-    
+
     <div class="card-body">
       <!-- 圖片骨架 -->
       <div class="image-skeleton">
         <ElSkeleton style="width: 100%; height: 120px" animated />
       </div>
-      
+
       <!-- 內容骨架 -->
       <div class="content-skeleton">
         <ElSkeleton :rows="2" animated />
-        
+
         <!-- 標籤骨架 -->
         <div class="tags-skeleton">
           <ElSkeleton style="width: 60px; height: 20px; border-radius: 10px" animated />
           <ElSkeleton style="width: 80px; height: 20px; border-radius: 10px" animated />
         </div>
-        
+
         <!-- 位置和時間骨架 -->
         <div class="meta-skeleton">
           <ElSkeleton style="width: 40%" animated />
@@ -83,11 +83,11 @@
   .card-body {
     flex-direction: column;
   }
-  
+
   .image-skeleton {
     width: 100%;
   }
-  
+
   .meta-skeleton {
     flex-direction: column;
     align-items: flex-start;

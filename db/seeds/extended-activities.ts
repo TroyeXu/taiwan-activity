@@ -1,16 +1,23 @@
 import { nanoid } from 'nanoid';
-import type { NewActivity, NewLocation, NewActivityTime, NewDataSource, NewActivityCategory } from '../schema';
+import type {
+  NewActivity,
+  NewLocation,
+  NewActivityTime,
+  NewDataSource,
+  NewActivityCategory,
+} from '../schema';
 
 // 擴展的假活動資料 - 更多台灣觀光活動
 export const extendedActivities = () => {
   const now = new Date();
-  
+
   const activities: NewActivity[] = [
     // 台北地區
     {
       id: nanoid(),
       name: '台北101跨年煙火',
-      description: '台北101大樓跨年煙火秀，全球矚目的跨年盛事，結合音樂與璀璨煙火，為新年揭開序幕。',
+      description:
+        '台北101大樓跨年煙火秀，全球矚目的跨年盛事，結合音樂與璀璨煙火，為新年揭開序幕。',
       summary: '台北101跨年煙火秀，全球矚目',
       status: 'upcoming',
       qualityScore: 99,
@@ -47,7 +54,7 @@ export const extendedActivities = () => {
       createdAt: now,
       updatedAt: now,
     },
-    
+
     // 新北地區
     {
       id: nanoid(),
@@ -69,7 +76,7 @@ export const extendedActivities = () => {
       createdAt: now,
       updatedAt: now,
     },
-    
+
     // 桃園地區
     {
       id: nanoid(),
@@ -91,7 +98,7 @@ export const extendedActivities = () => {
       createdAt: now,
       updatedAt: now,
     },
-    
+
     // 新竹地區
     {
       id: nanoid(),
@@ -113,7 +120,7 @@ export const extendedActivities = () => {
       createdAt: now,
       updatedAt: now,
     },
-    
+
     // 台中地區
     {
       id: nanoid(),
@@ -145,7 +152,7 @@ export const extendedActivities = () => {
       createdAt: now,
       updatedAt: now,
     },
-    
+
     // 彰化地區
     {
       id: nanoid(),
@@ -157,7 +164,7 @@ export const extendedActivities = () => {
       createdAt: now,
       updatedAt: now,
     },
-    
+
     // 南投地區
     {
       id: nanoid(),
@@ -179,7 +186,7 @@ export const extendedActivities = () => {
       createdAt: now,
       updatedAt: now,
     },
-    
+
     // 雲林地區
     {
       id: nanoid(),
@@ -191,7 +198,7 @@ export const extendedActivities = () => {
       createdAt: now,
       updatedAt: now,
     },
-    
+
     // 嘉義地區
     {
       id: nanoid(),
@@ -203,8 +210,8 @@ export const extendedActivities = () => {
       createdAt: now,
       updatedAt: now,
     },
-    
-    // 台南地區  
+
+    // 台南地區
     {
       id: nanoid(),
       name: '台南孔廟文化園區',
@@ -225,7 +232,7 @@ export const extendedActivities = () => {
       createdAt: now,
       updatedAt: now,
     },
-    
+
     // 高雄地區
     {
       id: nanoid(),
@@ -247,7 +254,7 @@ export const extendedActivities = () => {
       createdAt: now,
       updatedAt: now,
     },
-    
+
     // 屏東地區
     {
       id: nanoid(),
@@ -259,7 +266,7 @@ export const extendedActivities = () => {
       createdAt: now,
       updatedAt: now,
     },
-    
+
     // 宜蘭地區
     {
       id: nanoid(),
@@ -281,7 +288,7 @@ export const extendedActivities = () => {
       createdAt: now,
       updatedAt: now,
     },
-    
+
     // 花蓮地區
     {
       id: nanoid(),
@@ -303,7 +310,7 @@ export const extendedActivities = () => {
       createdAt: now,
       updatedAt: now,
     },
-    
+
     // 台東地區
     {
       id: nanoid(),
@@ -325,7 +332,7 @@ export const extendedActivities = () => {
       createdAt: now,
       updatedAt: now,
     },
-    
+
     // 金門地區
     {
       id: nanoid(),
@@ -337,7 +344,7 @@ export const extendedActivities = () => {
       createdAt: now,
       updatedAt: now,
     },
-    
+
     // 馬祖地區
     {
       id: nanoid(),
@@ -348,7 +355,7 @@ export const extendedActivities = () => {
       qualityScore: 98,
       createdAt: now,
       updatedAt: now,
-    }
+    },
   ];
 
   // 對應的地點資料
@@ -361,7 +368,7 @@ export const extendedActivities = () => {
       district: '信義區',
       city: '台北市',
       region: 'north',
-      latitude: 25.0340,
+      latitude: 25.034,
       longitude: 121.5645,
       venue: '台北101',
       landmarks: JSON.stringify(['象山', '世貿中心', '信義商圈']),
@@ -386,7 +393,7 @@ export const extendedActivities = () => {
       city: '台北市',
       region: 'north',
       latitude: 25.0877,
-      longitude: 121.5240,
+      longitude: 121.524,
       venue: '士林夜市',
       landmarks: JSON.stringify(['士林官邸', '故宮博物院', '兒童新樂園']),
     },
@@ -402,7 +409,7 @@ export const extendedActivities = () => {
       venue: '淡水老街',
       landmarks: JSON.stringify(['紅毛城', '漁人碼頭', '真理大學']),
     },
-    
+
     // 新北地區
     {
       id: nanoid(),
@@ -428,7 +435,7 @@ export const extendedActivities = () => {
       venue: '野柳地質公園',
       landmarks: JSON.stringify(['女王頭', '燭台石', '仙女鞋']),
     },
-    
+
     // 桃園地區
     {
       id: nanoid(),
@@ -454,7 +461,7 @@ export const extendedActivities = () => {
       venue: '大溪老街',
       landmarks: JSON.stringify(['大溪橋', '李騰芳古宅', '慈湖']),
     },
-    
+
     // 新竹地區
     {
       id: nanoid(),
@@ -480,7 +487,7 @@ export const extendedActivities = () => {
       venue: '司馬庫斯部落',
       landmarks: JSON.stringify(['神木群', '司馬庫斯教堂', '泰雅文物館']),
     },
-    
+
     // 台中地區
     {
       id: nanoid(),
@@ -518,7 +525,7 @@ export const extendedActivities = () => {
       venue: '彩虹眷村',
       landmarks: JSON.stringify(['嶺東科技大學', '南屯老街', '文心森林公園']),
     },
-    
+
     // 彰化地區
     {
       id: nanoid(),
@@ -527,12 +534,12 @@ export const extendedActivities = () => {
       district: '鹿港鎮',
       city: '彰化縣',
       region: 'central',
-      latitude: 24.0570,
+      latitude: 24.057,
       longitude: 120.4338,
       venue: '鹿港龍山寺',
       landmarks: JSON.stringify(['鹿港天后宮', '摸乳巷', '九曲巷']),
     },
-    
+
     // 南投地區
     {
       id: nanoid(),
@@ -558,7 +565,7 @@ export const extendedActivities = () => {
       venue: '清境農場',
       landmarks: JSON.stringify(['青青草原', '小瑞士花園', '合歡山']),
     },
-    
+
     // 雲林地區
     {
       id: nanoid(),
@@ -567,12 +574,12 @@ export const extendedActivities = () => {
       district: '古坑鄉',
       city: '雲林縣',
       region: 'central',
-      latitude: 23.6270,
+      latitude: 23.627,
       longitude: 120.5774,
       venue: '劍湖山世界',
       landmarks: JSON.stringify(['古坑咖啡', '華山休閒農業區', '樟湖']),
     },
-    
+
     // 嘉義地區
     {
       id: nanoid(),
@@ -586,7 +593,7 @@ export const extendedActivities = () => {
       venue: '嘉義車站周邊',
       landmarks: JSON.stringify(['檜意森活村', '嘉義公園', '阿里山森鐵']),
     },
-    
+
     // 台南地區
     {
       id: nanoid(),
@@ -612,7 +619,7 @@ export const extendedActivities = () => {
       venue: '安平老街',
       landmarks: JSON.stringify(['安平古堡', '德記洋行', '朱玖瑩故居']),
     },
-    
+
     // 高雄地區
     {
       id: nanoid(),
@@ -638,7 +645,7 @@ export const extendedActivities = () => {
       venue: '旗津半島',
       landmarks: JSON.stringify(['旗津燈塔', '星空隧道', '風車公園']),
     },
-    
+
     // 屏東地區
     {
       id: nanoid(),
@@ -652,7 +659,7 @@ export const extendedActivities = () => {
       venue: '小琉球',
       landmarks: JSON.stringify(['美人洞', '烏鬼洞', '花瓶岩']),
     },
-    
+
     // 宜蘭地區
     {
       id: nanoid(),
@@ -673,12 +680,12 @@ export const extendedActivities = () => {
       district: '礁溪鄉',
       city: '宜蘭縣',
       region: 'east',
-      latitude: 24.8280,
+      latitude: 24.828,
       longitude: 121.7711,
       venue: '礁溪溫泉區',
       landmarks: JSON.stringify(['湯圍溝公園', '礁溪車站', '五峰旗瀑布']),
     },
-    
+
     // 花蓮地區
     {
       id: nanoid(),
@@ -687,7 +694,7 @@ export const extendedActivities = () => {
       district: '花蓮市',
       city: '花蓮縣',
       region: 'east',
-      latitude: 23.9740,
+      latitude: 23.974,
       longitude: 121.6045,
       venue: '東大門夜市',
       landmarks: JSON.stringify(['花蓮車站', '鐵道文化園區', '松園別館']),
@@ -704,7 +711,7 @@ export const extendedActivities = () => {
       venue: '七星潭',
       landmarks: JSON.stringify(['四八高地', '奇萊鼻燈塔', '柴魚博物館']),
     },
-    
+
     // 台東地區
     {
       id: nanoid(),
@@ -726,11 +733,11 @@ export const extendedActivities = () => {
       city: '台東縣',
       region: 'east',
       latitude: 23.1247,
-      longitude: 121.4100,
+      longitude: 121.41,
       venue: '三仙台',
       landmarks: JSON.stringify(['三仙台跨海步橋', '比西里岸', '成功漁港']),
     },
-    
+
     // 離島地區
     {
       id: nanoid(),
@@ -755,7 +762,7 @@ export const extendedActivities = () => {
       longitude: 119.9295,
       venue: '馬祖南竿',
       landmarks: JSON.stringify(['北海坑道', '馬祖酒廠', '八八坑道']),
-    }
+    },
   ];
 
   // 對應的時間資料
@@ -771,7 +778,7 @@ export const extendedActivities = () => {
   }));
 
   // 對應的資料來源
-  const dataSources: NewDataSource[] = activities.map(activity => ({
+  const dataSources: NewDataSource[] = activities.map((activity) => ({
     id: nanoid(),
     activityId: activity.id,
     website: '台灣觀光局',
@@ -810,48 +817,51 @@ function getRandomEndTime(): string {
 }
 
 // 活動分類對應 - 擴展版
-export const getExtendedActivityCategoriesRelations = (activities: NewActivity[], categories: any[]): NewActivityCategory[] => {
+export const getExtendedActivityCategoriesRelations = (
+  activities: NewActivity[],
+  categories: any[]
+): NewActivityCategory[] => {
   const relations: NewActivityCategory[] = [];
-  
+
   // 更詳細的分類映射
   const categoryMap: { [key: string]: string[] } = {
-    '台北101跨年煙火': ['traditional', 'art_culture'],
-    '陽明山花季': ['nature', 'romantic'],
-    '士林夜市美食之旅': ['cuisine'],
-    '淡水河岸夕陽': ['romantic', 'nature'],
-    '九份老街懷舊之旅': ['art_culture', 'traditional'],
-    '野柳地質公園': ['nature'],
-    '桃園機場捷運體驗': ['wellness'],
-    '大溪老街巴洛克建築': ['art_culture', 'traditional'],
-    '新竹城隍廟美食': ['cuisine', 'traditional'],
-    '司馬庫斯神木群': ['nature', 'indigenous'],
-    '逢甲夜市': ['cuisine'],
-    '高美濕地生態': ['nature'],
-    '彩虹眷村文創': ['art_culture'],
-    '鹿港龍山寺文化': ['traditional', 'art_culture'],
-    '日月潭環湖之旅': ['nature', 'romantic'],
-    '清境農場綿羊秀': ['nature', 'wellness'],
-    '劍湖山世界樂園': ['wellness'],
-    '嘉義雞肉飯文化': ['cuisine'],
-    '台南孔廟文化園區': ['traditional', 'art_culture'],
-    '安平老街尋寶': ['traditional', 'cuisine'],
-    '駁二藝術特區': ['art_culture'],
-    '旗津海產美食': ['cuisine', 'nature'],
-    '小琉球海龜浮潛': ['nature', 'wellness'],
-    '宜蘭傳藝中心': ['traditional', 'art_culture'],
-    '礁溪溫泉鄉': ['wellness', 'romantic'],
-    '花蓮東大門夜市': ['cuisine', 'indigenous'],
-    '七星潭海岸風光': ['nature', 'romantic'],
-    '台東熱氣球嘉年華': ['nature', 'wellness'],
-    '三仙台日出': ['nature', 'romantic'],
-    '金門戰地風情': ['traditional', 'art_culture'],
-    '馬祖藍眼淚': ['nature', 'romantic']
+    台北101跨年煙火: ['traditional', 'art_culture'],
+    陽明山花季: ['nature', 'romantic'],
+    士林夜市美食之旅: ['cuisine'],
+    淡水河岸夕陽: ['romantic', 'nature'],
+    九份老街懷舊之旅: ['art_culture', 'traditional'],
+    野柳地質公園: ['nature'],
+    桃園機場捷運體驗: ['wellness'],
+    大溪老街巴洛克建築: ['art_culture', 'traditional'],
+    新竹城隍廟美食: ['cuisine', 'traditional'],
+    司馬庫斯神木群: ['nature', 'indigenous'],
+    逢甲夜市: ['cuisine'],
+    高美濕地生態: ['nature'],
+    彩虹眷村文創: ['art_culture'],
+    鹿港龍山寺文化: ['traditional', 'art_culture'],
+    日月潭環湖之旅: ['nature', 'romantic'],
+    清境農場綿羊秀: ['nature', 'wellness'],
+    劍湖山世界樂園: ['wellness'],
+    嘉義雞肉飯文化: ['cuisine'],
+    台南孔廟文化園區: ['traditional', 'art_culture'],
+    安平老街尋寶: ['traditional', 'cuisine'],
+    駁二藝術特區: ['art_culture'],
+    旗津海產美食: ['cuisine', 'nature'],
+    小琉球海龜浮潛: ['nature', 'wellness'],
+    宜蘭傳藝中心: ['traditional', 'art_culture'],
+    礁溪溫泉鄉: ['wellness', 'romantic'],
+    花蓮東大門夜市: ['cuisine', 'indigenous'],
+    七星潭海岸風光: ['nature', 'romantic'],
+    台東熱氣球嘉年華: ['nature', 'wellness'],
+    三仙台日出: ['nature', 'romantic'],
+    金門戰地風情: ['traditional', 'art_culture'],
+    馬祖藍眼淚: ['nature', 'romantic'],
   };
 
-  activities.forEach(activity => {
+  activities.forEach((activity) => {
     const categoryNames = categoryMap[activity.name] || ['nature'];
-    categoryNames.forEach(categorySlug => {
-      const category = categories.find(c => c.slug === categorySlug);
+    categoryNames.forEach((categorySlug) => {
+      const category = categories.find((c) => c.slug === categorySlug);
       if (category) {
         relations.push({
           id: nanoid(),

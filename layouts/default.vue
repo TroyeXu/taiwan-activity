@@ -3,15 +3,15 @@
     <div class="min-h-screen bg-gray-50">
       <!-- 應用標題列（僅在非首頁顯示） -->
       <AppHeader v-if="!isHomePage" />
-      
+
       <!-- 主要內容 -->
       <main :class="isHomePage ? '' : 'pt-16'">
         <slot />
       </main>
-      
+
       <!-- 應用底部（僅在非首頁顯示） -->
       <AppFooter v-if="!isHomePage" />
-      
+
       <!-- 全域通知容器 -->
       <ElBacktop />
     </div>
@@ -30,11 +30,11 @@ const isHomePage = computed(() => route.path === '/');
 // 設定全域樣式
 useHead({
   htmlAttrs: {
-    lang: 'zh-TW'
+    lang: 'zh-TW',
   },
   bodyAttrs: {
-    class: 'antialiased'
-  }
+    class: 'antialiased',
+  },
 });
 </script>
 
@@ -45,7 +45,13 @@ html {
 }
 
 body {
-  font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    'Noto Sans TC',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
 }
 
 /* Element Plus 客製化 */

@@ -5,7 +5,7 @@ export enum LogLevel {
   DEBUG = 0,
   INFO = 1,
   WARN = 2,
-  ERROR = 3
+  ERROR = 3,
 }
 
 interface LogEntry {
@@ -43,22 +43,22 @@ class Logger {
 
   private formatLogEntry(entry: LogEntry): string {
     const { timestamp, level, message, data, source, userId, requestId } = entry;
-    
+
     const parts = [
       `[${timestamp}]`,
       `[${level}]`,
       source ? `[${source}]` : '',
       userId ? `[User:${userId}]` : '',
       requestId ? `[Req:${requestId}]` : '',
-      message
+      message,
     ].filter(Boolean);
 
     let logLine = parts.join(' ');
-    
+
     if (data) {
       logLine += ` | Data: ${JSON.stringify(data)}`;
     }
-    
+
     return logLine;
   }
 
@@ -66,7 +66,7 @@ class Logger {
     try {
       const logPath = join(this.logDir, filename);
       const logLine = this.formatLogEntry(entry) + '\n';
-      
+
       appendFileSync(logPath, logLine, 'utf8');
     } catch (error) {
       console.error('Failed to write to log file:', error);
@@ -78,7 +78,11 @@ class Logger {
     return `${level.toLowerCase()}-${date}.log`;
   }
 
-  debug(message: string, data?: any, context?: { source?: string; userId?: string; requestId?: string }): void {
+  debug(
+    message: string,
+    data?: any,
+    context?: { source?: string; userId?: string; requestId?: string }
+  ): void {
     if (!this.shouldLog(LogLevel.DEBUG)) return;
 
     const entry: LogEntry = {
@@ -86,14 +90,18 @@ class Logger {
       level: 'DEBUG',
       message,
       data,
-      ...context
+      ...context,
     };
 
     console.debug(`🐛 ${this.formatLogEntry(entry)}`);
     this.writeToFile(entry, this.getLogFilename('debug'));
   }
 
-  info(message: string, data?: any, context?: { source?: string; userId?: string; requestId?: string }): void {
+  info(
+    message: string,
+    data?: any,
+    context?: { source?: string; userId?: string; requestId?: string }
+  ): void {
     if (!this.shouldLog(LogLevel.INFO)) return;
 
     const entry: LogEntry = {
@@ -101,14 +109,18 @@ class Logger {
       level: 'INFO',
       message,
       data,
-      ...context
+      ...context,
     };
 
     console.info(`ℹ️ ${this.formatLogEntry(entry)}`);
     this.writeToFile(entry, this.getLogFilename('info'));
   }
 
-  warn(message: string, data?: any, context?: { source?: string; userId?: string; requestId?: string }): void {
+  warn(
+    message: string,
+    data?: any,
+    context?: { source?: string; userId?: string; requestId?: string }
+  ): void {
     if (!this.shouldLog(LogLevel.WARN)) return;
 
     const entry: LogEntry = {
@@ -116,26 +128,33 @@ class Logger {
       level: 'WARN',
       message,
       data,
-      ...context
+      ...context,
     };
 
     console.warn(`⚠️ ${this.formatLogEntry(entry)}`);
     this.writeToFile(entry, this.getLogFilename('warn'));
   }
 
-  error(message: string, error?: Error | any, context?: { source?: string; userId?: string; requestId?: string }): void {
+  error(
+    message: string,
+    error?: Error | any,
+    context?: { source?: string; userId?: string; requestId?: string }
+  ): void {
     if (!this.shouldLog(LogLevel.ERROR)) return;
 
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
       level: 'ERROR',
       message,
-      data: error instanceof Error ? {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      } : error,
-      ...context
+      data:
+        error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+            }
+          : error,
+      ...context,
     };
 
     console.error(`❌ ${this.formatLogEntry(entry)}`);
@@ -160,10 +179,10 @@ class Logger {
         statusCode,
         duration,
         userAgent: context?.userAgent,
-        ip: context?.ip
+        ip: context?.ip,
       },
       source: 'API',
-      ...context
+      ...context,
     };
 
     if (statusCode >= 400) {
@@ -184,10 +203,10 @@ class Logger {
       data: {
         query: query.substring(0, 200) + (query.length > 200 ? '...' : ''),
         duration,
-        params
+        params,
       },
       source: 'DATABASE',
-      ...context
+      ...context,
     };
 
     if (duration > 1000) {
@@ -200,19 +219,14 @@ class Logger {
   }
 
   // 爬蟲活動日誌
-  crawlerActivity(
-    spider: string,
-    action: string,
-    data?: any,
-    context?: { source?: string }
-  ): void {
+  crawlerActivity(spider: string, action: string, data?: any, context?: { source?: string }): void {
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
       level: 'INFO',
       message: `Crawler ${spider}: ${action}`,
       data,
       source: 'CRAWLER',
-      ...context
+      ...context,
     };
 
     console.info(`🕷️ ${this.formatLogEntry(entry)}`);
@@ -236,10 +250,10 @@ class Logger {
         result,
         score,
         issueCount: issues?.length || 0,
-        issues: issues?.slice(0, 3) // 只記錄前3個問題
+        issues: issues?.slice(0, 3), // 只記錄前3個問題
       },
       source: 'VALIDATION',
-      ...context
+      ...context,
     };
 
     const emoji = result === 'passed' ? '✅' : '❌';
@@ -255,7 +269,7 @@ class Logger {
     context?: { source?: string }
   ): void {
     const level = duration > 5000 ? 'WARN' : duration > 1000 ? 'INFO' : 'DEBUG';
-    
+
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
       level: level.toUpperCase(),
@@ -263,14 +277,14 @@ class Logger {
       data: {
         operation,
         duration,
-        ...data
+        ...data,
       },
       source: 'PERFORMANCE',
-      ...context
+      ...context,
     };
 
     const emoji = duration > 5000 ? '🐌' : duration > 1000 ? '⏱️' : '⚡';
-    
+
     if (level === 'WARN') {
       console.warn(`${emoji} ${this.formatLogEntry(entry)}`);
       this.writeToFile(entry, this.getLogFilename('performance'));
@@ -310,20 +324,20 @@ export function logPerformance(operation?: string) {
 
     descriptor.value = async function (...args: any[]) {
       const startTime = Date.now();
-      
+
       try {
         const result = await originalMethod.apply(this, args);
         const duration = Date.now() - startTime;
-        
+
         logger.performance(operationName, duration);
-        
+
         return result;
       } catch (error) {
         const duration = Date.now() - startTime;
-        
+
         logger.performance(operationName, duration, { error: true });
         logger.error(`${operationName} failed`, error);
-        
+
         throw error;
       }
     };

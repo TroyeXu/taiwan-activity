@@ -1,5 +1,5 @@
 <template>
-  <div class="activity-card-skeleton" :class="{ 'compact': compact }">
+  <div class="activity-card-skeleton" :class="{ compact: compact }">
     <!-- 圖片骨架 -->
     <div v-if="!compact" class="skeleton-image"></div>
 
@@ -7,7 +7,7 @@
     <div class="skeleton-content" :class="{ 'p-4': !compact, 'p-3': compact }">
       <!-- 標題骨架 -->
       <div class="skeleton-title mb-2"></div>
-      
+
       <!-- 摘要骨架 (非緊湊模式) -->
       <div v-if="!compact" class="space-y-1 mb-3">
         <div class="skeleton-text w-full"></div>
@@ -21,7 +21,7 @@
           <div class="skeleton-icon mr-2"></div>
           <div class="skeleton-text w-32"></div>
         </div>
-        
+
         <!-- 地點資訊骨架 -->
         <div class="flex items-center">
           <div class="skeleton-icon mr-2"></div>
@@ -54,7 +54,7 @@ interface Props {
 }
 
 withDefaults(defineProps<Props>(), {
-  compact: false
+  compact: false,
 });
 </script>
 
@@ -116,12 +116,7 @@ withDefaults(defineProps<Props>(), {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.4),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
   animation: shimmer 2s infinite;
   pointer-events: none;
   z-index: 1;

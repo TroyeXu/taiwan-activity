@@ -1,5 +1,12 @@
 import { db } from '../index';
-import { categories, activities, locations, activityTimes, dataSources, activityCategories } from '../schema';
+import {
+  categories,
+  activities,
+  locations,
+  activityTimes,
+  dataSources,
+  activityCategories,
+} from '../schema';
 import { seedCategories } from './categories';
 import { sampleActivities, getActivityCategoriesRelations } from './sample-activities';
 import { extendedActivities } from './extended-activities';
@@ -28,7 +35,7 @@ export async function seedDatabase() {
     // 產生範例活動資料
     const sampleData = sampleActivities();
     const extendedData = extendedActivities();
-    
+
     // 插入活動資料
     console.log('🎭 插入活動資料...');
     const allActivities = [...sampleData.activities, ...extendedData.activities];
@@ -55,26 +62,31 @@ export async function seedDatabase() {
 
     // 插入活動分類關聯
     console.log('🏷️ 插入活動分類關聯...');
-    const sampleCategoryRelations = getActivityCategoriesRelations(sampleData.activities, insertedCategories);
-    const extendedCategoryRelations = getActivityCategoriesRelations(extendedData.activities, insertedCategories);
+    const sampleCategoryRelations = getActivityCategoriesRelations(
+      sampleData.activities,
+      insertedCategories
+    );
+    const extendedCategoryRelations = getActivityCategoriesRelations(
+      extendedData.activities,
+      insertedCategories
+    );
     const allCategoryRelations = [...sampleCategoryRelations, ...extendedCategoryRelations];
     await db.insert(activityCategories).values(allCategoryRelations);
     console.log(`✅ 已插入 ${allCategoryRelations.length} 個分類關聯`);
 
     console.log('🎉 種子資料建立完成！');
-    
+
     // 顯示統計資訊
     const stats = {
       categories: await db.select().from(categories),
       activities: await db.select().from(activities),
       locations: await db.select().from(locations),
     };
-    
+
     console.log('\n📊 資料庫統計：');
     console.log(`   分類: ${stats.categories.length} 個`);
     console.log(`   活動: ${stats.activities.length} 個`);
     console.log(`   地點: ${stats.locations.length} 個`);
-    
   } catch (error) {
     console.error('❌ 種子資料建立失敗:', error);
     process.exit(1);
@@ -93,4 +105,3 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       process.exit(1);
     });
 }
-

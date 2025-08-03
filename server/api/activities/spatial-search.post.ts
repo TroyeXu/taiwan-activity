@@ -34,7 +34,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
   try {
     const db = getDatabase();
     const sqlite = getSqlite();
-    const body = await readBody(event) as SpatialSearchParams;
+    const body = (await readBody(event)) as SpatialSearchParams;
     const {
       center,
       radius = 10,
@@ -42,7 +42,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
       filters = {},
       sorting = 'distance',
       page = 1,
-      limit = 50
+      limit = 50,
     } = body;
 
     // Ensure filters is defined
@@ -52,35 +52,37 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
     if (!center?.lat || !center?.lng) {
       throw createError({
         statusCode: 400,
-        statusMessage: '缺少中心座標'
+        statusMessage: '缺少中心座標',
       });
     }
 
     if (radius <= 0 || radius > 100) {
       throw createError({
         statusCode: 400,
-        statusMessage: '搜尋半徑必須在 0.1-100 公里之間'
+        statusMessage: '搜尋半徑必須在 0.1-100 公里之間',
       });
     }
 
     // 檢查座標是否在台灣範圍內
-    if (center.lat < 21.8 || center.lat > 25.4 || 
-        center.lng < 119.3 || center.lng > 122.1) {
+    if (center.lat < 21.8 || center.lat > 25.4 || center.lng < 119.3 || center.lng > 122.1) {
       throw createError({
         statusCode: 400,
-        statusMessage: '搜尋中心必須在台灣範圍內'
+        statusMessage: '搜尋中心必須在台灣範圍內',
       });
     }
 
-    const results = await performSpatialSearch({
-      center,
-      radius,
-      bounds,
-      filters,
-      sorting,
-      page,
-      limit
-    }, sqlite);
+    const results = await performSpatialSearch(
+      {
+        center,
+        radius,
+        bounds,
+        filters,
+        sorting,
+        page,
+        limit,
+      },
+      sqlite
+    );
 
     const executionTime = Date.now() - startTime;
 
@@ -91,10 +93,9 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
         page,
         limit,
         total: results.total,
-        totalPages: Math.ceil(results.total / limit)
-      }
+        totalPages: Math.ceil(results.total / limit),
+      },
     };
-
   } catch (error) {
     console.error('空間搜尋失敗:', error);
 
@@ -104,7 +105,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
 
     throw createError({
       statusCode: 500,
-      statusMessage: '空間搜尋失敗'
+      statusMessage: '空間搜尋失敗',
     });
   }
 });
@@ -112,7 +113,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
 async function performSpatialSearch(params: SpatialSearchParams, sqlite: any) {
   const { center, radius, bounds, filters, sorting, page, limit } = params;
   const safeFilters = filters || {};
-  
+
   try {
     // 構建基礎 SQL 查詢
     let query = `
@@ -169,8 +170,11 @@ async function performSpatialSearch(params: SpatialSearchParams, sqlite: any) {
     `;
 
     const queryParams: any[] = [
-      center.lng, center.lat, // SpatiaLite MakePoint
-      center.lat, center.lng, center.lat // Haversine 公式
+      center.lng,
+      center.lat, // SpatiaLite MakePoint
+      center.lat,
+      center.lng,
+      center.lat, // Haversine 公式
     ];
 
     // 空間條件 - 優先使用空間索引
@@ -195,8 +199,13 @@ async function performSpatialSearch(params: SpatialSearchParams, sqlite: any) {
         END
       )`;
       queryParams.push(
-        center.lng, center.lat, radius * 1000, // SpatiaLite Buffer (米)
-        center.lat, center.lng, center.lat, radius // Haversine (公里)
+        center.lng,
+        center.lat,
+        radius * 1000, // SpatiaLite Buffer (米)
+        center.lat,
+        center.lng,
+        center.lat,
+        radius // Haversine (公里)
       );
     }
 
@@ -234,8 +243,10 @@ async function performSpatialSearch(params: SpatialSearchParams, sqlite: any) {
         OR (t.start_date >= ? AND t.start_date <= ?)
       )`;
       queryParams.push(
-        safeFilters.dateRange.end, safeFilters.dateRange.start,
-        safeFilters.dateRange.start, safeFilters.dateRange.end
+        safeFilters.dateRange.end,
+        safeFilters.dateRange.start,
+        safeFilters.dateRange.start,
+        safeFilters.dateRange.end
       );
     }
 
@@ -273,38 +284,50 @@ async function performSpatialSearch(params: SpatialSearchParams, sqlite: any) {
     query += ` LIMIT ? OFFSET ?`;
     queryParams.push(safeLimit, offset);
 
-    console.log('Executing spatial query with params:', { 
-      center, radius, bounds, filters: safeFilters, sorting, page: safePage, limit: safeLimit 
+    console.log('Executing spatial query with params:', {
+      center,
+      radius,
+      bounds,
+      filters: safeFilters,
+      sorting,
+      page: safePage,
+      limit: safeLimit,
     });
 
-    // 執行查詢  
+    // 執行查詢
     // Note: This is a workaround for Drizzle sql.raw parameter issues
     let finalQuery = query;
     queryParams.forEach((param, index) => {
-      finalQuery = finalQuery.replace('?', typeof param === 'string' ? `'${param}'` : param.toString());
+      finalQuery = finalQuery.replace(
+        '?',
+        typeof param === 'string' ? `'${param}'` : param.toString()
+      );
     });
     const result = await sqlite.prepare(finalQuery).all();
-    
+
     // 同時執行計數查詢 (不含 LIMIT/OFFSET)
     const countQuery = query
       .replace(/SELECT[\s\S]*?FROM/, 'SELECT COUNT(DISTINCT a.id) as total FROM')
       .replace(/ORDER BY[\s\S]*$/, '')
       .replace(/LIMIT[\s\S]*$/, '');
-    
+
     const countParams = queryParams.slice(0, -2); // 移除 LIMIT 和 OFFSET
     let finalCountQuery = countQuery;
     countParams.forEach((param, index) => {
-      finalCountQuery = finalCountQuery.replace('?', typeof param === 'string' ? `'${param}'` : param.toString());
+      finalCountQuery = finalCountQuery.replace(
+        '?',
+        typeof param === 'string' ? `'${param}'` : param.toString()
+      );
     });
     const countResult = await sqlite.prepare(finalCountQuery).get();
-    const total = (countResult as any)?.total as number || 0;
+    const total = ((countResult as any)?.total as number) || 0;
 
     // 格式化結果
-    const activities: Activity[] = (result as any[]).map(row => ({
+    const activities: Activity[] = (result as any[]).map((row) => ({
       id: row.id as string,
       name: row.name as string,
-      description: row.description as string || undefined,
-      summary: row.summary as string || undefined,
+      description: (row.description as string) || undefined,
+      summary: (row.summary as string) || undefined,
       status: row.status as any,
       qualityScore: row.quality_score as number,
       popularityScore: row.popularity_score as number,
@@ -318,38 +341,43 @@ async function performSpatialSearch(params: SpatialSearchParams, sqlite: any) {
         id: '', // 這裡需要從 join 結果中取得
         activityId: row.id as string,
         address: row.address as string,
-        district: row.district as string || undefined,
+        district: (row.district as string) || undefined,
         city: row.city as string,
         region: row.region as any,
         latitude: row.latitude as number,
         longitude: row.longitude as number,
-        venue: row.venue as string || undefined,
-        landmarks: row.landmarks ? JSON.parse(row.landmarks as string) : []
+        venue: (row.venue as string) || undefined,
+        landmarks: row.landmarks ? JSON.parse(row.landmarks as string) : [],
       },
-      time: row.start_date ? {
-        id: '', // 同上
-        activityId: row.id as string,
-        startDate: row.start_date as string,
-        endDate: row.end_date as string || undefined,
-        startTime: row.start_time as string || undefined,
-        endTime: row.end_time as string || undefined,
-        timezone: 'Asia/Taipei',
-        isRecurring: Boolean(row.is_recurring),
-        recurrenceRule: undefined
-      } : undefined,
-      categories: row.category_names ? 
-        (row.category_names as string).split(',').map((name, index) => ({
-          id: '',
-          name: name.trim(),
-          slug: ((row.category_slugs as string)?.split(',')[index] || '').trim(),
-          colorCode: ((row.category_colors as string)?.split(',')[index] || '').trim(),
-          icon: ((row.category_icons as string)?.split(',')[index] || '').trim()
-        })).filter(cat => cat.name) : [],
-      distance: Math.round((row.distance_km as number) * 100) / 100 // 保留兩位小數
+      time: row.start_date
+        ? {
+            id: '', // 同上
+            activityId: row.id as string,
+            startDate: row.start_date as string,
+            endDate: (row.end_date as string) || undefined,
+            startTime: (row.start_time as string) || undefined,
+            endTime: (row.end_time as string) || undefined,
+            timezone: 'Asia/Taipei',
+            isRecurring: Boolean(row.is_recurring),
+            recurrenceRule: undefined,
+          }
+        : undefined,
+      categories: row.category_names
+        ? (row.category_names as string)
+            .split(',')
+            .map((name, index) => ({
+              id: '',
+              name: name.trim(),
+              slug: ((row.category_slugs as string)?.split(',')[index] || '').trim(),
+              colorCode: ((row.category_colors as string)?.split(',')[index] || '').trim(),
+              icon: ((row.category_icons as string)?.split(',')[index] || '').trim(),
+            }))
+            .filter((cat) => cat.name)
+        : [],
+      distance: Math.round((row.distance_km as number) * 100) / 100, // 保留兩位小數
     }));
 
     return { activities, total };
-
   } catch (error) {
     console.error('Spatial search database error:', error);
     throw error;

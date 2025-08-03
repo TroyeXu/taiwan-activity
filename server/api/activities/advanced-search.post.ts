@@ -1,6 +1,14 @@
 import { defineEventHandler, readBody } from 'h3';
 import { getDatabase } from '~/server/utils/database';
-import { activities, locations, activityCategories, categories, activityTimes, activityTags, tags } from '~/db/schema';
+import {
+  activities,
+  locations,
+  activityCategories,
+  categories,
+  activityTimes,
+  activityTags,
+  tags,
+} from '~/db/schema';
 import { eq, and, or, gte, lte, like, desc, asc, sql, inArray } from 'drizzle-orm';
 import type { SearchFilters } from '~/types';
 
@@ -27,7 +35,7 @@ export default defineEventHandler(async (event) => {
       radius = 10,
       sort = 'relevance',
       page = 1,
-      limit = 20
+      limit = 20,
     } = body;
 
     // 建立查詢條件
@@ -95,7 +103,7 @@ export default defineEventHandler(async (event) => {
               sin(radians(${location.lat})) * sin(radians(${locations.latitude}))
             )
           `.as('distance')
-          : sql<number>`0`.as('distance')
+          : sql<number>`0`.as('distance'),
       })
       .from(activities)
       .leftJoin(locations, eq(activities.id, locations.activityId))
@@ -104,14 +112,12 @@ export default defineEventHandler(async (event) => {
 
     // 距離篩選 - 需要用 having 因為 distance 是計算欄位
     if (location && radius) {
-      baseQuery = (baseQuery as any).having(
-        sql`distance <= ${radius}`
-      );
+      baseQuery = (baseQuery as any).having(sql`distance <= ${radius}`);
     }
 
     // 取得符合條件的活動 ID
     const filteredResults = await baseQuery;
-    const activityIds = filteredResults.map(r => r.activity.id);
+    const activityIds = filteredResults.map((r) => r.activity.id);
 
     // 如果沒有結果，直接返回
     if (activityIds.length === 0) {
@@ -122,8 +128,8 @@ export default defineEventHandler(async (event) => {
           page,
           limit,
           total: 0,
-          totalPages: 0
-        }
+          totalPages: 0,
+        },
       };
     }
 
@@ -139,9 +145,9 @@ export default defineEventHandler(async (event) => {
             inArray(categories.slug, categoryFilters)
           )
         );
-      
-      const categorizedIds = categorizedActivities.map(a => a.activityId);
-      filteredResults.filter(r => categorizedIds.includes(r.activity.id));
+
+      const categorizedIds = categorizedActivities.map((a) => a.activityId);
+      filteredResults.filter((r) => categorizedIds.includes(r.activity.id));
     }
 
     // 標籤篩選
@@ -150,15 +156,10 @@ export default defineEventHandler(async (event) => {
         .select({ activityId: activityTags.activityId })
         .from(activityTags)
         .innerJoin(tags, eq(activityTags.tagId, tags.id))
-        .where(
-          and(
-            inArray(activityTags.activityId, activityIds),
-            inArray(tags.slug, tagFilters)
-          )
-        );
-      
-      const taggedIds = taggedActivities.map(a => a.activityId);
-      filteredResults.filter(r => taggedIds.includes(r.activity.id));
+        .where(and(inArray(activityTags.activityId, activityIds), inArray(tags.slug, tagFilters)));
+
+      const taggedIds = taggedActivities.map((a) => a.activityId);
+      filteredResults.filter((r) => taggedIds.includes(r.activity.id));
     }
 
     // 排序
@@ -170,7 +171,9 @@ export default defineEventHandler(async (event) => {
         }
         break;
       case 'popularity':
-        sortedResults.sort((a, b) => (b.activity.popularityScore || 0) - (a.activity.popularityScore || 0));
+        sortedResults.sort(
+          (a, b) => (b.activity.popularityScore || 0) - (a.activity.popularityScore || 0)
+        );
         break;
       case 'date':
         sortedResults.sort((a, b) => {
@@ -223,7 +226,7 @@ export default defineEventHandler(async (event) => {
         await db
           .update(activities)
           .set({
-            viewCount: sql`${activities.viewCount} + 1`
+            viewCount: sql`${activities.viewCount} + 1`,
           })
           .where(eq(activities.id, result.activity.id));
 
@@ -231,9 +234,9 @@ export default defineEventHandler(async (event) => {
           ...result.activity,
           location: result.location,
           time: result.time,
-          categories: categoryData.map(ac => ac.category),
-          tags: tagData.map(at => at.tag),
-          distance: result.distance
+          categories: categoryData.map((ac) => ac.category),
+          tags: tagData.map((at) => at.tag),
+          distance: result.distance,
         };
       })
     );
@@ -245,16 +248,15 @@ export default defineEventHandler(async (event) => {
         page,
         limit,
         total,
-        totalPages
-      }
+        totalPages,
+      },
     };
-
   } catch (error) {
     console.error('進階搜尋失敗:', error);
     return {
       success: false,
       message: '搜尋活動時發生錯誤',
-      data: []
+      data: [],
     };
   }
 });
@@ -263,21 +265,21 @@ export default defineEventHandler(async (event) => {
 function calculateRelevanceScore(activity: any, query: string): number {
   let score = activity.popularityScore || 0;
   const lowerQuery = query.toLowerCase();
-  
+
   // 標題匹配得分最高
   if (activity.name.toLowerCase().includes(lowerQuery)) {
     score += 10;
   }
-  
+
   // 描述匹配
   if (activity.description?.toLowerCase().includes(lowerQuery)) {
     score += 5;
   }
-  
+
   // 摘要匹配
   if (activity.summary?.toLowerCase().includes(lowerQuery)) {
     score += 3;
   }
-  
+
   return score;
 }

@@ -13,7 +13,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
     if (!activityData) {
       throw createError({
         statusCode: 400,
-        statusMessage: '缺少活動資料'
+        statusMessage: '缺少活動資料',
       });
     }
 
@@ -27,20 +27,21 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
       try {
         // 執行驗證
         const validationResult = await validationService.validateActivity(activity);
-        
+
         // 記錄驗證結果
         const db = getDatabase();
         await db.insert(validationLogs).values({
           id: nanoid(),
           activityId: activity.id || nanoid(),
           originalData: JSON.stringify(activity),
-          validatedData: validationResult.validatedData ? 
-            JSON.stringify(validationResult.validatedData) : null,
+          validatedData: validationResult.validatedData
+            ? JSON.stringify(validationResult.validatedData)
+            : null,
           qualityScore: validationResult.qualityScore,
           issues: JSON.stringify(validationResult.issues),
           suggestions: JSON.stringify(validationResult.suggestions),
           validatedAt: new Date(),
-          validator: `claude-${source}`
+          validator: `claude-${source}`,
         });
 
         // 如果啟用自動處理且驗證通過，直接儲存活動
@@ -56,9 +57,8 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
           qualityScore: validationResult.qualityScore,
           issues: validationResult.issues,
           suggestions: validationResult.suggestions,
-          ...(validationResult.activityId && { activityId: validationResult.activityId })
+          ...(validationResult.activityId && { activityId: validationResult.activityId }),
         });
-
       } catch (error) {
         console.error(`Validation failed for activity:`, error);
         results.push({
@@ -66,13 +66,15 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
           validationId: null,
           isValid: false,
           qualityScore: 0,
-          issues: [{
-            field: 'general',
-            type: 'system_error',
-            severity: 'error' as const,
-            message: '驗證過程發生錯誤'
-          }],
-          suggestions: []
+          issues: [
+            {
+              field: 'general',
+              type: 'system_error',
+              severity: 'error' as const,
+              message: '驗證過程發生錯誤',
+            },
+          ],
+          suggestions: [],
         });
       }
     }
@@ -80,10 +82,10 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
     // 統計結果
     const summary = {
       total: results.length,
-      valid: results.filter(r => r.isValid).length,
-      invalid: results.filter(r => !r.isValid).length,
+      valid: results.filter((r) => r.isValid).length,
+      invalid: results.filter((r) => !r.isValid).length,
       averageQuality: results.reduce((sum, r) => sum + (r.qualityScore || 0), 0) / results.length,
-      processed: results.filter(r => 'activityId' in r && r.activityId).length
+      processed: results.filter((r) => 'activityId' in r && r.activityId).length,
     };
 
     return {
@@ -92,17 +94,16 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
         results,
         summary,
         source,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
-      message: `已驗證 ${results.length} 個活動，${summary.valid} 個通過驗證`
+      message: `已驗證 ${results.length} 個活動，${summary.valid} 個通過驗證`,
     };
-
   } catch (error) {
     console.error('Validation submission failed:', error);
-    
+
     throw createError({
       statusCode: 500,
-      statusMessage: '驗證提交失敗'
+      statusMessage: '驗證提交失敗',
     });
   }
 });
@@ -110,7 +111,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
 // 儲存已驗證的活動
 async function saveValidatedActivity(validatedData: any): Promise<string> {
   const activityId = validatedData.id || nanoid();
-  
+
   try {
     const db = getDatabase();
     // 插入活動主資料
@@ -138,8 +139,9 @@ async function saveValidatedActivity(validatedData: any): Promise<string> {
         latitude: validatedData.location.latitude,
         longitude: validatedData.location.longitude,
         venue: validatedData.location.venue,
-        landmarks: validatedData.location.landmarks ? 
-          JSON.stringify(validatedData.location.landmarks) : null
+        landmarks: validatedData.location.landmarks
+          ? JSON.stringify(validatedData.location.landmarks)
+          : null,
       });
     }
 
@@ -155,18 +157,20 @@ async function saveValidatedActivity(validatedData: any): Promise<string> {
         endTime: validatedData.time.endTime,
         timezone: validatedData.time.timezone || 'Asia/Taipei',
         isRecurring: validatedData.time.isRecurring || false,
-        recurrenceRule: validatedData.time.recurrenceRule ? 
-          JSON.stringify(validatedData.time.recurrenceRule) : null
+        recurrenceRule: validatedData.time.recurrenceRule
+          ? JSON.stringify(validatedData.time.recurrenceRule)
+          : null,
       });
     }
 
     // 插入分類關聯
     if (validatedData.categories?.length) {
       const { categories, activityCategories } = await import('~/db/schema');
-      
+
       for (const category of validatedData.categories) {
         // 確保分類存在
-        const existingCategory = await db.select()
+        const existingCategory = await db
+          .select()
           .from(categories)
           .where(eq(categories.slug, category.slug))
           .limit(1);
@@ -179,7 +183,7 @@ async function saveValidatedActivity(validatedData: any): Promise<string> {
             name: category.name,
             slug: category.slug,
             colorCode: category.colorCode,
-            icon: category.icon
+            icon: category.icon,
           });
         } else {
           categoryId = existingCategory[0]!.id;
@@ -189,13 +193,12 @@ async function saveValidatedActivity(validatedData: any): Promise<string> {
         await db.insert(activityCategories).values({
           id: nanoid(),
           activityId,
-          categoryId
+          categoryId,
         });
       }
     }
 
     return activityId;
-
   } catch (error) {
     console.error('Failed to save validated activity:', error);
     throw error;

@@ -11,7 +11,7 @@ export const useGeolocation = (options: GeolocationOptions = {}) => {
   const {
     enableHighAccuracy = true,
     timeout = 10000,
-    maximumAge = 300000 // 5 分鐘
+    maximumAge = 300000, // 5 分鐘
   } = options;
 
   // 響應式狀態
@@ -36,7 +36,7 @@ export const useGeolocation = (options: GeolocationOptions = {}) => {
       if ('permissions' in navigator) {
         const result = await navigator.permissions.query({ name: 'geolocation' });
         permission.value = result.state;
-        
+
         // 監聽權限變化
         result.onchange = () => {
           permission.value = result.state;
@@ -68,20 +68,16 @@ export const useGeolocation = (options: GeolocationOptions = {}) => {
 
     try {
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-          resolve,
-          reject,
-          {
-            enableHighAccuracy,
-            timeout,
-            maximumAge
-          }
-        );
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy,
+          timeout,
+          maximumAge,
+        });
       });
 
       const coords = {
         lat: position.coords.latitude,
-        lng: position.coords.longitude
+        lng: position.coords.longitude,
       };
 
       coordinates.value = coords;
@@ -91,7 +87,6 @@ export const useGeolocation = (options: GeolocationOptions = {}) => {
 
       console.log('成功取得位置:', coords);
       return coords;
-
     } catch (err: any) {
       let errorMessage = '無法取得位置資訊';
 
@@ -115,7 +110,6 @@ export const useGeolocation = (options: GeolocationOptions = {}) => {
       error.value = errorMessage;
       console.error('定位錯誤:', err);
       return null;
-
     } finally {
       loading.value = false;
     }
@@ -135,7 +129,7 @@ export const useGeolocation = (options: GeolocationOptions = {}) => {
       (position) => {
         const coords = {
           lat: position.coords.latitude,
-          lng: position.coords.longitude
+          lng: position.coords.longitude,
         };
         coordinates.value = coords;
         onSuccess(coords);
@@ -161,7 +155,7 @@ export const useGeolocation = (options: GeolocationOptions = {}) => {
       {
         enableHighAccuracy,
         timeout,
-        maximumAge
+        maximumAge,
       }
     );
   };
@@ -189,7 +183,6 @@ export const useGeolocation = (options: GeolocationOptions = {}) => {
         console.warn('反向地理編碼失敗: 無資料');
         return null;
       }
-
     } catch (err) {
       console.error('反向地理編碼錯誤:', err);
       return null;
@@ -210,7 +203,7 @@ export const useGeolocation = (options: GeolocationOptions = {}) => {
         const result = data[0];
         const coords = {
           lat: parseFloat(result.lat),
-          lng: parseFloat(result.lon)
+          lng: parseFloat(result.lon),
         };
 
         coordinates.value = coords;
@@ -221,7 +214,6 @@ export const useGeolocation = (options: GeolocationOptions = {}) => {
         console.warn('地理編碼失敗: 找不到地址');
         return null;
       }
-
     } catch (err) {
       console.error('地理編碼錯誤:', err);
       return null;
@@ -229,20 +221,20 @@ export const useGeolocation = (options: GeolocationOptions = {}) => {
   };
 
   // 計算兩點間距離 (公里)
-  const calculateDistance = (
-    point1: MapCenter,
-    point2: MapCenter
-  ): number => {
+  const calculateDistance = (point1: MapCenter, point2: MapCenter): number => {
     const R = 6371; // 地球半徑 (公里)
     const dLat = (point2.lat - point1.lat) * (Math.PI / 180);
     const dLng = (point2.lng - point1.lng) * (Math.PI / 180);
-    
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(point1.lat * (Math.PI / 180)) * Math.cos(point2.lat * (Math.PI / 180)) *
-      Math.sin(dLng / 2) * Math.sin(dLng / 2);
-    
+
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(point1.lat * (Math.PI / 180)) *
+        Math.cos(point2.lat * (Math.PI / 180)) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    
+
     return R * c;
   };
 
@@ -275,7 +267,6 @@ export const useGeolocation = (options: GeolocationOptions = {}) => {
       // 嘗試取得位置 (這會觸發權限請求)
       const coords = await getCurrentPosition();
       return coords !== null;
-
     } catch (err) {
       return false;
     }
@@ -326,6 +317,6 @@ export const useGeolocation = (options: GeolocationOptions = {}) => {
     calculateDistance,
     formatDistance,
     requestPermission,
-    reset
+    reset,
   };
 };

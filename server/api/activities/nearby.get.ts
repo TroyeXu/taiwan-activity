@@ -8,13 +8,13 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
       lat,
       lng,
       radius = 10, // 預設 10 公里
-      limit = 10
+      limit = 10,
     } = query;
 
     if (!lat || !lng) {
       throw createError({
         statusCode: 400,
-        statusMessage: '請提供經緯度'
+        statusMessage: '請提供經緯度',
       });
     }
 
@@ -22,27 +22,30 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
     const nearbyActivities = filterActivities({
       lat: parseFloat(lat as string),
       lng: parseFloat(lng as string),
-      radius: parseFloat(radius as string)
+      radius: parseFloat(radius as string),
     });
 
     // 按距離排序
     nearbyActivities.sort((a, b) => {
       if (!a.location || !b.location) return 0;
-      if (a.location.latitude == null || a.location.longitude == null || 
-          b.location.latitude == null || b.location.longitude == null) return 0;
-      
+      if (
+        a.location.latitude == null ||
+        a.location.longitude == null ||
+        b.location.latitude == null ||
+        b.location.longitude == null
+      )
+        return 0;
+
       const latNum = parseFloat(lat as string);
       const lngNum = parseFloat(lng as string);
-      
+
       const distA = Math.sqrt(
-        Math.pow(a.location.latitude - latNum, 2) +
-        Math.pow(a.location.longitude - lngNum, 2)
+        Math.pow(a.location.latitude - latNum, 2) + Math.pow(a.location.longitude - lngNum, 2)
       );
       const distB = Math.sqrt(
-        Math.pow(b.location.latitude - latNum, 2) +
-        Math.pow(b.location.longitude - lngNum, 2)
+        Math.pow(b.location.latitude - latNum, 2) + Math.pow(b.location.longitude - lngNum, 2)
       );
-      
+
       return distA - distB;
     });
 
@@ -52,9 +55,8 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
     return {
       success: true,
       data: limitedResults,
-      message: `找到 ${limitedResults.length} 個附近的活動`
+      message: `找到 ${limitedResults.length} 個附近的活動`,
     };
-
   } catch (error) {
     console.error('取得附近活動失敗:', error);
 
@@ -64,7 +66,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
 
     throw createError({
       statusCode: 500,
-      statusMessage: '取得附近活動失敗'
+      statusMessage: '取得附近活動失敗',
     });
   }
 });

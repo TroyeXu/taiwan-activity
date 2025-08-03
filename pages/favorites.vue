@@ -10,12 +10,7 @@
       </template>
       <template #extra>
         <ElSpace>
-          <ElButton 
-            v-if="favorites.length > 0"
-            @click="showClearDialog = true"
-            type="danger"
-            plain
-          >
+          <ElButton v-if="favorites.length > 0" @click="showClearDialog = true" type="danger" plain>
             清空收藏
           </ElButton>
           <ElButton @click="exportFavorites" :disabled="favorites.length === 0">
@@ -36,16 +31,11 @@
 
       <!-- 空狀態 -->
       <div v-else-if="favorites.length === 0" class="text-center py-16">
-        <ElEmpty 
-          description="還沒有收藏任何活動"
-          :image-size="200"
-        >
+        <ElEmpty description="還沒有收藏任何活動" :image-size="200">
           <template #description>
             <p class="text-gray-500 mb-4">探索更多精彩活動，將喜歡的活動加入收藏吧！</p>
           </template>
-          <ElButton type="primary" @click="$router.push('/')">
-            探索活動
-          </ElButton>
+          <ElButton type="primary" @click="$router.push('/')"> 探索活動 </ElButton>
         </ElEmpty>
       </div>
 
@@ -55,11 +45,7 @@
         <ElCard class="mb-6">
           <ElRow :gutter="24">
             <ElCol :span="8">
-              <ElStatistic
-                title="收藏總數"
-                :value="favorites.length"
-                suffix="個活動"
-              />
+              <ElStatistic title="收藏總數" :value="favorites.length" suffix="個活動" />
             </ElCol>
             <ElCol :span="8">
               <div>
@@ -110,11 +96,7 @@
               </ElSelect>
             </ElCol>
             <ElCol :span="6">
-              <ElSelect
-                v-model="sortBy"
-                placeholder="排序方式"
-                @change="applySorting"
-              >
+              <ElSelect v-model="sortBy" placeholder="排序方式" @change="applySorting">
                 <ElOption label="收藏時間 (新到舊)" value="favorited_desc" />
                 <ElOption label="收藏時間 (舊到新)" value="favorited_asc" />
                 <ElOption label="活動時間" value="activity_date" />
@@ -147,9 +129,7 @@
                   <ElIcon class="mr-1"><Calendar /></ElIcon>
                   {{ formatDate(favorite.activity.time.startDate) }}
                 </span>
-                <span class="text-xs">
-                  收藏於 {{ formatDate(favorite.createdAt) }}
-                </span>
+                <span class="text-xs"> 收藏於 {{ formatDate(favorite.createdAt) }} </span>
               </div>
             </div>
 
@@ -168,12 +148,7 @@
     </ElContainer>
 
     <!-- 清空收藏確認對話框 -->
-    <ElDialog
-      v-model="showClearDialog"
-      title="確認清空收藏"
-      width="400px"
-      align-center
-    >
+    <ElDialog v-model="showClearDialog" title="確認清空收藏" width="400px" align-center>
       <p>確定要清空所有收藏的活動嗎？此操作無法復原。</p>
       <template #footer>
         <ElButton @click="showClearDialog = false">取消</ElButton>
@@ -184,20 +159,13 @@
 </template>
 
 <script setup lang="ts">
-import { 
-  StarFilled, 
-  LocationFilled, 
-  Calendar,
-  Delete
-} from '@element-plus/icons-vue';
+import { StarFilled, LocationFilled, Calendar, Delete } from '@element-plus/icons-vue';
 import type { Activity, FavoriteActivity } from '~/types';
 
 // 頁面元資料
 useHead({
   title: '我的收藏 - 台灣觀光活動地圖',
-  meta: [
-    { name: 'description', content: '查看您收藏的所有精彩觀光活動' }
-  ]
+  meta: [{ name: 'description', content: '查看您收藏的所有精彩觀光活動' }],
 });
 
 // 響應式狀態
@@ -208,26 +176,26 @@ const filterRegion = ref('');
 const sortBy = ref('favorited_desc');
 
 // 使用收藏功能
-const { 
-  favorites, 
+const {
+  favorites,
   loading: favoritesLoading,
   removeFavorite: removeFav,
   clearFavorites,
-  refreshFavorites
+  refreshFavorites,
 } = useFavorites();
 
 // 計算屬性
 const availableCategories = computed(() => {
   const categories = new Set<string>();
-  favorites.value.forEach(fav => {
-    fav.activity.categories?.forEach(cat => categories.add(cat.name));
+  favorites.value.forEach((fav) => {
+    fav.activity.categories?.forEach((cat) => categories.add(cat.name));
   });
   return Array.from(categories).sort();
 });
 
 const availableRegions = computed(() => {
   const regions = new Set<string>();
-  favorites.value.forEach(fav => {
+  favorites.value.forEach((fav) => {
     if (fav.activity.location?.region) {
       regions.add(fav.activity.location.region);
     }
@@ -237,7 +205,7 @@ const availableRegions = computed(() => {
 
 const recentFavoriteDate = computed(() => {
   if (favorites.value.length === 0) return '';
-  const recent = favorites.value.reduce((latest, fav) => 
+  const recent = favorites.value.reduce((latest, fav) =>
     new Date(fav.createdAt) > new Date(latest.createdAt) ? fav : latest
   );
   return formatDate(recent.createdAt);
@@ -245,12 +213,12 @@ const recentFavoriteDate = computed(() => {
 
 const topCategory = computed(() => {
   const categoryCount = new Map<string, number>();
-  favorites.value.forEach(fav => {
-    fav.activity.categories?.forEach(cat => {
+  favorites.value.forEach((fav) => {
+    fav.activity.categories?.forEach((cat) => {
       categoryCount.set(cat.name, (categoryCount.get(cat.name) || 0) + 1);
     });
   });
-  
+
   let topCat = '';
   let maxCount = 0;
   for (const [cat, count] of categoryCount) {
@@ -267,16 +235,14 @@ const filteredFavorites = computed(() => {
 
   // 分類篩選
   if (filterCategory.value) {
-    filtered = filtered.filter(fav =>
-      fav.activity.categories?.some(cat => cat.name === filterCategory.value)
+    filtered = filtered.filter((fav) =>
+      fav.activity.categories?.some((cat) => cat.name === filterCategory.value)
     );
   }
 
   // 地區篩選
   if (filterRegion.value) {
-    filtered = filtered.filter(fav =>
-      fav.activity.location?.region === filterRegion.value
-    );
+    filtered = filtered.filter((fav) => fav.activity.location?.region === filterRegion.value);
   }
 
   // 排序
@@ -312,7 +278,7 @@ const formatDate = (date: string | Date) => {
   return new Date(date).toLocaleDateString('zh-TW', {
     year: 'numeric',
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
   });
 };
 
@@ -349,21 +315,23 @@ const clearAllFavorites = async () => {
 };
 
 const exportFavorites = () => {
-  const data = favorites.value.map(fav => ({
+  const data = favorites.value.map((fav) => ({
     活動名稱: fav.activity.name,
     活動摘要: fav.activity.summary,
     地址: fav.activity.location?.address,
     城市: fav.activity.location?.city,
     地區: fav.activity.location?.region,
     活動時間: fav.activity.time?.startDate,
-    分類: fav.activity.categories?.map(c => c.name).join(', '),
-    收藏時間: formatDate(fav.createdAt)
+    分類: fav.activity.categories?.map((c) => c.name).join(', '),
+    收藏時間: formatDate(fav.createdAt),
   }));
 
-  const csv = data.length > 0 ? [
-    Object.keys(data[0]!).join(','),
-    ...data.map(row => Object.values(row!).join(','))
-  ].join('\n') : '';
+  const csv =
+    data.length > 0
+      ? [Object.keys(data[0]!).join(','), ...data.map((row) => Object.values(row!).join(','))].join(
+          '\n'
+        )
+      : '';
 
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
@@ -390,7 +358,7 @@ watch(loading, (newVal) => {
   .transition-transform {
     transform: none !important;
   }
-  
+
   .hover\:scale-105:hover {
     transform: none !important;
   }

@@ -9,11 +9,7 @@
 
     <!-- 錯誤狀態 -->
     <div v-else-if="error" class="flex items-center justify-center min-h-screen">
-      <ElResult
-        icon="error"
-        title="載入失敗"
-        :sub-title="error.message || '無法載入活動詳情'"
-      >
+      <ElResult icon="error" title="載入失敗" :sub-title="error.message || '無法載入活動詳情'">
         <template #extra>
           <ElButton type="primary" @click="refresh()">重試</ElButton>
           <ElButton @click="$router.push('/')">返回首頁</ElButton>
@@ -54,8 +50,8 @@
             <ElCard v-if="activity.images && activity.images.length > 0" class="mb-6">
               <ElCarousel height="300px" indicator-position="outside">
                 <ElCarouselItem v-for="image in activity.images" :key="image.id">
-                  <img 
-                    :src="image.url" 
+                  <img
+                    :src="image.url"
                     :alt="image.alt || activity.name"
                     class="w-full h-full object-cover"
                   />
@@ -68,7 +64,7 @@
               <template #header>
                 <h2 class="text-lg font-semibold">活動詳情</h2>
               </template>
-              
+
               <!-- 簡短摘要 -->
               <div v-if="activity.summary" class="mb-4 p-4 bg-blue-50 rounded-lg">
                 <h3 class="font-medium text-blue-800 mb-2">活動摘要</h3>
@@ -114,7 +110,8 @@
                   <h4 class="font-medium mb-2">地址</h4>
                   <p class="text-gray-700">{{ activity.location.address }}</p>
                   <p class="text-sm text-gray-500">
-                    {{ activity.location.district }}, {{ activity.location.city }}, {{ activity.location.region }}
+                    {{ activity.location.district }}, {{ activity.location.city }},
+                    {{ activity.location.region }}
                   </p>
                 </div>
 
@@ -128,8 +125,8 @@
                 <div v-if="activity.location.landmarks && activity.location.landmarks.length > 0">
                   <h4 class="font-medium mb-2">鄰近地標</h4>
                   <ElSpace wrap>
-                    <ElTag 
-                      v-for="landmark in activity.location.landmarks" 
+                    <ElTag
+                      v-for="landmark in activity.location.landmarks"
                       :key="landmark"
                       type="info"
                       size="small"
@@ -143,7 +140,10 @@
                 <div class="h-64 bg-gray-100 rounded-lg">
                   <ActivityMap
                     :activities="[activity]"
-                    :center="{ lat: activity.location.latitude || 0, lng: activity.location.longitude || 0 }"
+                    :center="{
+                      lat: activity.location.latitude || 0,
+                      lng: activity.location.longitude || 0,
+                    }"
                     :zoom="15"
                     :show-controls="false"
                     class="h-full"
@@ -175,28 +175,37 @@
                 <div v-if="activity.validation">
                   <h4 class="font-medium mb-2">驗證狀態</h4>
                   <div class="flex items-center gap-2 mb-2">
-                    <ElIcon 
-                      :color="activity.validation.verified ? '#67C23A' : '#F56C6C'"
-                    >
-                      <component :is="activity.validation.verified ? 'CircleCheckFilled' : 'CircleCloseFilled'" />
+                    <ElIcon :color="activity.validation.verified ? '#67C23A' : '#F56C6C'">
+                      <component
+                        :is="
+                          activity.validation.verified ? 'CircleCheckFilled' : 'CircleCloseFilled'
+                        "
+                      />
                     </ElIcon>
                     <span :class="activity.validation.verified ? 'text-green-600' : 'text-red-600'">
                       {{ activity.validation.verified ? '已驗證' : '未驗證' }}
                     </span>
-                    <ElTag size="small">
-                      品質分數: {{ activity.validation.qualityScore }}%
-                    </ElTag>
+                    <ElTag size="small"> 品質分數: {{ activity.validation.qualityScore }}% </ElTag>
                   </div>
-                  
+
                   <p class="text-xs text-gray-500 mb-2">
-                    驗證時間: {{ activity.validation.verificationDate ? formatDate(activity.validation.verificationDate) : '未知' }}
+                    驗證時間:
+                    {{
+                      activity.validation.verificationDate
+                        ? formatDate(activity.validation.verificationDate)
+                        : '未知'
+                    }}
                   </p>
 
                   <!-- 驗證問題 -->
                   <div v-if="activity.validation.issues && activity.validation.issues.length > 0">
                     <h5 class="text-sm font-medium mb-1">發現問題:</h5>
                     <ul class="text-sm text-gray-600 space-y-1">
-                      <li v-for="(issue, index) in activity.validation.issues" :key="`${issue.field}-${index}`" class="flex items-start gap-2">
+                      <li
+                        v-for="(issue, index) in activity.validation.issues"
+                        :key="`${issue.field}-${index}`"
+                        class="flex items-start gap-2"
+                      >
                         <ElIcon class="mt-0.5 text-orange-500"><Warning /></ElIcon>
                         {{ issue.message }}
                       </li>
@@ -261,10 +270,10 @@
               <template #header>
                 <h3 class="text-lg font-semibold">附近活動</h3>
               </template>
-              
+
               <div class="space-y-3">
-                <div 
-                  v-for="nearby in nearbyActivities.slice(0, 5)" 
+                <div
+                  v-for="nearby in nearbyActivities.slice(0, 5)"
                   :key="nearby.id"
                   class="p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
                   @click="$router.push(`/activity/${nearby.id}`)"
@@ -286,15 +295,15 @@
 </template>
 
 <script setup lang="ts">
-import { 
-  LocationFilled, 
-  Calendar, 
-  Clock, 
-  Share, 
+import {
+  LocationFilled,
+  Calendar,
+  Clock,
+  Share,
   InfoFilled,
-  CircleCheckFilled, 
+  CircleCheckFilled,
   CircleCloseFilled,
-  Warning
+  Warning,
 } from '@element-plus/icons-vue';
 import type { Activity } from '~/types';
 
@@ -327,37 +336,46 @@ const formatActivity = (row: any): Activity => {
     qualityScore: row.qualityScore || 0,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
-    location: row.latitude && row.longitude ? {
-      id: row.locationId || '',
-      activityId: row.id,
-      address: row.address,
-      district: row.district || undefined,
-      city: row.city,
-      region: row.region || 'north',
-      latitude: row.latitude,
-      longitude: row.longitude,
-      venue: row.venue || undefined,
-      landmarks: row.landmarks ? JSON.parse(row.landmarks) : []
-    } : undefined,
-    time: row.startDate ? {
-      id: row.timeId || '',
-      activityId: row.id,
-      startDate: row.startDate,
-      endDate: row.endDate,
-      startTime: row.startTime,
-      endTime: row.endTime,
-      timezone: row.timezone || 'Asia/Taipei',
-      isRecurring: row.isRecurring || false,
-      recurrenceRule: row.recurrenceRule ? JSON.parse(row.recurrenceRule) : undefined
-    } : undefined,
-    categories: row.categories ? 
-      row.categories.split(',').map((name: string) => ({
-        id: '',
-        name: name.trim(),
-        slug: name.trim().toLowerCase(),
-        colorCode: '#3B82F6',
-        icon: '📍'
-      })).filter((cat: any) => cat.name) : []
+    location:
+      row.latitude && row.longitude
+        ? {
+            id: row.locationId || '',
+            activityId: row.id,
+            address: row.address,
+            district: row.district || undefined,
+            city: row.city,
+            region: row.region || 'north',
+            latitude: row.latitude,
+            longitude: row.longitude,
+            venue: row.venue || undefined,
+            landmarks: row.landmarks ? JSON.parse(row.landmarks) : [],
+          }
+        : undefined,
+    time: row.startDate
+      ? {
+          id: row.timeId || '',
+          activityId: row.id,
+          startDate: row.startDate,
+          endDate: row.endDate,
+          startTime: row.startTime,
+          endTime: row.endTime,
+          timezone: row.timezone || 'Asia/Taipei',
+          isRecurring: row.isRecurring || false,
+          recurrenceRule: row.recurrenceRule ? JSON.parse(row.recurrenceRule) : undefined,
+        }
+      : undefined,
+    categories: row.categories
+      ? row.categories
+          .split(',')
+          .map((name: string) => ({
+            id: '',
+            name: name.trim(),
+            slug: name.trim().toLowerCase(),
+            colorCode: '#3B82F6',
+            icon: '📍',
+          }))
+          .filter((cat: any) => cat.name)
+      : [],
   };
 };
 
@@ -365,14 +383,14 @@ const formatActivity = (row: any): Activity => {
 const loadActivity = async () => {
   pending.value = true;
   error.value = null;
-  
+
   try {
     await initDatabase();
     const data = await getActivity(activityId);
-    
+
     if (data) {
       activity.value = formatActivity(data);
-      
+
       // 載入附近活動
       if (activity.value.location?.latitude && activity.value.location?.longitude) {
         const nearby = await getNearbyActivities(
@@ -380,7 +398,7 @@ const loadActivity = async () => {
           activity.value.location.longitude,
           10
         );
-        nearbyActivities.value = nearby.map(formatActivity).filter(a => a.id !== activityId);
+        nearbyActivities.value = nearby.map(formatActivity).filter((a) => a.id !== activityId);
       }
     } else {
       error.value = { message: '找不到活動' };
@@ -410,8 +428,8 @@ useHead({
     { name: 'description', content: activity.value?.summary || activity.value?.description || '' },
     { property: 'og:title', content: activity.value?.name || '' },
     { property: 'og:description', content: activity.value?.summary || '' },
-    { property: 'og:type', content: 'article' }
-  ])
+    { property: 'og:type', content: 'article' },
+  ]),
 });
 
 // 格式化函數
@@ -423,7 +441,7 @@ const formatDate = (date: string | Date) => {
   return new Date(date).toLocaleDateString('zh-TW', {
     year: 'numeric',
     month: 'long',
-    day: 'numeric'
+    day: 'numeric',
   });
 };
 
@@ -462,11 +480,11 @@ const formatDistance = (distance: number) => {
 // 分享活動
 const shareActivity = async () => {
   if (!activity.value) return;
-  
+
   const shareData = {
     title: activity.value.name,
     text: activity.value.summary || activity.value.description,
-    url: window.location.href
+    url: window.location.href,
   };
 
   try {
@@ -486,7 +504,7 @@ const shareActivity = async () => {
 if (error.value) {
   throw createError({
     statusCode: error.value?.statusCode || 404,
-    statusMessage: error.value?.message || '找不到指定的活動'
+    statusMessage: error.value?.message || '找不到指定的活動',
   });
 }
 </script>

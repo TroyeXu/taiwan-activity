@@ -131,7 +131,7 @@ export enum ActivityStatus {
   ENDED = 'ended',
   CANCELLED = 'cancelled',
   PENDING = 'pending',
-  DRAFT = 'draft'
+  DRAFT = 'draft',
 }
 
 export enum Region {
@@ -139,7 +139,7 @@ export enum Region {
   CENTRAL = 'central',
   SOUTH = 'south',
   EAST = 'east',
-  ISLANDS = 'islands'
+  ISLANDS = 'islands',
 }
 
 export enum CategorySlug {
@@ -150,7 +150,7 @@ export enum CategorySlug {
   CUISINE = 'cuisine',
   NATURE = 'nature',
   INDIGENOUS = 'indigenous',
-  HAKKA = 'hakka'
+  HAKKA = 'hakka',
 }
 
 // 篩選相關類型
@@ -325,11 +325,13 @@ export interface ValidationResult {
   errors?: ValidationIssue[];
   warnings?: ValidationIssue[];
   issues?: ValidationIssue[];
-  suggestions?: Array<{
-    field: string;
-    suggestion: string;
-    reason: string;
-  }> | string[];
+  suggestions?:
+    | Array<{
+        field: string;
+        suggestion: string;
+        reason: string;
+      }>
+    | string[];
   qualityScore?: number;
   originalData?: any;
   validatedData?: any;
@@ -341,65 +343,65 @@ export interface ValidationResult {
 export const REGIONS = {
   [Region.NORTH]: {
     name: '北部地區',
-    cities: ['台北市', '新北市', '基隆市', '桃園市', '新竹市', '新竹縣']
+    cities: ['台北市', '新北市', '基隆市', '桃園市', '新竹市', '新竹縣'],
   },
   [Region.CENTRAL]: {
-    name: '中部地區', 
-    cities: ['苗栗縣', '台中市', '彰化縣', '南投縣', '雲林縣']
+    name: '中部地區',
+    cities: ['苗栗縣', '台中市', '彰化縣', '南投縣', '雲林縣'],
   },
   [Region.SOUTH]: {
     name: '南部地區',
-    cities: ['嘉義縣', '嘉義市', '台南市', '高雄市', '屏東縣']
+    cities: ['嘉義縣', '嘉義市', '台南市', '高雄市', '屏東縣'],
   },
   [Region.EAST]: {
     name: '東部地區',
-    cities: ['宜蘭縣', '花蓮縣', '台東縣']
+    cities: ['宜蘭縣', '花蓮縣', '台東縣'],
   },
   [Region.ISLANDS]: {
     name: '離島地區',
-    cities: ['澎湖縣', '金門縣', '連江縣']
-  }
+    cities: ['澎湖縣', '金門縣', '連江縣'],
+  },
 };
 
 export const CATEGORIES = {
   [CategorySlug.TRADITIONAL]: {
     name: '傳統節慶',
     icon: '🎊',
-    color: '#DC2626'
+    color: '#DC2626',
   },
   [CategorySlug.ROMANTIC]: {
-    name: '浪漫之旅', 
+    name: '浪漫之旅',
     icon: '💕',
-    color: '#EC4899'
+    color: '#EC4899',
   },
   [CategorySlug.ART_CULTURE]: {
     name: '藝術文化',
     icon: '🎭',
-    color: '#7C3AED'
+    color: '#7C3AED',
   },
   [CategorySlug.WELLNESS]: {
     name: '養生樂活',
     icon: '🧘',
-    color: '#10B981'
+    color: '#10B981',
   },
   [CategorySlug.CUISINE]: {
     name: '美食饗宴',
     icon: '🍜',
-    color: '#F59E0B'
+    color: '#F59E0B',
   },
   [CategorySlug.NATURE]: {
     name: '自然生態',
     icon: '🌿',
-    color: '#059669'
+    color: '#059669',
   },
   [CategorySlug.INDIGENOUS]: {
     name: '原民慶典',
     icon: '🪶',
-    color: '#B91C1C'
+    color: '#B91C1C',
   },
   [CategorySlug.HAKKA]: {
     name: '客家文化',
     icon: '🏮',
-    color: '#1E40AF'
-  }
+    color: '#1E40AF',
+  },
 };

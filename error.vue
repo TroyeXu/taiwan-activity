@@ -4,18 +4,16 @@
       <h1 class="text-2xl font-bold text-red-600 mb-4">錯誤發生</h1>
       <div class="text-gray-600 mb-4">
         <p>{{ error.message || '發生了未知錯誤' }}</p>
-        <p class="text-sm mt-2" v-if="error.statusCode">
-          錯誤代碼: {{ error.statusCode }}
-        </p>
+        <p class="text-sm mt-2" v-if="error.statusCode">錯誤代碼: {{ error.statusCode }}</p>
       </div>
       <div class="flex gap-4">
-        <button 
+        <button
           @click="handleError"
           class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
           返回首頁
         </button>
-        <button 
+        <button
           @click="clearError({ redirect: '/' })"
           class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
         >
@@ -28,8 +26,8 @@
 
 <script setup>
 const props = defineProps({
-  error: Object
-})
+  error: Object,
+});
 
-const handleError = () => clearError({ redirect: '/' })
+const handleError = () => clearError({ redirect: '/' });
 </script>

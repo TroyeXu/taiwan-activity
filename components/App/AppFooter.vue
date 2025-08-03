@@ -10,9 +10,7 @@
                 <LocationFilled />
               </ElIcon>
             </div>
-            <h3 class="text-lg font-semibold text-gray-800">
-              台灣觀光活動地圖
-            </h3>
+            <h3 class="text-lg font-semibold text-gray-800">台灣觀光活動地圖</h3>
           </div>
           <p class="text-gray-600 text-sm leading-relaxed">
             探索台灣各地精彩的觀光活動，使用互動地圖輕鬆找到您感興趣的景點和活動。
@@ -31,27 +29,27 @@
         <div class="space-y-4">
           <h4 class="font-semibold text-gray-800">快速連結</h4>
           <div class="space-y-2">
-            <NuxtLink 
-              to="/" 
+            <NuxtLink
+              to="/"
               class="block text-gray-600 hover:text-blue-600 transition-colors text-sm"
             >
               首頁
             </NuxtLink>
-            <NuxtLink 
-              to="/favorites" 
+            <NuxtLink
+              to="/favorites"
               class="block text-gray-600 hover:text-blue-600 transition-colors text-sm"
             >
               我的收藏
             </NuxtLink>
-            <a 
-              href="#about" 
+            <a
+              href="#about"
               class="block text-gray-600 hover:text-blue-600 transition-colors text-sm"
               @click="scrollToTop"
             >
               關於我們
             </a>
-            <a 
-              href="#contact" 
+            <a
+              href="#contact"
               class="block text-gray-600 hover:text-blue-600 transition-colors text-sm"
               @click="scrollToTop"
             >
@@ -64,7 +62,7 @@
         <div class="space-y-4">
           <h4 class="font-semibold text-gray-800">熱門分類</h4>
           <div class="space-y-2">
-            <NuxtLink 
+            <NuxtLink
               v-for="category in popularCategories"
               :key="category.slug"
               :to="`/?category=${category.slug}`"
@@ -92,7 +90,7 @@
               <span>台北市信義區</span>
             </div>
           </div>
-          
+
           <!-- 資料來源說明 -->
           <div class="pt-4 border-t border-gray-100">
             <p class="text-xs text-gray-500 leading-relaxed">
@@ -105,20 +103,12 @@
       <!-- 底部資訊 -->
       <div class="border-t border-gray-200 mt-8 pt-6">
         <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-          <div class="text-sm text-gray-500">
-            © {{ currentYear }} 台灣觀光活動地圖. 版權所有.
-          </div>
-          
+          <div class="text-sm text-gray-500">© {{ currentYear }} 台灣觀光活動地圖. 版權所有.</div>
+
           <div class="flex items-center gap-6 text-sm text-gray-500">
-            <a href="#privacy" class="hover:text-blue-600 transition-colors">
-              隱私政策
-            </a>
-            <a href="#terms" class="hover:text-blue-600 transition-colors">
-              使用條款
-            </a>
-            <a href="#cookies" class="hover:text-blue-600 transition-colors">
-              Cookie 政策
-            </a>
+            <a href="#privacy" class="hover:text-blue-600 transition-colors"> 隱私政策 </a>
+            <a href="#terms" class="hover:text-blue-600 transition-colors"> 使用條款 </a>
+            <a href="#cookies" class="hover:text-blue-600 transition-colors"> Cookie 政策 </a>
             <div class="flex items-center gap-1">
               <ElIcon><TrendCharts /></ElIcon>
               <span>資料更新: {{ lastUpdateDate }}</span>
@@ -131,14 +121,7 @@
 </template>
 
 <script setup lang="ts">
-import { 
-  LocationFilled, 
-  Share, 
-  Link, 
-  Message, 
-  Phone,
-  TrendCharts 
-} from '@element-plus/icons-vue';
+import { LocationFilled, Share, Link, Message, Phone, TrendCharts } from '@element-plus/icons-vue';
 
 // 響應式資料
 const currentYear = new Date().getFullYear();
@@ -150,7 +133,7 @@ const popularCategories = ref([
   { name: '自然景觀', slug: 'nature' },
   { name: '美食體驗', slug: 'food' },
   { name: '戶外活動', slug: 'outdoor' },
-  { name: '節慶活動', slug: 'festival' }
+  { name: '節慶活動', slug: 'festival' },
 ]);
 
 // 分享應用
@@ -158,7 +141,7 @@ const shareApp = async () => {
   const shareData = {
     title: '台灣觀光活動地圖',
     text: '探索台灣各地精彩的觀光活動',
-    url: window.location.origin
+    url: window.location.origin,
   };
 
   try {
@@ -195,7 +178,7 @@ a {
   .container {
     padding: 0 1rem;
   }
-  
+
   .grid-cols-4 {
     grid-template-columns: repeat(2, 1fr);
   }

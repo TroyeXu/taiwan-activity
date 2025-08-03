@@ -17,22 +17,22 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
             platform: process.platform,
             nodeVersion: process.version,
             uptime: process.uptime(),
-            memory: process.memoryUsage()
-          }
-        }
+            memory: process.memoryUsage(),
+          },
+        },
       };
     }
 
     // 獲取排程器狀態
     const jobStatus = schedulerInstance.getStatus();
-    
+
     // 獲取系統資訊
     const systemInfo = {
       platform: process.platform,
       nodeVersion: process.version,
       uptime: process.uptime(),
       memory: process.memoryUsage(),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     // 計算總體健康狀態
@@ -48,47 +48,48 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
         summary: {
           totalJobs: Object.keys(jobStatus).length,
           runningJobs: Object.values(jobStatus).filter((job: any) => job.running).length,
-          errorJobs: Object.values(jobStatus).filter((job: any) => job.lastResult === 'error').length,
-          successJobs: Object.values(jobStatus).filter((job: any) => job.lastResult === 'success').length
-        }
-      }
+          errorJobs: Object.values(jobStatus).filter((job: any) => job.lastResult === 'error')
+            .length,
+          successJobs: Object.values(jobStatus).filter((job: any) => job.lastResult === 'success')
+            .length,
+        },
+      },
     };
-
   } catch (error) {
     console.error('獲取排程器狀態失敗:', error);
 
     throw createError({
       statusCode: 500,
-      statusMessage: '獲取排程器狀態失敗'
+      statusMessage: '獲取排程器狀態失敗',
     });
   }
 });
 
 function calculateHealthStatus(jobStatus: Record<string, any>): string {
   const jobs = Object.values(jobStatus);
-  
+
   if (jobs.length === 0) {
     return 'unknown';
   }
 
   const errorJobs = jobs.filter((job: any) => job.lastResult === 'error').length;
   const runningJobs = jobs.filter((job: any) => job.running).length;
-  
+
   // 如果有超過一半的任務失敗
   if (errorJobs > jobs.length / 2) {
     return 'critical';
   }
-  
+
   // 如果有錯誤但不超過一半
   if (errorJobs > 0) {
     return 'warning';
   }
-  
+
   // 如果有任務正在運行或所有任務都成功
   if (runningJobs > 0 || jobs.some((job: any) => job.lastResult === 'success')) {
     return 'healthy';
   }
-  
+
   return 'unknown';
 }
 

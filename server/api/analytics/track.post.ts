@@ -12,13 +12,13 @@ interface TrackingEvent {
 
 export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
   try {
-    const body = await readBody(event) as TrackingEvent;
+    const body = (await readBody(event)) as TrackingEvent;
     const { type, activityId, userId, data } = body;
 
     if (!type) {
       throw createError({
         statusCode: 400,
-        statusMessage: '缺少事件類型'
+        statusMessage: '缺少事件類型',
       });
     }
 
@@ -45,16 +45,15 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
       default:
         throw createError({
           statusCode: 400,
-          statusMessage: '無效的事件類型'
+          statusMessage: '無效的事件類型',
         });
     }
 
     return {
       success: true,
       data: { tracked: true },
-      message: '事件追蹤成功'
+      message: '事件追蹤成功',
     };
-
   } catch (error) {
     console.error('Analytics tracking failed:', error);
 
@@ -64,15 +63,15 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: '事件追蹤失敗'
+      statusMessage: '事件追蹤失敗',
     });
   }
 });
 
 async function trackActivityView(
-  activityId: string, 
-  userId?: string, 
-  clientIP?: string, 
+  activityId: string,
+  userId?: string,
+  clientIP?: string,
   userAgent?: string
 ) {
   try {
@@ -88,7 +87,7 @@ async function trackActivityView(
            ${activities.clickCount} * 0.3 +
            ${activities.qualityScore} * 0.1) / 100.0
         `,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
       .where(eq(activities.id, activityId));
 
@@ -99,18 +98,17 @@ async function trackActivityView(
       userId,
       clientIP,
       userAgent,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
-
   } catch (error) {
     console.error('Failed to track activity view:', error);
   }
 }
 
 async function trackActivityClick(
-  activityId: string, 
-  userId?: string, 
-  clientIP?: string, 
+  activityId: string,
+  userId?: string,
+  clientIP?: string,
   userAgent?: string
 ) {
   try {
@@ -126,7 +124,7 @@ async function trackActivityClick(
            (${activities.clickCount} + 1) * 0.3 +
            ${activities.qualityScore} * 0.1) / 100.0
         `,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
       .where(eq(activities.id, activityId));
 
@@ -137,18 +135,17 @@ async function trackActivityClick(
       userId,
       clientIP,
       userAgent,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
-
   } catch (error) {
     console.error('Failed to track activity click:', error);
   }
 }
 
 async function trackSearch(
-  searchData: any, 
-  userId?: string, 
-  clientIP?: string, 
+  searchData: any,
+  userId?: string,
+  clientIP?: string,
   userAgent?: string
 ) {
   try {
@@ -172,7 +169,6 @@ async function trackSearch(
         )
       `);
     }
-
   } catch (error) {
     console.error('Failed to track search:', error);
   }
@@ -194,12 +190,11 @@ async function logAnalyticsEvent(event: {
       type: event.type,
       activityId: event.activityId,
       userId: event.userId,
-      timestamp: event.timestamp.toISOString()
+      timestamp: event.timestamp.toISOString(),
     });
 
     // 未來可以整合到專門的分析資料庫或服務
     // 例如：Google Analytics, Mixpanel, 自定義分析表等
-
   } catch (error) {
     console.error('Failed to log analytics event:', error);
   }

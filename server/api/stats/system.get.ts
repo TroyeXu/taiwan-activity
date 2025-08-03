@@ -6,19 +6,19 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
   try {
     // 取得活動統計
     const activityStats = await getActivityStats();
-    
+
     // 取得分類統計
     const categoryStats = await getCategoryStats();
-    
+
     // 取得地區統計
     const regionStats = await getRegionStats();
-    
+
     // 取得品質統計
     const qualityStats = await getQualityStats();
-    
+
     // 取得搜尋統計 (如果有搜尋記錄表)
     const searchStats = await getSearchStats();
-    
+
     return {
       success: true,
       data: {
@@ -27,16 +27,15 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
         regions: regionStats,
         quality: qualityStats,
         searches: searchStats,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     };
-    
   } catch (error) {
     console.error('Get system stats failed:', error);
-    
+
     throw createError({
       statusCode: 500,
-      statusMessage: '取得系統統計失敗'
+      statusMessage: '取得系統統計失敗',
     });
   }
 });
@@ -54,7 +53,7 @@ async function getActivityStats() {
         SUM(favorite_count) as total_favorites
       FROM activities
     `);
-    
+
     return (result as any).rows?.[0] || {};
   } catch (error) {
     console.error('Failed to get activity stats:', error);
@@ -77,7 +76,7 @@ async function getCategoryStats() {
       ORDER BY activity_count DESC
       LIMIT 10
     `);
-    
+
     return (result as any).rows || [];
   } catch (error) {
     console.error('Failed to get category stats:', error);
@@ -99,7 +98,7 @@ async function getRegionStats() {
       GROUP BY l.region
       ORDER BY activity_count DESC
     `);
-    
+
     return (result as any).rows || [];
   } catch (error) {
     console.error('Failed to get region stats:', error);
@@ -120,7 +119,7 @@ async function getQualityStats() {
       FROM activities
       WHERE status = 'active'
     `);
-    
+
     return (result as any).rows?.[0] || {};
   } catch (error) {
     console.error('Failed to get quality stats:', error);
@@ -135,11 +134,11 @@ async function getSearchStats() {
       SELECT name FROM sqlite_master 
       WHERE type='table' AND name='search_logs'
     `);
-    
+
     if (!(tableExists as any).rows?.length) {
       return { enabled: false };
     }
-    
+
     const result = await db.get(sql`
       SELECT 
         COUNT(*) as total_searches,
@@ -149,10 +148,10 @@ async function getSearchStats() {
       FROM search_logs
       WHERE searched_at > ${Date.now() - 24 * 60 * 60 * 1000}
     `);
-    
+
     return {
       enabled: true,
-      ...(result as any).rows?.[0]
+      ...(result as any).rows?.[0],
     };
   } catch (error) {
     console.warn('Failed to get search stats:', error);

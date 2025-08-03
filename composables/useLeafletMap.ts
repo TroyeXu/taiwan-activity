@@ -8,19 +8,46 @@ interface UseLeafletMapOptions {
 }
 
 export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
-  const { 
+  const {
     defaultCenter = { lat: 23.69781, lng: 120.960515 }, // 台灣地理中心
     defaultZoom = 8,
-    clustered = true 
+    clustered = true,
   } = options;
 
   // 響應式狀態
-  const mapInstance = ref<any>(null);
+  interface LeafletMap {
+    setView: (center: [number, number], zoom?: number) => void;
+    setZoom: (zoom: number) => void;
+    getCenter: () => { lat: number; lng: number };
+    getBounds: () => {
+      getNorth: () => number;
+      getSouth: () => number;
+      getEast: () => number;
+      getWest: () => number;
+    };
+    getZoom: () => number;
+    remove: () => void;
+    removeLayer: (layer: unknown) => void;
+    addLayer: (layer: unknown) => void;
+    on: (event: string, handler: () => void) => void;
+    fitBounds: (bounds: unknown, options?: Record<string, unknown>) => void;
+  }
+
+  const mapInstance = ref<LeafletMap | null>(null);
   const mapElement = ref<HTMLElement | null>(null);
   const isMapLoaded = ref(false);
   const mapError = ref<string | null>(null);
-  const markers = ref<any[]>([]);
-  const markerCluster = ref<any>(null);
+  interface LeafletMarker {
+    addTo: (map: LeafletMap) => void;
+  }
+
+  const markers = ref<LeafletMarker[]>([]);
+  interface MarkerClusterGroup {
+    clearLayers: () => void;
+    addLayers: (markers: LeafletMarker[]) => void;
+  }
+
+  const markerCluster = ref<MarkerClusterGroup | null>(null);
   const selectedActivity = ref<Activity | null>(null);
 
   // 地圖狀態
@@ -36,8 +63,8 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
 
     try {
       if (import.meta.client) {
-        const L = await import('leaflet');
-        const MarkerClusterGroup = await import('leaflet.markercluster');
+        await import('leaflet');
+        await import('leaflet.markercluster');
         isMapLoaded.value = true;
         mapError.value = null;
         return true;
@@ -53,7 +80,7 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
 
   // 初始化地圖
   const initializeMap = async (element: HTMLElement) => {
-    if (!await loadLeaflet() || !process.client) {
+    if (!(await loadLeaflet()) || !process.client) {
       throw new Error('Leaflet 載入失敗');
     }
 
@@ -70,15 +97,15 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
       maxZoom: 18,
       maxBounds: [
         [21.5, 119.5], // 台灣西南角
-        [25.5, 122.5]  // 台灣東北角
+        [25.5, 122.5], // 台灣東北角
       ],
-      maxBoundsViscosity: 1.0
+      maxBoundsViscosity: 1.0,
     });
 
     // 定義台灣邊界
     const taiwanBounds = L.latLngBounds(
       [21.5, 119.5], // 西南角
-      [25.5, 122.5]  // 東北角
+      [25.5, 122.5] // 東北角
     );
 
     // 添加 OpenStreetMap 圖層，限制在台灣範圍
@@ -93,7 +120,7 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
       keepBuffer: 1, // 減少圖磚緩衝區
       tileSize: 256,
       zoomOffset: 0,
-      detectRetina: true // 支援高解析度螢幕
+      detectRetina: true, // 支援高解析度螢幕
     }).addTo(mapInstance.value);
 
     // 初始化標記聚合群組
@@ -108,7 +135,7 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
       const newCenter = mapInstance.value.getCenter();
       center.value = {
         lat: newCenter.lat,
-        lng: newCenter.lng
+        lng: newCenter.lng,
       };
 
       const mapBounds = mapInstance.value.getBounds();
@@ -116,7 +143,7 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
         north: mapBounds.getNorth(),
         south: mapBounds.getSouth(),
         east: mapBounds.getEast(),
-        west: mapBounds.getWest()
+        west: mapBounds.getWest(),
       };
     });
 
@@ -129,7 +156,7 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
   };
 
   // 建立活動標記
-  const createActivityMarker = async (activity: Activity): Promise<any | null> => {
+  const createActivityMarker = async (activity: Activity): Promise<LeafletMarker | null> => {
     if (!mapInstance.value || !activity.location?.latitude || !activity.location?.longitude) {
       return null;
     }
@@ -140,7 +167,7 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
     // 取得分類圖標
     const category = activity.categories?.[0];
     const categoryInfo = category ? CATEGORIES[category.slug as keyof typeof CATEGORIES] : null;
-    
+
     // 創建自定義圖標
     const markerIcon = L.divIcon({
       className: 'custom-div-icon',
@@ -162,19 +189,19 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
         </div>
       `,
       iconSize: [30, 30],
-      iconAnchor: [15, 15]
+      iconAnchor: [15, 15],
     });
 
-    const marker = L.marker(position, { 
+    const marker = L.marker(position, {
       icon: markerIcon,
-      title: activity.name
+      title: activity.name,
     });
 
     // 創建彈出視窗內容
     const popupContent = createPopupContent(activity);
     marker.bindPopup(popupContent, {
       maxWidth: 300,
-      className: 'custom-popup'
+      className: 'custom-popup',
     });
 
     // 點擊標記事件
@@ -187,8 +214,8 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
 
   // 建立彈出視窗內容
   const createPopupContent = (activity: Activity): string => {
-    const categoryNames = activity.categories?.map(c => c.name).join(', ') || '';
-    const timeInfo = activity.time 
+    const categoryNames = activity.categories?.map((c) => c.name).join(', ') || '';
+    const timeInfo = activity.time
       ? `${activity.time.startDate}${activity.time.endDate ? ` - ${activity.time.endDate}` : ''}`
       : '';
 
@@ -202,14 +229,22 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
           <p style="margin: 0; font-size: 12px; color: #9ca3af;">
             <span style="color: #dc2626;">📍</span> ${activity.location?.address || ''}
           </p>
-          ${timeInfo ? `<p style="margin: 2px 0 0 0; font-size: 12px; color: #9ca3af;">
+          ${
+            timeInfo
+              ? `<p style="margin: 2px 0 0 0; font-size: 12px; color: #9ca3af;">
             <span style="color: #059669;">📅</span> ${timeInfo}
-          </p>` : ''}
+          </p>`
+              : ''
+          }
         </div>
         
-        ${categoryNames ? `<div style="margin-bottom: 8px;">
+        ${
+          categoryNames
+            ? `<div style="margin-bottom: 8px;">
           <span style="font-size: 11px; background: #f3f4f6; padding: 2px 6px; border-radius: 4px; color: #4b5563;">${categoryNames}</span>
-        </div>` : ''}
+        </div>`
+            : ''
+        }
         
         <button onclick="window.viewActivityDetails('${activity.id}')" 
                 style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; width: 100%;">
@@ -227,8 +262,8 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
     clearMarkers();
 
     // 建立新標記
-    const newMarkers: any[] = [];
-    
+    const newMarkers: LeafletMarker[] = [];
+
     for (const activity of activities) {
       const marker = await createActivityMarker(activity);
       if (marker) {
@@ -242,7 +277,7 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
     if (clustered && markerCluster.value) {
       markerCluster.value.addLayers(newMarkers);
     } else {
-      newMarkers.forEach(marker => {
+      newMarkers.forEach((marker) => {
         marker.addTo(mapInstance.value);
       });
     }
@@ -258,7 +293,7 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
     if (clustered && markerCluster.value) {
       markerCluster.value.clearLayers();
     } else {
-      markers.value.forEach(marker => {
+      markers.value.forEach((marker) => {
         mapInstance.value.removeLayer(marker);
       });
     }
@@ -272,7 +307,7 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
     const L = await import('leaflet');
     const group = new L.FeatureGroup(markers.value);
     mapInstance.value.fitBounds(group.getBounds(), {
-      padding: [20, 20]
+      padding: [20, 20],
     });
   };
 
@@ -302,16 +337,18 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
   const getActivitiesInBounds = (activities: Activity[]): Activity[] => {
     if (!bounds.value) return activities;
 
-    return activities.filter(activity => {
+    return activities.filter((activity) => {
       const lat = activity.location?.latitude;
       const lng = activity.location?.longitude;
-      
+
       if (!lat || !lng) return false;
-      
-      return lat >= bounds.value!.south &&
-             lat <= bounds.value!.north &&
-             lng >= bounds.value!.west &&
-             lng <= bounds.value!.east;
+
+      return (
+        lat >= bounds.value.south &&
+        lat <= bounds.value.north &&
+        lng >= bounds.value.west &&
+        lng <= bounds.value.east
+      );
     });
   };
 
@@ -327,7 +364,11 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
 
   // 全域函數 (供彈出視窗使用)
   if (process.client) {
-    (window as any).viewActivityDetails = (activityId: string) => {
+    interface ExtendedWindow extends Window {
+      viewActivityDetails: (activityId: string) => void;
+    }
+
+    (window as ExtendedWindow).viewActivityDetails = (activityId: string) => {
       navigateTo(`/activity/${activityId}`);
     };
   }
@@ -358,6 +399,6 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
     resetView,
     fitBoundsToMarkers,
     getActivitiesInBounds,
-    cleanup
+    cleanup,
   };
 };

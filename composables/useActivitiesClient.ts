@@ -16,7 +16,7 @@ interface SearchOptions {
 
 export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
   const { autoLoad = false, pageSize = 20 } = options;
-  const { getActivities, getActivity, initDatabase } = useSqlite();
+  const { getActivities, initDatabase } = useSqlite();
 
   // 響應式狀態
   const activities = ref<Activity[]>([]);
@@ -27,7 +27,36 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
   const isInitialized = ref(false);
 
   // 格式化活動資料
-  const formatActivity = (row: any): Activity => {
+  interface ActivityRow {
+    id: string;
+    name: string;
+    description?: string;
+    summary?: string;
+    status?: string;
+    qualityScore?: number;
+    createdAt: string;
+    updatedAt: string;
+    locationId?: string;
+    address: string;
+    district?: string;
+    city: string;
+    region?: string;
+    latitude?: number;
+    longitude?: number;
+    venue?: string;
+    landmarks?: string;
+    timeId?: string;
+    startDate?: string;
+    endDate?: string;
+    startTime?: string;
+    endTime?: string;
+    timezone?: string;
+    isRecurring?: boolean;
+    recurrenceRule?: string;
+    categories?: string;
+  }
+
+  const formatActivity = (row: ActivityRow): Activity => {
     return {
       id: row.id,
       name: row.name,
@@ -37,44 +66,53 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
       qualityScore: row.qualityScore || 0,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
-      location: row.latitude && row.longitude ? {
-        id: row.locationId || '',
-        activityId: row.id,
-        address: row.address,
-        district: row.district || undefined,
-        city: row.city,
-        region: row.region || 'north',
-        latitude: row.latitude,
-        longitude: row.longitude,
-        venue: row.venue || undefined,
-        landmarks: row.landmarks ? JSON.parse(row.landmarks) : []
-      } : undefined,
-      time: row.startDate ? {
-        id: row.timeId || '',
-        activityId: row.id,
-        startDate: row.startDate,
-        endDate: row.endDate,
-        startTime: row.startTime,
-        endTime: row.endTime,
-        timezone: row.timezone || 'Asia/Taipei',
-        isRecurring: row.isRecurring || false,
-        recurrenceRule: row.recurrenceRule ? JSON.parse(row.recurrenceRule) : undefined
-      } : undefined,
-      categories: row.categories ? 
-        row.categories.split(',').map((name: string) => ({
-          id: '',
-          name: name.trim(),
-          slug: name.trim().toLowerCase(),
-          colorCode: '#3B82F6',
-          icon: '📍'
-        })).filter((cat: any) => cat.name) : []
+      location:
+        row.latitude && row.longitude
+          ? {
+              id: row.locationId || '',
+              activityId: row.id,
+              address: row.address,
+              district: row.district || undefined,
+              city: row.city,
+              region: row.region || 'north',
+              latitude: row.latitude,
+              longitude: row.longitude,
+              venue: row.venue || undefined,
+              landmarks: row.landmarks ? JSON.parse(row.landmarks) : [],
+            }
+          : undefined,
+      time: row.startDate
+        ? {
+            id: row.timeId || '',
+            activityId: row.id,
+            startDate: row.startDate,
+            endDate: row.endDate,
+            startTime: row.startTime,
+            endTime: row.endTime,
+            timezone: row.timezone || 'Asia/Taipei',
+            isRecurring: row.isRecurring || false,
+            recurrenceRule: row.recurrenceRule ? JSON.parse(row.recurrenceRule) : undefined,
+          }
+        : undefined,
+      categories: row.categories
+        ? row.categories
+            .split(',')
+            .map((name: string) => ({
+              id: '',
+              name: name.trim(),
+              slug: name.trim().toLowerCase(),
+              colorCode: '#3B82F6',
+              icon: '📍',
+            }))
+            .filter((cat) => cat.name)
+        : [],
     };
   };
 
   // 初始化資料庫
   const initialize = async () => {
     if (isInitialized.value) return;
-    
+
     loading.value = true;
     try {
       await initDatabase();
@@ -89,14 +127,14 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
   // 載入活動資料
   const loadActivities = async (page = 1, reset = false) => {
     await initialize();
-    
+
     loading.value = true;
-    
+
     try {
       const offset = (page - 1) * pageSize;
       const results = await getActivities({
         limit: pageSize,
-        offset
+        offset,
       });
 
       const formattedResults = results.map(formatActivity);
@@ -108,13 +146,11 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
       }
 
       // 簡單估算總數
-      totalActivities.value = results.length < pageSize ? 
-        offset + results.length : 
-        (offset + results.length) * 2;
-      
+      totalActivities.value =
+        results.length < pageSize ? offset + results.length : (offset + results.length) * 2;
+
       hasMoreActivities.value = results.length === pageSize;
       currentPage.value = page;
-
     } catch (error) {
       console.error('載入活動失敗:', error);
       activities.value = [];
@@ -128,13 +164,21 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
   // 搜尋活動
   const searchActivities = async (searchOptions: SearchOptions = {}) => {
     await initialize();
-    
+
     loading.value = true;
-    
+
     try {
-      const queryOptions: any = {
+      interface QueryOptions {
+        limit: number;
+        offset: number;
+        search?: string;
+        category?: string;
+        city?: string;
+      }
+
+      const queryOptions: QueryOptions = {
         limit: pageSize,
-        offset: 0
+        offset: 0,
       };
 
       if (searchOptions.query) {
@@ -152,12 +196,13 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
           central: ['台中市', '彰化縣', '南投縣', '雲林縣', '苗栗縣'],
           south: ['台南市', '高雄市', '嘉義市', '嘉義縣', '屏東縣'],
           east: ['花蓮縣', '台東縣'],
-          island: ['澎湖縣', '金門縣', '連江縣']
+          island: ['澎湖縣', '金門縣', '連江縣'],
         };
-        
-        const cities = searchOptions.filters.regions
-          .flatMap(region => regionCityMap[region] || []);
-        
+
+        const cities = searchOptions.filters.regions.flatMap(
+          (region) => regionCityMap[region] || []
+        );
+
         if (cities.length > 0) {
           queryOptions.city = cities[0]; // SQLite 查詢限制，只用第一個城市
         }
@@ -170,37 +215,35 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
       if (searchOptions.location && searchOptions.radius) {
         const { lat, lng } = searchOptions.location;
         const radius = searchOptions.radius;
-        
-        const filteredResults = formattedResults.filter(activity => {
+
+        const filteredResults = formattedResults.filter((activity) => {
           if (!activity.location?.latitude || !activity.location?.longitude) return false;
-          
+
           const distance = calculateDistance(
-            lat, lng,
+            lat,
+            lng,
             activity.location.latitude,
             activity.location.longitude
           );
-          
+
           return distance <= radius;
         });
-        
+
         // 按距離排序
         filteredResults.sort((a, b) => {
-          if (!a.location?.latitude || !a.location?.longitude || !b.location?.latitude || !b.location?.longitude) {
+          if (
+            !a.location?.latitude ||
+            !a.location?.longitude ||
+            !b.location?.latitude ||
+            !b.location?.longitude
+          ) {
             return 0;
           }
-          const distA = calculateDistance(
-            lat, lng,
-            a.location.latitude,
-            a.location.longitude
-          );
-          const distB = calculateDistance(
-            lat, lng,
-            b.location.latitude,
-            b.location.longitude
-          );
+          const distA = calculateDistance(lat, lng, a.location.latitude, a.location.longitude);
+          const distB = calculateDistance(lat, lng, b.location.latitude, b.location.longitude);
           return distA - distB;
         });
-        
+
         activities.value = filteredResults;
       } else {
         activities.value = formattedResults;
@@ -209,7 +252,6 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
       totalActivities.value = activities.value.length;
       hasMoreActivities.value = false; // 客戶端搜尋不分頁
       currentPage.value = 1;
-
     } catch (error) {
       console.error('搜尋活動失敗:', error);
       activities.value = [];
@@ -223,20 +265,22 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
   // 計算兩點間距離（公里）
   const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
     const R = 6371; // 地球半徑（公里）
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLng/2) * Math.sin(dLng/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLng = ((lng2 - lng1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   };
 
   // 載入更多活動
   const loadMoreActivities = async () => {
     if (!hasMoreActivities.value || loading.value) return;
-    
+
     await loadActivities(currentPage.value + 1, false);
   };
 
@@ -260,6 +304,6 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
     searchActivities,
     loadMoreActivities,
     refreshActivities,
-    loadActivities
+    loadActivities,
   };
 };

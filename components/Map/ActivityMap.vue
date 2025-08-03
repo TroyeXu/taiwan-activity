@@ -1,21 +1,15 @@
 <template>
   <div class="map-container">
     <!-- 地圖 -->
-    <div id="activity-map" class="leaflet-map" style="height: 100%; width: 100%;"></div>
+    <div id="activity-map" class="leaflet-map" style="height: 100%; width: 100%"></div>
 
     <!-- 分類篩選器 -->
     <div v-if="showCategoryFilter" class="category-filter">
       <div class="filter-header">
         <h4>活動分類</h4>
-        <ElButton 
-          text 
-          size="small" 
-          @click="clearCategoryFilter"
-        >
-          清除
-        </ElButton>
+        <ElButton text size="small" @click="clearCategoryFilter"> 清除 </ElButton>
       </div>
-      
+
       <div class="category-list">
         <ElCheckboxGroup v-model="selectedCategories" @change="updateFilter">
           <ElCheckbox
@@ -70,7 +64,7 @@ const props = withDefaults(defineProps<Props>(), {
   height: '500px',
   showCategoryFilter: true,
   showStats: true,
-  initialCategories: () => []
+  initialCategories: () => [],
 });
 
 interface Emits {
@@ -90,16 +84,19 @@ const markers = ref<any[]>([]);
 
 // 可用分類列表
 const availableCategories = computed(() => {
-  const categoryMap = new Map<string, {
-    label: string;
-    value: string;
-    color: string;
-    icon: string;
-    count: number;
-  }>();
+  const categoryMap = new Map<
+    string,
+    {
+      label: string;
+      value: string;
+      color: string;
+      icon: string;
+      count: number;
+    }
+  >();
 
-  props.activities.forEach(activity => {
-    activity.categories?.forEach(category => {
+  props.activities.forEach((activity) => {
+    activity.categories?.forEach((category) => {
       const existing = categoryMap.get(category.slug);
       if (existing) {
         existing.count++;
@@ -109,7 +106,7 @@ const availableCategories = computed(() => {
           value: category.slug,
           color: category.colorCode || '#3b82f6',
           icon: category.icon || '📍',
-          count: 1
+          count: 1,
         });
       }
     });
@@ -124,8 +121,8 @@ const filteredActivities = computed(() => {
     return props.activities;
   }
 
-  return props.activities.filter(activity => {
-    return activity.categories?.some(category => 
+  return props.activities.filter((activity) => {
+    return activity.categories?.some((category) =>
       selectedCategories.value.includes(category.slug)
     );
   });
@@ -134,34 +131,35 @@ const filteredActivities = computed(() => {
 // 初始化地圖
 const initMap = async () => {
   if (!import.meta.client) return;
-  
+
   // 動態載入 Leaflet
   const leafletModule = await import('leaflet');
   L = leafletModule.default;
-  
+
   // 手動載入 CSS
   const link = document.createElement('link');
   link.rel = 'stylesheet';
   link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
   document.head.appendChild(link);
-  
+
   // 等待 CSS 載入
   setTimeout(() => {
     // 創建地圖
     map.value = L.map('activity-map').setView([props.center.lat, props.center.lng], props.zoom);
-    
+
     // 添加瓦片圖層
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      attribution:
+        '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map.value);
-    
+
     // 添加活動標記
     updateMarkers();
-    
+
     // 發送地圖準備就緒事件
     emit('mapReady', map.value);
-    
+
     console.log('ActivityMap 已創建');
   }, 500);
 };
@@ -173,7 +171,7 @@ const createActivityMarker = (activity: Activity) => {
   }
 
   const marker = L.marker([activity.location.latitude, activity.location.longitude]);
-  
+
   // 創建彈出窗口內容
   const popupContent = `
     <div class="activity-popup">
@@ -186,7 +184,7 @@ const createActivityMarker = (activity: Activity) => {
   `;
 
   marker.bindPopup(popupContent);
-  
+
   // 點擊事件
   marker.on('click', () => {
     emit('activityClick', activity);
@@ -200,7 +198,7 @@ const updateMarkers = () => {
   if (!map.value || !L) return;
 
   // 清除現有標記
-  markers.value.forEach(marker => {
+  markers.value.forEach((marker) => {
     if (marker && map.value) {
       map.value.removeLayer(marker);
     }
@@ -208,7 +206,7 @@ const updateMarkers = () => {
   markers.value = [];
 
   // 添加新標記
-  filteredActivities.value.forEach(activity => {
+  filteredActivities.value.forEach((activity) => {
     const marker = createActivityMarker(activity);
     if (marker) {
       markers.value.push(marker);
@@ -229,17 +227,29 @@ const clearCategoryFilter = () => {
 };
 
 // 監聽 props 變化
-watch(() => props.initialCategories, (newCategories) => {
-  selectedCategories.value = [...newCategories];
-}, { deep: true });
+watch(
+  () => props.initialCategories,
+  (newCategories) => {
+    selectedCategories.value = [...newCategories];
+  },
+  { deep: true }
+);
 
-watch(() => props.activities, () => {
-  updateMarkers();
-}, { deep: true });
+watch(
+  () => props.activities,
+  () => {
+    updateMarkers();
+  },
+  { deep: true }
+);
 
-watch(filteredActivities, () => {
-  updateMarkers();
-}, { deep: true });
+watch(
+  filteredActivities,
+  () => {
+    updateMarkers();
+  },
+  { deep: true }
+);
 
 // 生命週期
 onMounted(async () => {
@@ -370,7 +380,7 @@ onUnmounted(() => {
   .category-filter {
     max-width: 200px;
   }
-  
+
   .map-stats {
     flex-direction: column;
     gap: 4px;

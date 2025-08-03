@@ -1,6 +1,6 @@
 declare module 'leaflet.markercluster' {
   import * as L from 'leaflet';
-  
+
   namespace L {
     class MarkerClusterGroup extends L.LayerGroup {
       constructor(options?: MarkerClusterGroupOptions);

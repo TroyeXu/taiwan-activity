@@ -20,12 +20,12 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
       limit = 20,
       lat,
       lng,
-      radius = 10
+      radius = 10,
     } = query;
 
     // 建立基礎條件
     const whereConditions = [eq(activities.status, 'active')];
-    
+
     // 地區篩選
     if (regions) {
       const regionList = Array.isArray(regions) ? regions : [regions];
@@ -47,7 +47,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
         categoryNames: sql<string>`GROUP_CONCAT(${categories.name})`.as('category_names'),
         categorySlugs: sql<string>`GROUP_CONCAT(${categories.slug})`.as('category_slugs'),
         categoryIcons: sql<string>`GROUP_CONCAT(${categories.icon})`.as('category_icons'),
-        categoryColors: sql<string>`GROUP_CONCAT(${categories.colorCode})`.as('category_colors')
+        categoryColors: sql<string>`GROUP_CONCAT(${categories.colorCode})`.as('category_colors'),
       })
       .from(activities)
       .leftJoin(locations, eq(activities.id, locations.activityId))
@@ -69,10 +69,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
             dateConditions.push(
               and(
                 sql`${activityTimes.startDate} <= ${today}`,
-                or(
-                  sql`${activityTimes.endDate} >= ${today}`,
-                  sql`${activityTimes.endDate} IS NULL`
-                )
+                or(sql`${activityTimes.endDate} >= ${today}`, sql`${activityTimes.endDate} IS NULL`)
               )
             );
             break;
@@ -123,10 +120,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
 
       if (startDate) {
         dateConditions.push(
-          or(
-            sql`${activityTimes.endDate} >= ${startDate}`,
-            sql`${activityTimes.endDate} IS NULL`
-          )
+          or(sql`${activityTimes.endDate} >= ${startDate}`, sql`${activityTimes.endDate} IS NULL`)
         );
       }
 
@@ -168,11 +162,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
     if (categoryFilter) {
       const categoryList = Array.isArray(categoryFilter) ? categoryFilter : [categoryFilter];
       queryBuilder = (queryBuilder as any).having(
-        or(
-          ...categoryList.map(cat => 
-            sql`GROUP_CONCAT(${categories.slug}) LIKE '%${cat}%'`
-          )
-        )
+        or(...categoryList.map((cat) => sql`GROUP_CONCAT(${categories.slug}) LIKE '%${cat}%'`))
       );
     }
 
@@ -223,10 +213,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
       default:
         // 相關性排序 (品質分數 + 創建時間)
         queryBuilder = (queryBuilder as any)
-          .orderBy(
-            desc(activities.qualityScore),
-            desc(activities.createdAt)
-          )
+          .orderBy(desc(activities.qualityScore), desc(activities.createdAt))
           .limit(limitNum)
           .offset(offset);
     }
@@ -235,7 +222,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
     const results = await queryBuilder;
 
     // 轉換結果格式
-    const formattedResults: Activity[] = results.map(row => ({
+    const formattedResults: Activity[] = results.map((row) => ({
       id: row.activity.id,
       name: row.activity.name,
       description: row.activity.description || undefined,
@@ -244,43 +231,54 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
       qualityScore: row.activity.qualityScore,
       createdAt: row.activity.createdAt,
       updatedAt: row.activity.updatedAt,
-      location: row.location ? {
-        id: row.location.id,
-        activityId: row.location.activityId,
-        address: row.location.address,
-        district: row.location.district || undefined,
-        city: row.location.city,
-        region: row.location.region as any,
-        latitude: row.location.latitude,
-        longitude: row.location.longitude,
-        venue: row.location.venue || undefined,
-        landmarks: row.location.landmarks ? JSON.parse(row.location.landmarks) : []
-      } : undefined,
-      time: row.time ? {
-        id: row.time.id,
-        activityId: row.time.activityId,
-        startDate: row.time.startDate,
-        endDate: row.time.endDate,
-        startTime: row.time.startTime,
-        endTime: row.time.endTime,
-        timezone: row.time.timezone,
-        isRecurring: row.time.isRecurring,
-        recurrenceRule: row.time.recurrenceRule ? JSON.parse(row.time.recurrenceRule) : undefined
-      } : undefined,
-      categories: row.categoryNames ? 
-        row.categoryNames.split(',').map((name, index) => ({
-          id: '',
-          name: name.trim(),
-          slug: row.categorySlugs?.split(',')[index]?.trim() || '',
-          colorCode: row.categoryColors?.split(',')[index]?.trim() || '',
-          icon: row.categoryIcons?.split(',')[index]?.trim() || ''
-        })).filter(cat => cat.name) : []
+      location: row.location
+        ? {
+            id: row.location.id,
+            activityId: row.location.activityId,
+            address: row.location.address,
+            district: row.location.district || undefined,
+            city: row.location.city,
+            region: row.location.region as any,
+            latitude: row.location.latitude,
+            longitude: row.location.longitude,
+            venue: row.location.venue || undefined,
+            landmarks: row.location.landmarks ? JSON.parse(row.location.landmarks) : [],
+          }
+        : undefined,
+      time: row.time
+        ? {
+            id: row.time.id,
+            activityId: row.time.activityId,
+            startDate: row.time.startDate,
+            endDate: row.time.endDate,
+            startTime: row.time.startTime,
+            endTime: row.time.endTime,
+            timezone: row.time.timezone,
+            isRecurring: row.time.isRecurring,
+            recurrenceRule: row.time.recurrenceRule
+              ? JSON.parse(row.time.recurrenceRule)
+              : undefined,
+          }
+        : undefined,
+      categories: row.categoryNames
+        ? row.categoryNames
+            .split(',')
+            .map((name, index) => ({
+              id: '',
+              name: name.trim(),
+              slug: row.categorySlugs?.split(',')[index]?.trim() || '',
+              colorCode: row.categoryColors?.split(',')[index]?.trim() || '',
+              icon: row.categoryIcons?.split(',')[index]?.trim() || '',
+            }))
+            .filter((cat) => cat.name)
+        : [],
     }));
 
     // 計算總數 (簡化版本，實際應用中可能需要單獨查詢)
-    const totalCount = results.length < limitNum ? 
-      offset + results.length : 
-      Math.ceil((offset + results.length) * 1.5); // 估算值
+    const totalCount =
+      results.length < limitNum
+        ? offset + results.length
+        : Math.ceil((offset + results.length) * 1.5); // 估算值
 
     return {
       success: true,
@@ -289,16 +287,15 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
         page: pageNum,
         limit: limitNum,
         total: totalCount,
-        totalPages: Math.ceil(totalCount / limitNum)
-      }
+        totalPages: Math.ceil(totalCount / limitNum),
+      },
     };
-
   } catch (error) {
     console.error('取得活動列表失敗:', error);
-    
+
     throw createError({
       statusCode: 500,
-      statusMessage: '取得活動列表失敗'
+      statusMessage: '取得活動列表失敗',
     });
   }
 });

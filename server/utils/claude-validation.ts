@@ -28,7 +28,7 @@ export class ClaudeValidationService {
   constructor() {
     const config = useRuntimeConfig();
     this.apiKey = config.claudeApiKey || process.env.CLAUDE_API_KEY || '';
-    
+
     if (!this.apiKey) {
       console.warn('Claude API key not configured, validation service disabled');
     }
@@ -42,28 +42,29 @@ export class ClaudeValidationService {
     try {
       // 基礎驗證
       const basicIssues = this.performBasicValidation(rawData);
-      
+
       // Claude AI 深度驗證
       const claudeResult = await this.callClaudeAPI(rawData);
-      
+
       // 計算品質分數
       const qualityScore = this.calculateQualityScore(rawData, [
-        ...basicIssues, 
-        ...claudeResult.issues
+        ...basicIssues,
+        ...claudeResult.issues,
       ]);
 
       return {
         id: this.generateUUID(),
         originalData: rawData,
-        validatedData: claudeResult.isValid ? 
-          this.standardizeData(rawData, claudeResult.standardizedData) : null,
-        isValid: claudeResult.isValid && basicIssues.filter(i => i.severity === 'error').length === 0,
+        validatedData: claudeResult.isValid
+          ? this.standardizeData(rawData, claudeResult.standardizedData)
+          : null,
+        isValid:
+          claudeResult.isValid && basicIssues.filter((i) => i.severity === 'error').length === 0,
         qualityScore,
         issues: [...basicIssues, ...claudeResult.issues],
         suggestions: claudeResult.suggestions,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-
     } catch (error) {
       console.error('Claude validation failed:', error);
       // 降級到基礎驗證
@@ -73,14 +74,16 @@ export class ClaudeValidationService {
 
   private async callClaudeAPI(data: any): Promise<ClaudeValidationResponse> {
     const prompt = this.buildValidationPrompt(data);
-    
+
     const request: ClaudeValidationRequest = {
       model: 'claude-3-sonnet-20240229',
       max_tokens: 2000,
-      messages: [{
-        role: 'user',
-        content: prompt
-      }]
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
     };
 
     const response = await fetch(this.baseUrl, {
@@ -88,9 +91,9 @@ export class ClaudeValidationService {
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': this.apiKey,
-        'anthropic-version': '2023-06-01'
+        'anthropic-version': '2023-06-01',
       },
-      body: JSON.stringify(request)
+      body: JSON.stringify(request),
     });
 
     if (!response.ok) {
@@ -153,31 +156,35 @@ ${JSON.stringify(data, null, 2)}
       if (jsonMatch) {
         return JSON.parse(jsonMatch[0]);
       }
-      
+
       // 如果無法解析，回傳預設結果
       return {
         isValid: false,
         qualityScore: 30,
-        issues: [{
-          field: 'general',
-          type: 'invalid',
-          severity: 'error',
-          message: '無法解析驗證回應'
-        }],
-        suggestions: []
+        issues: [
+          {
+            field: 'general',
+            type: 'invalid',
+            severity: 'error',
+            message: '無法解析驗證回應',
+          },
+        ],
+        suggestions: [],
       };
     } catch (error) {
       console.error('Failed to parse Claude response:', error);
       return {
         isValid: false,
         qualityScore: 20,
-        issues: [{
-          field: 'general',
-          type: 'invalid', 
-          severity: 'error',
-          message: 'Claude 回應格式錯誤'
-        }],
-        suggestions: []
+        issues: [
+          {
+            field: 'general',
+            type: 'invalid',
+            severity: 'error',
+            message: 'Claude 回應格式錯誤',
+          },
+        ],
+        suggestions: [],
       };
     }
   }
@@ -191,7 +198,7 @@ ${JSON.stringify(data, null, 2)}
         field: 'name',
         type: 'missing',
         severity: 'error',
-        message: '活動名稱為必填欄位'
+        message: '活動名稱為必填欄位',
       });
     }
 
@@ -199,8 +206,8 @@ ${JSON.stringify(data, null, 2)}
       issues.push({
         field: 'location.address',
         type: 'missing',
-        severity: 'error', 
-        message: '活動地址為必填欄位'
+        severity: 'error',
+        message: '活動地址為必填欄位',
       });
     }
 
@@ -209,7 +216,7 @@ ${JSON.stringify(data, null, 2)}
         field: 'time.startDate',
         type: 'missing',
         severity: 'error',
-        message: '活動開始日期為必填欄位'
+        message: '活動開始日期為必填欄位',
       });
     }
 
@@ -217,13 +224,13 @@ ${JSON.stringify(data, null, 2)}
     if (data.location?.latitude && data.location?.longitude) {
       const lat = parseFloat(data.location.latitude);
       const lng = parseFloat(data.location.longitude);
-      
+
       if (lat < 21.8 || lat > 25.4 || lng < 119.3 || lng > 122.1) {
         issues.push({
           field: 'location.coordinates',
           type: 'invalid',
           severity: 'warning',
-          message: '座標位置可能不在台灣範圍內'
+          message: '座標位置可能不在台灣範圍內',
         });
       }
     }
@@ -232,13 +239,13 @@ ${JSON.stringify(data, null, 2)}
     if (data.time?.startDate && data.time?.endDate) {
       const startDate = new Date(data.time.startDate);
       const endDate = new Date(data.time.endDate);
-      
+
       if (startDate > endDate) {
         issues.push({
           field: 'time',
           type: 'invalid',
           severity: 'error',
-          message: '開始時間不能晚於結束時間'
+          message: '開始時間不能晚於結束時間',
         });
       }
     }
@@ -250,7 +257,7 @@ ${JSON.stringify(data, null, 2)}
     let score = 100;
 
     // 扣分規則
-    issues.forEach(issue => {
+    issues.forEach((issue) => {
       switch (issue.severity) {
         case 'error':
           score -= 20;
@@ -273,7 +280,7 @@ ${JSON.stringify(data, null, 2)}
 
   private calculateCompletenessBonus(data: any): number {
     let bonus = 0;
-    
+
     // 檢查可選欄位完整性
     if (data.description) bonus += 5;
     if (data.summary) bonus += 3;
@@ -282,28 +289,24 @@ ${JSON.stringify(data, null, 2)}
     if (data.time?.endTime) bonus += 2;
     if (data.categories?.length > 0) bonus += 5;
     if (data.media?.images?.length > 0) bonus += 5;
-    
+
     return Math.min(20, bonus);
   }
 
   private standardizeData(
-    originalData: any, 
+    originalData: any,
     claudeSuggestions?: Partial<Activity>
   ): Partial<Activity> {
     const standardized = { ...originalData };
 
     // 標準化地址格式
     if (standardized.location?.address) {
-      standardized.location.address = this.standardizeAddress(
-        standardized.location.address
-      );
+      standardized.location.address = this.standardizeAddress(standardized.location.address);
     }
 
     // 標準化類別
     if (standardized.categories) {
-      standardized.categories = this.standardizeCategories(
-        standardized.categories
-      );
+      standardized.categories = this.standardizeCategories(standardized.categories);
     }
 
     // 合併 Claude 建議
@@ -321,16 +324,16 @@ ${JSON.stringify(data, null, 2)}
 
   private standardizeCategories(categories: any[]): any[] {
     const categoryMapping: Record<string, string> = {
-      '節慶活動': '傳統節慶',
-      '文化活動': '藝術文化',
-      '美食活動': '美食饗宴',
-      '自然活動': '自然生態',
-      '養生活動': '養生樂活'
+      節慶活動: '傳統節慶',
+      文化活動: '藝術文化',
+      美食活動: '美食饗宴',
+      自然活動: '自然生態',
+      養生活動: '養生樂活',
     };
 
-    return categories.map(cat => ({
+    return categories.map((cat) => ({
       ...cat,
-      name: categoryMapping[cat.name] || cat.name
+      name: categoryMapping[cat.name] || cat.name,
     }));
   }
 
@@ -341,13 +344,15 @@ ${JSON.stringify(data, null, 2)}
     return {
       id: this.generateUUID(),
       originalData: data,
-      validatedData: issues.filter(i => i.severity === 'error').length === 0 ? 
-        this.standardizeData(data) : null,
-      isValid: issues.filter(i => i.severity === 'error').length === 0,
+      validatedData:
+        issues.filter((i) => i.severity === 'error').length === 0
+          ? this.standardizeData(data)
+          : null,
+      isValid: issues.filter((i) => i.severity === 'error').length === 0,
       qualityScore,
       issues,
       suggestions: [],
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 

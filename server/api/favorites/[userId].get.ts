@@ -1,5 +1,12 @@
 import { getDatabase } from '~/server/utils/database';
-import { userFavorites, activities, locations, activityTimes, categories, activityCategories } from '~/db/schema';
+import {
+  userFavorites,
+  activities,
+  locations,
+  activityTimes,
+  categories,
+  activityCategories,
+} from '~/db/schema';
 import { eq, desc, sql } from 'drizzle-orm';
 import type { ApiResponse, Activity } from '~/types';
 
@@ -8,11 +15,11 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
     const db = getDatabase();
     const userId = getRouterParam(event, 'userId');
     const query = getQuery(event);
-    
+
     if (!userId) {
       throw createError({
         statusCode: 400,
-        statusMessage: '缺少使用者 ID'
+        statusMessage: '缺少使用者 ID',
       });
     }
 
@@ -30,7 +37,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
         categoryNames: sql<string>`GROUP_CONCAT(${categories.name})`.as('category_names'),
         categorySlugs: sql<string>`GROUP_CONCAT(${categories.slug})`.as('category_slugs'),
         categoryColors: sql<string>`GROUP_CONCAT(${categories.colorCode})`.as('category_colors'),
-        categoryIcons: sql<string>`GROUP_CONCAT(${categories.icon})`.as('category_icons')
+        categoryIcons: sql<string>`GROUP_CONCAT(${categories.icon})`.as('category_icons'),
       })
       .from(userFavorites)
       .innerJoin(activities, eq(userFavorites.activityId, activities.id))
@@ -54,7 +61,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
     const total = totalResult[0]?.count || 0;
 
     // 格式化結果
-    const formattedFavorites: Activity[] = favorites.map(row => ({
+    const formattedFavorites: Activity[] = favorites.map((row) => ({
       id: row.activity.id,
       name: row.activity.name,
       description: row.activity.description || undefined,
@@ -70,39 +77,49 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
       clickCount: row.activity.clickCount || 0,
       createdAt: row.activity.createdAt,
       updatedAt: row.activity.updatedAt,
-      location: row.location ? {
-        id: row.location.id,
-        activityId: row.location.activityId,
-        address: row.location.address,
-        district: row.location.district || undefined,
-        city: row.location.city,
-        region: row.location.region as any,
-        latitude: row.location.latitude ?? undefined,
-        longitude: row.location.longitude ?? undefined,
-        venue: row.location.venue || undefined,
-        landmarks: row.location.landmarks ? JSON.parse(row.location.landmarks) : []
-      } : undefined,
-      time: row.time ? {
-        id: row.time.id,
-        activityId: row.time.activityId,
-        startDate: row.time.startDate,
-        endDate: row.time.endDate,
-        startTime: row.time.startTime,
-        endTime: row.time.endTime,
-        timezone: row.time.timezone,
-        isRecurring: row.time.isRecurring,
-        recurrenceRule: row.time.recurrenceRule ? JSON.parse(row.time.recurrenceRule) : undefined
-      } : undefined,
-      categories: row.categoryNames ? 
-        row.categoryNames.split(',').map((name, index) => ({
-          id: '',
-          name: name.trim(),
-          slug: row.categorySlugs?.split(',')[index]?.trim() || '',
-          colorCode: row.categoryColors?.split(',')[index]?.trim() || '',
-          icon: row.categoryIcons?.split(',')[index]?.trim() || ''
-        })).filter(cat => cat.name) : [],
+      location: row.location
+        ? {
+            id: row.location.id,
+            activityId: row.location.activityId,
+            address: row.location.address,
+            district: row.location.district || undefined,
+            city: row.location.city,
+            region: row.location.region as any,
+            latitude: row.location.latitude ?? undefined,
+            longitude: row.location.longitude ?? undefined,
+            venue: row.location.venue || undefined,
+            landmarks: row.location.landmarks ? JSON.parse(row.location.landmarks) : [],
+          }
+        : undefined,
+      time: row.time
+        ? {
+            id: row.time.id,
+            activityId: row.time.activityId,
+            startDate: row.time.startDate,
+            endDate: row.time.endDate,
+            startTime: row.time.startTime,
+            endTime: row.time.endTime,
+            timezone: row.time.timezone,
+            isRecurring: row.time.isRecurring,
+            recurrenceRule: row.time.recurrenceRule
+              ? JSON.parse(row.time.recurrenceRule)
+              : undefined,
+          }
+        : undefined,
+      categories: row.categoryNames
+        ? row.categoryNames
+            .split(',')
+            .map((name, index) => ({
+              id: '',
+              name: name.trim(),
+              slug: row.categorySlugs?.split(',')[index]?.trim() || '',
+              colorCode: row.categoryColors?.split(',')[index]?.trim() || '',
+              icon: row.categoryIcons?.split(',')[index]?.trim() || '',
+            }))
+            .filter((cat) => cat.name)
+        : [],
       // 額外的收藏資訊
-      savedAt: row.savedAt
+      savedAt: row.savedAt,
     }));
 
     return {
@@ -112,10 +129,9 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit)
-      }
+        totalPages: Math.ceil(total / limit),
+      },
     };
-
   } catch (error) {
     console.error('Get user favorites failed:', error);
 
@@ -125,7 +141,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
 
     throw createError({
       statusCode: 500,
-      statusMessage: '取得收藏清單失敗'
+      statusMessage: '取得收藏清單失敗',
     });
   }
 });

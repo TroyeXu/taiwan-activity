@@ -1,8 +1,4 @@
 // 簡單的內建排程器，不依賴外部套件
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
 
 interface ScheduledJob {
   name: string;
@@ -53,13 +49,13 @@ export class SimpleScheduler {
       name,
       pattern,
       handler,
-      enabled: true
+      enabled: true,
     };
 
     this.jobs.set(name, job);
     this.jobStatus.set(name, {
       name,
-      running: false
+      running: false,
     });
 
     // 簡化的排程：轉換 cron 模式為間隔時間
@@ -68,7 +64,7 @@ export class SimpleScheduler {
       const interval = setInterval(async () => {
         await this.executeJob(name);
       }, intervalMs);
-      
+
       this.intervals.set(name, interval);
     }
   }
@@ -76,17 +72,17 @@ export class SimpleScheduler {
   private cronToInterval(pattern: string): number {
     // 簡化的 cron 轉換，只支援基本模式
     const parts = pattern.split(' ');
-    
+
     // 每小時: 0 * * * *
     if (parts[0] === '0' && parts[1] === '*') {
       return 60 * 60 * 1000; // 1 小時
     }
-    
+
     // 每 4 小時: 0 */4 * * *
     if (parts[0] === '0' && parts[1] === '*/4') {
       return 4 * 60 * 60 * 1000; // 4 小時
     }
-    
+
     // 每 6 小時: 0 */6 * * *
     if (parts[0] === '0' && parts[1] === '*/6') {
       return 6 * 60 * 60 * 1000; // 6 小時
@@ -99,13 +95,13 @@ export class SimpleScheduler {
   private async executeJob(jobName: string) {
     const job = this.jobs.get(jobName);
     const status = this.jobStatus.get(jobName);
-    
+
     if (!job || !status || !job.enabled || status.running) {
       return;
     }
 
     console.log(`🕐 執行排程任務: ${jobName}`);
-    
+
     status.running = true;
     status.lastRun = new Date();
 
@@ -125,19 +121,18 @@ export class SimpleScheduler {
   async runDailyCrawl() {
     try {
       console.log('🕐 開始每日爬取任務...');
-      
+
       // 觸發爬蟲 API
       const response = await $fetch('/api/crawler/trigger', {
         method: 'POST',
         body: {
           spider: 'tourism_bureau',
           args: { max_pages: 5 },
-          async: true
-        }
+          async: true,
+        },
       });
 
       console.log('✅ 每日爬取任務觸發成功:', response);
-      
     } catch (error) {
       console.error('❌ 每日爬取任務失敗:', error);
       throw error;
@@ -147,19 +142,18 @@ export class SimpleScheduler {
   async runIncrementalUpdate() {
     try {
       console.log('🕐 開始增量更新任務...');
-      
+
       // 觸發小量爬取
       const response = await $fetch('/api/crawler/trigger', {
         method: 'POST',
         body: {
           spider: 'tourism_bureau',
           args: { max_pages: 2, incremental: true },
-          async: true
-        }
+          async: true,
+        },
       });
 
       console.log('✅ 增量更新任務完成:', response);
-      
     } catch (error) {
       console.error('❌ 增量更新任務失敗:', error);
       throw error;
@@ -169,18 +163,17 @@ export class SimpleScheduler {
   async runBatchValidation() {
     try {
       console.log('🕐 開始批次驗證任務...');
-      
+
       const response = await $fetch('/api/validation/batch', {
         method: 'POST',
         body: {
           source: 'scheduler',
           batchSize: 50,
-          autoProcess: true
-        }
+          autoProcess: true,
+        },
       });
 
       console.log('✅ 批次驗證任務完成:', response);
-      
     } catch (error) {
       console.error('❌ 批次驗證任務失敗:', error);
       throw error;
@@ -206,7 +199,7 @@ export class SimpleScheduler {
     this.jobStatus.forEach((jobStatus, name) => {
       status[name] = {
         ...jobStatus,
-        nextRun: this.calculateNextRun(name)
+        nextRun: this.calculateNextRun(name),
       };
     });
     return status;
@@ -256,14 +249,14 @@ export const scheduler = new SimpleScheduler();
 // 在 Nuxt 伺服器啟動時自動啟動
 if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'test') {
   scheduler.start();
-  
+
   // 優雅關閉
   process.on('SIGINT', () => {
     console.log('正在關閉排程器...');
     scheduler.stop();
     process.exit(0);
   });
-  
+
   process.on('SIGTERM', () => {
     console.log('正在關閉排程器...');
     scheduler.stop();

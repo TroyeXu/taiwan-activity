@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real, blob } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
 
 // 活動主表
@@ -25,7 +25,9 @@ export const activities = sqliteTable('activities', {
 // 地點資訊表
 export const locations = sqliteTable('locations', {
   id: text('id').primaryKey(),
-  activityId: text('activity_id').references(() => activities.id, { onDelete: 'cascade' }).notNull(),
+  activityId: text('activity_id')
+    .references(() => activities.id, { onDelete: 'cascade' })
+    .notNull(),
   address: text('address').notNull(),
   district: text('district'),
   city: text('city').notNull(),
@@ -48,14 +50,20 @@ export const categories = sqliteTable('categories', {
 // 活動分類關聯表
 export const activityCategories = sqliteTable('activity_categories', {
   id: text('id').primaryKey(),
-  activityId: text('activity_id').references(() => activities.id, { onDelete: 'cascade' }).notNull(),
-  categoryId: text('category_id').references(() => categories.id, { onDelete: 'cascade' }).notNull(),
+  activityId: text('activity_id')
+    .references(() => activities.id, { onDelete: 'cascade' })
+    .notNull(),
+  categoryId: text('category_id')
+    .references(() => categories.id, { onDelete: 'cascade' })
+    .notNull(),
 });
 
 // 活動時間表
 export const activityTimes = sqliteTable('activity_times', {
   id: text('id').primaryKey(),
-  activityId: text('activity_id').references(() => activities.id, { onDelete: 'cascade' }).notNull(),
+  activityId: text('activity_id')
+    .references(() => activities.id, { onDelete: 'cascade' })
+    .notNull(),
   startDate: text('start_date').notNull(),
   endDate: text('end_date'),
   startTime: text('start_time'),
@@ -68,7 +76,9 @@ export const activityTimes = sqliteTable('activity_times', {
 // 資料來源表
 export const dataSources = sqliteTable('data_sources', {
   id: text('id').primaryKey(),
-  activityId: text('activity_id').references(() => activities.id, { onDelete: 'cascade' }).notNull(),
+  activityId: text('activity_id')
+    .references(() => activities.id, { onDelete: 'cascade' })
+    .notNull(),
   website: text('website').notNull(),
   url: text('url'),
   crawledAt: integer('crawled_at', { mode: 'timestamp' }).notNull(),
@@ -102,8 +112,12 @@ export const users = sqliteTable('users', {
 // 使用者收藏表
 export const userFavorites = sqliteTable('user_favorites', {
   id: text('id').primaryKey(),
-  userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  activityId: text('activity_id').references(() => activities.id, { onDelete: 'cascade' }).notNull(),
+  userId: text('user_id')
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull(),
+  activityId: text('activity_id')
+    .references(() => activities.id, { onDelete: 'cascade' })
+    .notNull(),
   savedAt: integer('saved_at', { mode: 'timestamp' }).notNull(),
 });
 
@@ -134,8 +148,12 @@ export const tags = sqliteTable('tags', {
 // 活動標籤關聯表
 export const activityTags = sqliteTable('activity_tags', {
   id: text('id').primaryKey(),
-  activityId: text('activity_id').references(() => activities.id, { onDelete: 'cascade' }).notNull(),
-  tagId: text('tag_id').references(() => tags.id, { onDelete: 'cascade' }).notNull(),
+  activityId: text('activity_id')
+    .references(() => activities.id, { onDelete: 'cascade' })
+    .notNull(),
+  tagId: text('tag_id')
+    .references(() => tags.id, { onDelete: 'cascade' })
+    .notNull(),
 });
 
 // 關聯定義
