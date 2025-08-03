@@ -44,13 +44,18 @@ jobs:
       - name: Initialize database
         run: npm run db:init
 
-      # 複製資料庫到公開目錄
-      - name: Copy database to public
-        run: cp database/tourism.sqlite public/tourism.sqlite
-
       # 建構靜態網站
       - name: Build
         run: npm run generate
+
+      # 複製資料庫到輸出目錄
+      - name: Copy database to output
+        run: |
+          cp database/tourism.sqlite .output/public/tourism.sqlite
+          # 確保 .nojekyll 檔案存在
+          touch .output/public/.nojekyll
+          # 複製 404.html 到輸出目錄
+          cp public/404.html .output/public/404.html || true
 
       # 上傳建構產物
       - name: Upload artifact
