@@ -56,6 +56,15 @@ jobs:
           touch .output/public/.nojekyll
           # 複製 404.html 到輸出目錄
           cp public/404.html .output/public/404.html || true
+          # 修復 manifest.json 被當成目錄的問題
+          if [ -d ".output/public/manifest.json" ]; then
+            rm -rf .output/public/manifest.json
+            cp public/manifest.json .output/public/manifest.json
+          fi
+          # 確保 favicon.ico 存在
+          if [ ! -f ".output/public/favicon.ico" ]; then
+            cp public/favicon.ico .output/public/favicon.ico || true
+          fi
 
       # 上傳建構產物
       - name: Upload artifact

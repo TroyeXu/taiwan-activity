@@ -51,6 +51,11 @@ export default defineNuxtConfig({
     rollupConfig: {
       external: ['cookie-es', 'better-sqlite3'],
     },
+    
+    // 排除靜態檔案不要預渲染
+    prerender: {
+      ignore: ['/manifest.json', '/favicon.ico', '/apple-touch-icon.png'],
+    },
   },
 
   // 應用程式配置
@@ -148,6 +153,10 @@ export default defineNuxtConfig({
   routeRules: {
     // 主頁預渲染
     '/': { prerender: true },
+    
+    // 防止靜態檔案被當成路由
+    '/manifest.json': { redirect: '/taiwan-activity/manifest.json' },
+    '/favicon.ico': { redirect: '/taiwan-activity/favicon.ico' },
 
     // API 路由快取設定
     '/api/categories/**': {
