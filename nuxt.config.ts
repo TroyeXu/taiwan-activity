@@ -2,6 +2,9 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: false },
   
+  // 設定為 SPA 模式（靜態生成）
+  ssr: false,
+  
   // 模組配置
   modules: [
     '@nuxtjs/tailwindcss',
@@ -39,20 +42,14 @@ export default defineNuxtConfig({
     experimental: {
       wasm: true
     },
+    // 靜態網站預設
+    preset: 'static',
     // Node.js 原生模組
     nodeModulesDirs: ['./node_modules'],
     
     // 修復 cookie-es 導入問題
     rollupConfig: {
       external: ['cookie-es', 'better-sqlite3']
-    },
-    // 禁用有問題的 Azure 相關功能
-    preset: 'node-server',
-    storage: {
-      fs: { 
-        driver: 'fs',
-        base: './data/cache'
-      }
     }
   },
   

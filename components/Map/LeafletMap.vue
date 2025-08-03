@@ -27,7 +27,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  zoom: 7,
+  zoom: 8,
   height: '400px'
 });
 
@@ -107,6 +107,13 @@ const initMap = async () => {
     zoom: props.zoom,
     zoomControl: false, // 我們使用自定義控制按鈕
     preferCanvas: true, // 提升性能
+    minZoom: 7, // 最小縮放級別
+    maxZoom: 18, // 最大縮放級別
+    maxBounds: [ // 限制地圖邊界在台灣區域
+      [21.5, 119.5], // 西南角
+      [25.5, 122.5]  // 東北角
+    ],
+    maxBoundsViscosity: 1.0 // 防止拖曳超出邊界
   });
 
   // 添加圖層 - 使用 OpenStreetMap（最穩定）

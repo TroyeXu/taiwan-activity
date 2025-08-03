@@ -9,7 +9,7 @@ interface UseLeafletMapOptions {
 
 export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
   const { 
-    defaultCenter = { lat: 23.8, lng: 121 }, // 台灣中心
+    defaultCenter = { lat: 23.69781, lng: 120.960515 }, // 台灣地理中心
     defaultZoom = 8,
     clustered = true 
   } = options;
@@ -65,7 +65,14 @@ export const useLeafletMap = (options: UseLeafletMapOptions = {}) => {
       center: [center.value.lat, center.value.lng],
       zoom: zoom.value,
       zoomControl: true,
-      attributionControl: true
+      attributionControl: true,
+      minZoom: 7,
+      maxZoom: 18,
+      maxBounds: [
+        [21.5, 119.5], // 台灣西南角
+        [25.5, 122.5]  // 台灣東北角
+      ],
+      maxBoundsViscosity: 1.0
     });
 
     // 添加 OpenStreetMap 圖層
