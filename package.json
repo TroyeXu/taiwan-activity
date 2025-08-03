@@ -4,39 +4,25 @@
   "description": "Taiwan Tourism Activity Map - Discover amazing activities across Taiwan",
   "type": "module",
   "private": true,
+  "packageManager": "npm@10.2.4",
   "scripts": {
-    "setup": "tsx scripts/setup-database.ts",
     "dev": "nuxt dev",
     "build": "nuxt build",
     "preview": "nuxt preview",
     "generate": "nuxt generate",
-    "db:generate": "drizzle-kit generate:sqlite",
-    "db:push": "drizzle-kit push:sqlite",
-    "db:studio": "drizzle-kit studio",
+    "postinstall": "nuxt prepare",
+    "prepare": "husky",
     "db:init": "tsx scripts/init-database.ts",
-    "db:seed": "tsx db/seeds/index.ts",
-    "db:fake": "tsx scripts/generate-fake-data.ts",
     "db:reset": "rm -f database/tourism.sqlite && npm run db:init",
-    "db:reset-fake": "rm -f database/tourism.sqlite && npm run db:init && npm run db:fake",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,vue,json,md,yml,yaml,css,scss}\"",
-    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,vue,json,md,yml,yaml,css,scss}\"",
-    "type-check": "nuxt typecheck",
-    "type-check:strict": "tsc --project tsconfig.strict.json --noEmit",
-    "check:all": "npm run lint && npm run format:check && npm run type-check",
-    "clean": "rm -rf .nuxt .output node_modules/.cache",
-    "clean:all": "rm -rf .nuxt .output node_modules database/tourism.sqlite",
-    "postinstall": "nuxt prepare",
-    "prepare": "husky",
-    "build:gh-pages": "npm run generate && cp data/tourism.db .output/public/tourism.sqlite",
-    "deploy:gh-pages": "npm run build:gh-pages && npx gh-pages -d .output/public"
+    "clean": "rm -rf .nuxt .output node_modules/.cache"
   },
   "dependencies": {
     "@element-plus/nuxt": "^1.1.4",
     "@nuxt/image": "^1.11.0",
     "@pinia/nuxt": "^0.11.2",
-    "@vue-leaflet/vue-leaflet": "^0.10.1",
     "@vueuse/nuxt": "^13.6.0",
     "better-sqlite3": "^9.2.2",
     "drizzle-orm": "^0.44.4",
@@ -48,13 +34,11 @@
     "pinia": "^3.0.3",
     "sql.js": "^1.13.0",
     "vue": "^3.4.0",
-    "vue-leaflet": "^0.1.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
     "@nuxt/devtools": "^2.6.2",
-    "@nuxtjs/eslint-config-typescript": "^12.1.0",
     "@nuxtjs/tailwindcss": "^6.14.0",
     "@tailwindcss/aspect-ratio": "^0.4.2",
     "@tailwindcss/forms": "^0.5.10",
@@ -73,32 +57,16 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.1.2",
     "prettier": "^3.6.2",
-    "sass-embedded": "^1.89.2",
     "tsx": "^4.7.0",
     "typescript": "^5.9.2",
-    "vue-tsc": "^3.0.5",
-    "youch": "^3.3.4"
+    "vue-tsc": "^3.0.5"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx,vue}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md,yml,yaml}": [
-      "prettier --write"
-    ],
-    "*.{css,scss,sass,less}": [
-      "prettier --write"
-    ]
+    "*.{js,jsx,ts,tsx,vue}": ["eslint --fix", "prettier --write"],
+    "*.{json,md,yml,yaml}": ["prettier --write"],
+    "*.{css,scss,sass,less}": ["prettier --write"]
   },
-  "keywords": [
-    "taiwan",
-    "tourism",
-    "activities",
-    "map",
-    "vue",
-    "nuxt"
-  ],
+  "keywords": ["taiwan", "tourism", "activities", "map", "vue", "nuxt"],
   "author": "Your Name",
   "license": "MIT"
 }

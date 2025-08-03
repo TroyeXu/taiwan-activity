@@ -1,5 +1,11 @@
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
+
+  // Nuxt 4 future features
+  future: {
+    compatibilityVersion: 4,
+  },
+
   devtools: { enabled: false },
 
   // 設定為 SPA 模式（靜態生成）
@@ -51,7 +57,7 @@ export default defineNuxtConfig({
     rollupConfig: {
       external: ['cookie-es', 'better-sqlite3'],
     },
-    
+
     // 排除靜態檔案不要預渲染
     prerender: {
       ignore: ['/manifest.json', '/favicon.ico', '/apple-touch-icon.png'],
@@ -153,7 +159,7 @@ export default defineNuxtConfig({
   routeRules: {
     // 主頁預渲染
     '/': { prerender: true },
-    
+
     // 防止靜態檔案被當成路由
     '/manifest.json': { redirect: '/taiwan-activity/manifest.json' },
     '/favicon.ico': { redirect: '/taiwan-activity/favicon.ico' },
