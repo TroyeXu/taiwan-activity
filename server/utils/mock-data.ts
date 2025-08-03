@@ -1,5 +1,5 @@
-import type { Activity, Category } from '~/types';
-import { ActivityStatus, Region } from '~/types';
+import type { Activity, Category } from '../../app/types';
+import { ActivityStatus, Region } from '../../app/types';
 
 // Mock 分類資料
 export const mockCategories: Category[] = [

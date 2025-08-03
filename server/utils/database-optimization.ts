@@ -1,4 +1,4 @@
-import { db } from '~/db';
+import { getDatabase } from './database';
 import { sql } from 'drizzle-orm';
 
 interface QueryPerformance {
@@ -50,7 +50,7 @@ export class DatabaseOptimizationService {
     try {
       // 只記錄慢查詢或取樣記錄
       if (executionTime > this.slowQueryThreshold || Math.random() < 0.01) {
-        await db.run(sql`
+        await getDatabase().run(sql`
           INSERT INTO query_performance (
             id, query_type, execution_time_ms, parameters, 
             executed_at, user_agent, ip_address
@@ -110,14 +110,14 @@ export class DatabaseOptimizationService {
     try {
       // 1. 清理舊的查詢效能記錄 (保留 30 天)
       const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-      const cleanupResult = await db.run(sql`
+      const cleanupResult = await getDatabase().run(sql`
         DELETE FROM query_performance 
         WHERE executed_at < ${thirtyDaysAgo}
       `);
       results.cleanupOldLogs = cleanupResult.changes || 0;
 
       // 2. 分析表格統計以優化查詢計劃
-      await db.run(sql`ANALYZE`);
+      await getDatabase().run(sql`ANALYZE`);
       results.analyze = true;
 
       // 3. 重建索引 (如果需要)
@@ -130,7 +130,7 @@ export class DatabaseOptimizationService {
 
       // 只有當資料庫大於 100MB 且有明顯碎片時才執行 VACUUM
       if (totalSize > 100 * 1024) {
-        await db.run(sql`VACUUM`);
+        await getDatabase().run(sql`VACUUM`);
         results.vacuum = true;
       }
 
@@ -147,7 +147,7 @@ export class DatabaseOptimizationService {
    */
   async getSlowQueryReport(limit = 50): Promise<QueryPerformance[]> {
     try {
-      const result = await db.all(sql`
+      const result = await getDatabase().all(sql`
         SELECT 
           id, query_type, execution_time_ms, parameters,
           executed_at, user_agent, ip_address
@@ -241,16 +241,16 @@ export class DatabaseOptimizationService {
   async optimizeSpatialIndexes(): Promise<boolean> {
     try {
       // 檢查 SpatiaLite 是否可用
-      const spatialiteCheck = await db.get(sql`
+      await getDatabase().get(sql`
         SELECT load_extension('mod_spatialite')
       `);
 
       // 重建空間索引
-      await db.run(sql`
+      await getDatabase().run(sql`
         SELECT DisableSpatialIndex('locations', 'geom')
       `);
 
-      await db.run(sql`
+      await getDatabase().run(sql`
         SELECT CreateSpatialIndex('locations', 'geom')
       `);
 
@@ -272,11 +272,11 @@ export class DatabaseOptimizationService {
   }> {
     try {
       // SQLite 快取統計
-      const pragmaResult = await db.get(sql`PRAGMA cache_size`);
+      const pragmaResult = await getDatabase().get(sql`PRAGMA cache_size`);
       const cacheSize = ((pragmaResult as any)?.cache_size as number) || 0;
 
       // 從查詢記錄分析快取命中率
-      const recentQueries = await db.all(sql`
+      const recentQueries = await getDatabase().all(sql`
         SELECT query_type, COUNT(*) as count, AVG(execution_time_ms) as avg_time
         FROM query_performance 
         WHERE executed_at > ${Date.now() - 3600000}
@@ -327,11 +327,11 @@ export class DatabaseOptimizationService {
     const stats = [];
     for (const table of tables) {
       try {
-        const countResult = await db.get(sql`
+        const countResult = await getDatabase().get(sql`
           SELECT COUNT(*) as count FROM ${sql.identifier(table)}
         `);
 
-        const sizeResult = await db.get(sql`
+        const sizeResult = await getDatabase().get(sql`
           SELECT page_count * page_size as size 
           FROM pragma_page_count('${sql.identifier(table)}'), pragma_page_size
         `);
@@ -351,7 +351,7 @@ export class DatabaseOptimizationService {
 
   private async getIndexStats() {
     try {
-      const result = await db.all(sql`
+      const result = await getDatabase().all(sql`
         SELECT name, tbl_name, sql 
         FROM sqlite_master 
         WHERE type = 'index' AND name NOT LIKE 'sqlite_%'
@@ -372,7 +372,7 @@ export class DatabaseOptimizationService {
 
   private async getPerformanceStats() {
     try {
-      const result = await db.all(sql`
+      const result = await getDatabase().all(sql`
         SELECT 
           COUNT(*) as query_count,
           AVG(execution_time_ms) as avg_time,
@@ -424,7 +424,7 @@ export class DatabaseOptimizationService {
   private async reindexIfNeeded() {
     try {
       // 檢查是否需要重建索引 (簡化版本)
-      await db.run(sql`REINDEX`);
+      await getDatabase().run(sql`REINDEX`);
     } catch (error) {
       console.warn('Reindex operation failed:', error);
     }

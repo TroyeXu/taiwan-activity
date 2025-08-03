@@ -1,7 +1,7 @@
-import { getDatabase } from '~/server/utils/database';
-import { activities } from '~/db/schema';
+import { getDatabase } from '../../utils/database';
+import { activities } from '../../../db/schema';
 import { eq, sql } from 'drizzle-orm';
-import type { ApiResponse } from '~/types';
+import type { ApiResponse } from '../../../app/types';
 
 interface TrackingEvent {
   type: 'view' | 'click' | 'favorite' | 'search';

@@ -1,7 +1,7 @@
-import { getDatabase } from '~/server/utils/database';
-import { activities, locations, activityTimes, categories, activityCategories } from '~/db/schema';
+import { getDatabase } from '../../utils/database';
+import { activities, locations, activityTimes, categories, activityCategories } from '../../../db/schema';
 import { eq, and, gte, lte, or, sql } from 'drizzle-orm';
-import type { ApiResponse } from '~/types';
+import type { ApiResponse } from '../../../app/types';
 
 interface CalendarEvent {
   id: string;

@@ -1,4 +1,4 @@
-import type { ApiResponse } from '~/types';
+import type { ApiResponse } from '../../../app/types';
 
 // 排程器實例 (單例模式)
 let schedulerInstance: any = null;

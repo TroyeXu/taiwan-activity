@@ -1,16 +1,11 @@
-import { ClaudeValidationService } from '~/server/utils/claude-validation';
-import { getDatabase } from '~/server/utils/database';
+import { ClaudeValidationService } from '../../utils/claude-validation';
+import { getDatabase } from '../../utils/database';
 import {
   activities,
   validationLogs,
-  locations,
-  activityTimes,
-  categories,
-  activityCategories,
-} from '~/db/schema';
-import { eq, isNull, or, lt, sql } from 'drizzle-orm';
-import { nanoid } from 'nanoid';
-import type { ApiResponse } from '~/types';
+} from '../../../db/schema';
+import { eq, or, lt, sql } from 'drizzle-orm';
+import type { ApiResponse } from '../../../app/types';
 
 export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
   try {
@@ -164,7 +159,7 @@ async function findActivitiesForValidation(limit: number = 50) {
   try {
     const db = getDatabase();
     const { locations, activityTimes, categories, activityCategories } = await import(
-      '~/db/schema'
+      '../../../db/schema'
     );
 
     // 查找品質分數過低或未驗證的活動

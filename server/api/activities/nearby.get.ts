@@ -1,5 +1,5 @@
-import { filterActivities } from '~/server/utils/mock-data';
-import type { ApiResponse, Activity } from '~/types';
+import { filterActivities } from '../../utils/mock-data';
+import type { ApiResponse, Activity } from '../../../app/types';
 
 export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>> => {
   try {

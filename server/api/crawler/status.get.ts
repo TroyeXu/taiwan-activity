@@ -1,5 +1,5 @@
 import { getCrawlerStatus } from './trigger.post';
-import type { ApiResponse } from '~/types';
+import type { ApiResponse } from '../../../app/types';
 
 export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
   try {

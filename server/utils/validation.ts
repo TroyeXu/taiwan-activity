@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { Activity, ApiResponse } from '~/types';
+import type { Activity, ApiResponse } from '../../app/types';
 
 // 活動搜尋參數驗證
 export const searchParamsSchema = z.object({

@@ -1,4 +1,4 @@
-import { getDatabase } from '~/server/utils/database';
+import { getDatabase } from '../../utils/database';
 import {
   activities,
   locations,
@@ -7,9 +7,9 @@ import {
   activityTimes,
   dataSources,
   validationLogs,
-} from '~/db/schema';
+} from '../../../db/schema';
 import { eq, sql } from 'drizzle-orm';
-import type { ApiResponse, Activity } from '~/types';
+import type { ApiResponse, Activity } from '../../../app/types';
 
 export default defineEventHandler(async (event): Promise<ApiResponse<Activity>> => {
   try {

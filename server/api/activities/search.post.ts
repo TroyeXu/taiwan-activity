@@ -1,5 +1,5 @@
-import { searchActivities } from '~/server/utils/mock-data';
-import type { ApiResponse, Activity, SearchParams } from '~/types';
+import { searchActivities } from '../../utils/mock-data';
+import type { ApiResponse, Activity, SearchParams } from '../../../app/types';
 
 export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>> => {
   try {

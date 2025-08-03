@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
-import * as schema from '~/db/schema';
+import * as schema from '../../db/schema';
 
 // 使用 lazy loading 來避免在客戶端載入
 let _db: ReturnType<typeof drizzle> | null = null;

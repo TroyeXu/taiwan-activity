@@ -252,10 +252,11 @@ const filteredFavorites = computed(() => {
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       case 'favorited_asc':
         return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      case 'activity_date':
+      case 'activity_date': {
         const aDate = a.activity.time?.startDate || '';
         const bDate = b.activity.time?.startDate || '';
         return new Date(aDate).getTime() - new Date(bDate).getTime();
+      }
       case 'name':
         return a.activity.name.localeCompare(b.activity.name, 'zh-TW');
       case 'quality':

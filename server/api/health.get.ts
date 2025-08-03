@@ -1,6 +1,6 @@
-import { getDatabase } from '~/server/utils/database';
+import { getDatabase } from '../utils/database';
 import { sql } from 'drizzle-orm';
-import type { ApiResponse } from '~/types';
+import type { ApiResponse } from '../../types';
 
 export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
   const startTime = Date.now();

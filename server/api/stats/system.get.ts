@@ -1,6 +1,6 @@
-import { db } from '~/db';
+import { getDatabase } from '../../utils/database';
 import { sql } from 'drizzle-orm';
-import type { ApiResponse } from '~/types';
+import type { ApiResponse } from '../../../app/types';
 
 export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
   try {
@@ -42,7 +42,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
 
 async function getActivityStats() {
   try {
-    const result = await db.get(sql`
+    const result = await getDatabase().get(sql`
       SELECT 
         COUNT(*) as total,
         COUNT(CASE WHEN status = 'active' THEN 1 END) as active,
@@ -63,7 +63,7 @@ async function getActivityStats() {
 
 async function getCategoryStats() {
   try {
-    const result = await db.get(sql`
+    const result = await getDatabase().get(sql`
       SELECT 
         c.name,
         c.slug,
@@ -86,7 +86,7 @@ async function getCategoryStats() {
 
 async function getRegionStats() {
   try {
-    const result = await db.get(sql`
+    const result = await getDatabase().get(sql`
       SELECT 
         l.region,
         COUNT(*) as activity_count,
@@ -108,7 +108,7 @@ async function getRegionStats() {
 
 async function getQualityStats() {
   try {
-    const result = await db.get(sql`
+    const result = await getDatabase().get(sql`
       SELECT 
         COUNT(CASE WHEN quality_score >= 80 THEN 1 END) as high_quality,
         COUNT(CASE WHEN quality_score >= 60 AND quality_score < 80 THEN 1 END) as medium_quality,
@@ -130,7 +130,7 @@ async function getQualityStats() {
 async function getSearchStats() {
   try {
     // 檢查是否有搜尋記錄表
-    const tableExists = await db.get(sql`
+    const tableExists = await getDatabase().get(sql`
       SELECT name FROM sqlite_master 
       WHERE type='table' AND name='search_logs'
     `);
@@ -139,7 +139,7 @@ async function getSearchStats() {
       return { enabled: false };
     }
 
-    const result = await db.get(sql`
+    const result = await getDatabase().get(sql`
       SELECT 
         COUNT(*) as total_searches,
         COUNT(DISTINCT query) as unique_queries,

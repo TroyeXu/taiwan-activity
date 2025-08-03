@@ -1,5 +1,5 @@
-import { filterActivities, searchActivities } from '~/server/utils/mock-data';
-import type { ApiResponse, Activity } from '~/types';
+import { filterActivities, searchActivities } from '../../utils/mock-data';
+import type { ApiResponse, Activity } from '../../../app/types';
 
 interface UnifiedSearchParams {
   // 文字搜尋

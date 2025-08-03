@@ -1,6 +1,6 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import type { ApiResponse } from '~/types';
+import type { ApiResponse } from '../../../app/types';
 
 const execAsync = promisify(exec);
 

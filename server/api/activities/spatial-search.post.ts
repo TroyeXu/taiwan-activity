@@ -1,7 +1,7 @@
-import { getDatabase, getSqlite } from '~/server/utils/database';
+import { getDatabase, getSqlite } from '../../utils/database';
 import { sql } from 'drizzle-orm';
-// import { monitorQuery } from '~/server/utils/database-optimization';
-import type { ApiResponse, Activity } from '~/types';
+// import { monitorQuery } from '../../utils/database-optimization';
+import type { ApiResponse, Activity } from '../../../app/types';
 
 interface SpatialSearchParams {
   center: { lat: number; lng: number };

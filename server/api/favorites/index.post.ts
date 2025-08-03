@@ -1,8 +1,8 @@
-import { getDatabase } from '~/server/utils/database';
-import { userFavorites, activities } from '~/db/schema';
+import { getDatabase } from '../../utils/database';
+import { userFavorites, activities } from '../../../db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import type { ApiResponse } from '~/types';
+import type { ApiResponse } from '../../../app/types';
 
 export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
   try {

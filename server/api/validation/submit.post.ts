@@ -1,9 +1,9 @@
-import { ClaudeValidationService } from '~/server/utils/claude-validation';
-import { getDatabase } from '~/server/utils/database';
-import { activities, validationLogs, locations, categories, activityCategories } from '~/db/schema';
+import { ClaudeValidationService } from '../../utils/claude-validation';
+import { getDatabase } from '../../utils/database';
+import { activities, validationLogs } from '../../../db/schema';
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import type { ApiResponse } from '~/types';
+import type { ApiResponse } from '../../../app/types';
 
 export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
   try {
@@ -128,7 +128,7 @@ async function saveValidatedActivity(validatedData: any): Promise<string> {
 
     // 插入地點資料
     if (validatedData.location) {
-      const { locations } = await import('~/db/schema');
+      const { locations } = await import('../../../db/schema');
       await db.insert(locations).values({
         id: nanoid(),
         activityId,
@@ -147,7 +147,7 @@ async function saveValidatedActivity(validatedData: any): Promise<string> {
 
     // 插入時間資料
     if (validatedData.time) {
-      const { activityTimes } = await import('~/db/schema');
+      const { activityTimes } = await import('../../../db/schema');
       await db.insert(activityTimes).values({
         id: nanoid(),
         activityId,
@@ -165,7 +165,7 @@ async function saveValidatedActivity(validatedData: any): Promise<string> {
 
     // 插入分類關聯
     if (validatedData.categories?.length) {
-      const { categories, activityCategories } = await import('~/db/schema');
+      const { categories, activityCategories } = await import('../../../db/schema');
 
       for (const category of validatedData.categories) {
         // 確保分類存在

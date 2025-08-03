@@ -1,7 +1,6 @@
-import { getDatabase } from '~/server/utils/database';
-import { activities, locations, activityTimes, categories, activityCategories } from '~/db/schema';
-import { eq, and, inArray, sql } from 'drizzle-orm';
-import type { ApiResponse } from '~/types';
+import { getDatabase } from '../../utils/database';
+import { activities, locations, activityTimes, categories, activityCategories } from '../../../db/schema';
+import { eq, inArray, sql } from 'drizzle-orm';
 
 export default defineEventHandler(async (event): Promise<any> => {
   try {

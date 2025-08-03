@@ -1,5 +1,4 @@
-import { defineEventHandler, readBody } from 'h3';
-import { getDatabase } from '~/server/utils/database';
+import { getDatabase } from '../../utils/database';
 import {
   activities,
   locations,
@@ -8,9 +7,9 @@ import {
   activityTimes,
   activityTags,
   tags,
-} from '~/db/schema';
-import { eq, and, or, gte, lte, like, desc, asc, sql, inArray } from 'drizzle-orm';
-import type { SearchFilters } from '~/types';
+} from '../../../db/schema';
+import { eq, and, or, gte, lte, like, sql, inArray } from 'drizzle-orm';
+import type { SearchFilters } from '../../../app/types';
 
 interface AdvancedSearchRequest extends SearchFilters {
   page?: number;

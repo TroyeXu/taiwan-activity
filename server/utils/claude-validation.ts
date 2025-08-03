@@ -1,4 +1,4 @@
-import type { ValidationResult, ValidationIssue, Activity } from '~/types';
+import type { ValidationResult, ValidationIssue, Activity } from '../../app/types';
 
 interface ClaudeValidationRequest {
   model: string;

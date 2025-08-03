@@ -1,7 +1,7 @@
-import { getDatabase, getSqlite } from '~/server/utils/database';
+import { getDatabase, getSqlite } from '../../utils/database';
 import { sql } from 'drizzle-orm';
-// import { monitorQuery } from '~/server/utils/database-optimization';
-import type { ApiResponse, Activity } from '~/types';
+// import { monitorQuery } from '../../utils/database-optimization';
+import type { ApiResponse, Activity } from '../../../app/types';
 
 function getClientIP(event: any): string | null {
   const forwarded = getHeader(event, 'x-forwarded-for');
@@ -47,7 +47,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<Activity[]>
   const startTime = Date.now();
 
   try {
-    const db = getDatabase();
+    const _db = getDatabase();
     const body = (await readBody(event)) as FullTextSearchParams;
     const {
       query,
