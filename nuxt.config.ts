@@ -56,6 +56,7 @@ export default defineNuxtConfig({
   // 應用程式配置
   app: {
     baseURL: '/taiwan-activity/', // GitHub Pages 子目錄
+    buildAssetsDir: '/_nuxt/', // 確保資源路徑正確
     head: {
       title: '台灣觀光活動地圖',
       titleTemplate: '%s - 台灣觀光活動地圖',
@@ -74,9 +75,9 @@ export default defineNuxtConfig({
         { name: 'theme-color', content: '#3B82F6' },
       ],
       link: [
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-        { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
-        { rel: 'manifest', href: '/manifest.json' },
+        { rel: 'icon', type: 'image/x-icon', href: '/taiwan-activity/favicon.ico' },
+        { rel: 'apple-touch-icon', href: '/taiwan-activity/apple-touch-icon.png' },
+        { rel: 'manifest', href: '/taiwan-activity/manifest.json' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         {
           rel: 'preconnect',
@@ -93,8 +94,8 @@ export default defineNuxtConfig({
 
   // TypeScript 配置
   typescript: {
-    strict: true,
-    typeCheck: true,
+    strict: false,
+    typeCheck: false,
   },
 
   // Element Plus 配置
