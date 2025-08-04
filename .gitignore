@@ -27,7 +27,8 @@ lerna-debug.log*
 
 # Database files
 *.db
-*.sqlite
+# *.sqlite  # 註解掉以允許 tourism.sqlite
+!public/tourism.sqlite  # 明確允許這個檔案
 *.sqlite-shm
 *.sqlite-wal
 *.db-shm

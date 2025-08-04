@@ -1,0 +1,111 @@
+name: Deploy to GitHub Pages with Database
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Download database from release
+        run: |
+          echo "📥 下載資料庫檔案..."
+          # 嘗試從最新的 release 下載資料庫
+          LATEST_RELEASE=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name || echo "")
+          
+          if [ ! -z "$LATEST_RELEASE" ]; then
+            echo "找到最新版本: $LATEST_RELEASE"
+            curl -L -o public/tourism.sqlite \
+              "https://github.com/${{ github.repository }}/releases/download/$LATEST_RELEASE/tourism.sqlite" || true
+          fi
+          
+          # 如果下載失敗或檔案不存在，創建示例資料庫
+          if [ ! -f public/tourism.sqlite ] || [ ! -s public/tourism.sqlite ]; then
+            echo "⚠️ 無法下載資料庫，創建示例資料庫..."
+            # 安裝 sqlite3
+            sudo apt-get update && sudo apt-get install -y sqlite3
+            
+            # 創建示例資料庫
+            sqlite3 public/tourism.sqlite << 'EOF'
+            CREATE TABLE IF NOT EXISTS activities (
+              id INTEGER PRIMARY KEY,
+              name TEXT NOT NULL,
+              description TEXT,
+              address TEXT,
+              latitude REAL,
+              longitude REAL,
+              category TEXT,
+              tags TEXT,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            
+            CREATE TABLE IF NOT EXISTS tags (
+              id INTEGER PRIMARY KEY,
+              name TEXT UNIQUE NOT NULL,
+              usage_count INTEGER DEFAULT 0
+            );
+            
+            INSERT INTO activities (name, description, address, latitude, longitude, category, tags)
+            VALUES 
+              ('台北 101', '台灣最高的建築物', '台北市信義區信義路五段7號', 25.0339, 121.5645, '景點', '地標,購物'),
+              ('故宮博物院', '世界級的博物館', '台北市士林區至善路二段221號', 25.1024, 121.5485, '博物館', '文化,歷史'),
+              ('日月潭', '台灣最大的天然湖泊', '南投縣魚池鄉', 23.8663, 120.9156, '自然景觀', '湖泊,風景');
+            
+            INSERT INTO tags (name, usage_count)
+            VALUES ('地標', 1), ('購物', 1), ('文化', 1), ('歷史', 1), ('湖泊', 1), ('風景', 1);
+EOF
+            echo "✅ 示例資料庫創建完成"
+          fi
+          
+          # 驗證資料庫
+          echo "📊 資料庫資訊:"
+          ls -lh public/tourism.sqlite
+          echo "資料表:"
+          sqlite3 public/tourism.sqlite ".tables"
+          echo "活動數量:"
+          sqlite3 public/tourism.sqlite "SELECT COUNT(*) FROM activities;"
+
+      - name: Build
+        run: npm run generate
+
+      - name: List output files
+        run: |
+          echo "=== Output directory structure ==="
+          ls -la .output/public/
+          echo "=== Check if tourism.sqlite exists ==="
+          ls -lh .output/public/tourism.sqlite || echo "tourism.sqlite not found!"
+          # 驗證檔案內容
+          if [ -f .output/public/tourism.sqlite ]; then
+            echo "=== Verify SQLite file ==="
+            file .output/public/tourism.sqlite
+            head -c 16 .output/public/tourism.sqlite | od -c
+          fi
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./.output/public
+          force_orphan: true
+          enable_jekyll: false
+          keep_files: false
