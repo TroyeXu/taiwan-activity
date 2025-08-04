@@ -30,9 +30,19 @@ jobs:
       - name: Build
         run: npm run generate
 
+      - name: List output files
+        run: |
+          echo "=== Output directory structure ==="
+          ls -la .output/public/
+          echo "=== Check if tourism.sqlite exists ==="
+          ls -lh .output/public/tourism.sqlite || echo "tourism.sqlite not found!"
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./.output/public
+          force_orphan: true
+          enable_jekyll: false
+          keep_files: false
           cname: # Leave empty unless you have a custom domain
