@@ -9,7 +9,7 @@
     "dev": "nuxt dev",
     "build": "nuxt build",
     "preview": "nuxt preview",
-    "generate": "nuxt generate",
+    "generate": "nuxt generate && node scripts/copy-static-files.js",
     "postinstall": "nuxt prepare",
     "prepare": "husky",
     "db:init": "node scripts/init-db.js",

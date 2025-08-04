@@ -52,6 +52,7 @@
 
 <script setup lang="ts">
 import { DatabaseLoader } from '~/utils/database-loader';
+import { useSqliteWeb } from '~/composables/useSqliteWeb';
 
 const loading = ref(false);
 const error = ref<Error | null>(null);
@@ -87,24 +88,32 @@ const testDatabase = async () => {
 
   try {
     addLog('開始測試資料庫載入...');
+    addLog(`環境: ${window.location.href}`);
     
-    // 測試 DatabaseLoader
-    addLog('使用 DatabaseLoader 載入資料庫...');
-    const buffer = await DatabaseLoader.loadDatabase();
-    addLog(`資料庫載入成功，大小: ${buffer.byteLength} bytes`);
-
-    // 測試 useSqlite
-    addLog('初始化 SQLite...');
-    const { query } = useSqlite();
+    // 使用新的 Web SQLite 載入器
+    addLog('使用 useSqliteWeb 載入資料庫...');
+    const { initDatabase, query } = useSqliteWeb();
     
+    // 初始化資料庫
+    addLog('初始化資料庫...');
+    await initDatabase();
+    addLog('資料庫初始化成功');
+    
+    // 執行測試查詢
     addLog('執行測試查詢...');
     const result = await query('SELECT COUNT(*) as count FROM activities');
     addLog(`查詢成功，活動數量: ${result[0].count}`);
+    
+    // 查詢更多資訊
+    const tableResult = await query("SELECT name FROM sqlite_master WHERE type='table'");
+    addLog(`資料表數量: ${tableResult.length}`);
+    addLog(`資料表名稱: ${tableResult.map(t => t.name).join(', ')}`);
     
     loadResult.value = result[0];
   } catch (err) {
     error.value = err as Error;
     addLog(`錯誤: ${err}`);
+    console.error('詳細錯誤:', err);
   } finally {
     loading.value = false;
   }
