@@ -110,7 +110,7 @@ export default defineNuxtConfig({
 
   // Element Plus 配置
   elementPlus: {
-    importStyle: false, // 暫時關閉 SCSS 導入
+    importStyle: 'css', // 使用 CSS 而不是 SCSS
     themes: ['dark'],
   },
 
