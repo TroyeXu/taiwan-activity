@@ -32,7 +32,7 @@
         </template>
         <template #extra>
           <ElSpace>
-            <FavoriteButton :activity-id="activity.id" />
+            <FavoriteButton :activity="activity" />
             <ElButton @click="shareActivity">
               <ElIcon><Share /></ElIcon>
               分享

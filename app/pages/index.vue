@@ -73,7 +73,7 @@
       >
         <FilterPanel
           v-model:filters="searchFilters"
-          @filter-change="handleFilterChange"
+          @filters-change="handleFilterChange"
           @clear-filters="clearFilters"
           @close="showFilter = false"
         />
@@ -212,6 +212,7 @@
       class="md:hidden"
     >
       <FilterPanel
+        v-model:filters="searchFilters"
         :loading="loading"
         :result-count="totalActivities"
         @filters-change="handleFilterChange"
@@ -393,13 +394,32 @@ watch(
 
 // 頁面載入時取得使用者位置
 onMounted(async () => {
-  // 先手動載入一些活動數據
+  console.log('頁面載入，初始篩選條件:', searchFilters.value);
+  // 先手動載入所有活動數據（不套用任何篩選）
   try {
-    await searchActivities({});
+    await searchActivities({
+      query: '',
+      filters: {
+        categories: [],
+        regions: [],
+        cities: [],
+        dateRange: undefined,
+        location: undefined,
+        radius: 10,
+        features: [],
+        sorting: 'relevance',
+        priceRange: {
+          min: 0,
+          max: 5000,
+          includeFreeze: true,
+        }
+      }
+    });
   } catch (error) {
     console.warn('載入初始活動失敗:', error);
   }
 
+  // 嘗試取得使用者位置
   try {
     const location = await getCurrentPosition();
     if (location) {
@@ -420,17 +440,13 @@ onMounted(async () => {
     }
   } catch (error) {
     console.warn('無法取得使用者位置:', error);
-    // 使用預設位置，但仍然載入活動
-    try {
-      await searchActivities({});
-    } catch (searchError) {
-      console.warn('載入預設活動失敗:', searchError);
-    }
+    // 定位失敗時不需要再次載入，因為上面已經載入過了
   }
 });
 
 // 搜尋處理
 const handleSearch = useDebounceFn(async () => {
+  console.log('handleSearch 被呼叫，篩選條件:', searchFilters.value);
   await searchActivities({
     query: searchQuery.value,
     filters: searchFilters.value,
@@ -447,6 +463,7 @@ const clearSearch = () => {
 
 // 篩選變更處理
 const handleFilterChange = (filters: any) => {
+  console.log('篩選條件變更:', filters);
   searchFilters.value = { ...filters };
   handleSearch();
 };

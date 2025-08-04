@@ -1,10 +1,25 @@
 <template>
   <NuxtLayout>
     <NuxtPage />
+    <!-- 開發工具面板 -->
+    <DevToolsPanel />
   </NuxtLayout>
 </template>
 
 <script setup lang="ts">
+// 載入除錯工具（僅在開發環境）
+if (process.dev) {
+  // import('~/utils/dev-tools/data-validator').then(({ setupDebugTools }) => {
+  //   setupDebugTools();
+  // });
+  // import('~/utils/dev-tools/data-inspector').then(({ setupDataInspector }) => {
+  //   setupDataInspector();
+  // });
+  // import('~/utils/dev-tools/performance-monitor').then(({ setupPerformanceMonitor }) => {
+  //   setupPerformanceMonitor();
+  // });
+}
+
 // 處理 GitHub Pages 404 重定向
 onMounted(() => {
   const urlParams = new URLSearchParams(window.location.search);

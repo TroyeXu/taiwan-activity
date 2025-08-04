@@ -218,6 +218,7 @@ export interface SearchFilters {
   priceRange?: {
     min?: number;
     max?: number;
+    includeFreeze?: boolean;
   };
   startDate?: string;
   endDate?: string;
@@ -226,8 +227,8 @@ export interface SearchFilters {
   radius?: number;
   sorting?: 'relevance' | 'distance' | 'popularity' | 'date' | 'price';
   dateRange?: {
-    start: string;
-    end: string;
+    start?: string;
+    end?: string;
   };
   features?: string[];
   minQuality?: number;

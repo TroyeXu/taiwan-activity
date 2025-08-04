@@ -176,17 +176,22 @@ export const useSqlite = () => {
       category?: string;
       city?: string;
       region?: string;
+      startDate?: string;
+      endDate?: string;
+      tags?: string[];
     } = {}
   ) => {
     let sql = `
-      SELECT 
+      SELECT DISTINCT
         a.*,
         l.address, l.city, l.district, l.latitude, l.longitude,
-        GROUP_CONCAT(c.name) as categories
+        GROUP_CONCAT(DISTINCT c.name) as categories,
+        at.start_date, at.end_date, at.start_time, at.end_time
       FROM activities a
       LEFT JOIN locations l ON l.activity_id = a.id
       LEFT JOIN activity_categories ac ON ac.activity_id = a.id
       LEFT JOIN categories c ON c.id = ac.category_id
+      LEFT JOIN activity_times at ON at.activity_id = a.id
       WHERE 1=1
     `;
 
@@ -212,6 +217,29 @@ export const useSqlite = () => {
       params.push(options.region);
     }
 
+    // 日期篩選
+    if (options.startDate) {
+      sql += ` AND at.start_date >= ?`;
+      params.push(options.startDate);
+    }
+
+    if (options.endDate) {
+      sql += ` AND (at.end_date <= ? OR (at.end_date IS NULL AND at.start_date <= ?))`;
+      params.push(options.endDate, options.endDate);
+    }
+
+    // 標籤篩選
+    if (options.tags && options.tags.length > 0) {
+      const tagPlaceholders = options.tags.map(() => '?').join(',');
+      sql += ` AND a.id IN (
+        SELECT activity_id FROM activity_tags 
+        WHERE tag_id IN (
+          SELECT id FROM tags WHERE slug IN (${tagPlaceholders})
+        )
+      )`;
+      params.push(...options.tags);
+    }
+
     sql += ` GROUP BY a.id`;
 
     if (options.limit) {
@@ -224,6 +252,9 @@ export const useSqlite = () => {
       }
     }
 
+    console.log('SQL 查詢:', sql);
+    console.log('查詢參數:', params);
+    
     const results = await query(sql, params);
 
     return results;
@@ -248,6 +279,12 @@ export const useSqlite = () => {
   // 取得所有分類
   const getCategories = async () => {
     const sql = `SELECT * FROM categories ORDER BY name`;
+    return await query(sql);
+  };
+
+  // 取得所有標籤
+  const getTags = async () => {
+    const sql = `SELECT * FROM tags ORDER BY usage_count DESC, name`;
     return await query(sql);
   };
 
@@ -308,6 +345,7 @@ export const useSqlite = () => {
     getActivities,
     getActivity,
     getCategories,
+    getTags,
     getNearbyActivities,
     checkHealth,
     resetDatabase,

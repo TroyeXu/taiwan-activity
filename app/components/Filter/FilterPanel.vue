@@ -817,28 +817,28 @@ const monthOptions = computed(() => {
 
 // 地區選項
 const cityOptions = [
-  { value: 'taipei', label: '臺北市' },
-  { value: 'newtaipei', label: '新北市' },
-  { value: 'taoyuan', label: '桃園市' },
-  { value: 'taichung', label: '臺中市' },
-  { value: 'tainan', label: '臺南市' },
-  { value: 'kaohsiung', label: '高雄市' },
-  { value: 'keelung', label: '基隆市' },
-  { value: 'hsinchu-city', label: '新竹市' },
-  { value: 'hsinchu-county', label: '新竹縣' },
-  { value: 'miaoli', label: '苗栗縣' },
-  { value: 'changhua', label: '彰化縣' },
-  { value: 'nantou', label: '南投縣' },
-  { value: 'yunlin', label: '雲林縣' },
-  { value: 'chiayi-city', label: '嘉義市' },
-  { value: 'chiayi-county', label: '嘉義縣' },
-  { value: 'pingtung', label: '屏東縣' },
-  { value: 'yilan', label: '宜蘭縣' },
-  { value: 'hualien', label: '花蓮縣' },
-  { value: 'taitung', label: '臺東縣' },
-  { value: 'penghu', label: '澎湖縣' },
-  { value: 'kinmen', label: '金門縣' },
-  { value: 'lienchiang', label: '連江縣' },
+  { value: '台北市', label: '台北市' },
+  { value: '新北市', label: '新北市' },
+  { value: '桃園市', label: '桃園市' },
+  { value: '台中市', label: '台中市' },
+  { value: '台南市', label: '台南市' },
+  { value: '高雄市', label: '高雄市' },
+  { value: '基隆市', label: '基隆市' },
+  { value: '新竹市', label: '新竹市' },
+  { value: '新竹縣', label: '新竹縣' },
+  { value: '苗栗縣', label: '苗栗縣' },
+  { value: '彰化縣', label: '彰化縣' },
+  { value: '南投縣', label: '南投縣' },
+  { value: '雲林縣', label: '雲林縣' },
+  { value: '嘉義市', label: '嘉義市' },
+  { value: '嘉義縣', label: '嘉義縣' },
+  { value: '屏東縣', label: '屏東縣' },
+  { value: '宜蘭縣', label: '宜蘭縣' },
+  { value: '花蓮縣', label: '花蓮縣' },
+  { value: '台東縣', label: '台東縣' },
+  { value: '澎湖縣', label: '澎湖縣' },
+  { value: '金門縣', label: '金門縣' },
+  { value: '連江縣', label: '連江縣' },
 ];
 
 const districtOptions = computed(() => {
@@ -868,16 +868,7 @@ const accessibilityOptions = [
 ];
 
 // 標籤相關
-const allTags = ref<Tag[]>([
-  { id: 'family', name: '親子活動', slug: 'family', usageCount: 45 },
-  { id: 'outdoor', name: '戶外活動', slug: 'outdoor', usageCount: 38 },
-  { id: 'indoor', name: '室內活動', slug: 'indoor', usageCount: 32 },
-  { id: 'photography', name: '攝影熱點', slug: 'photography', usageCount: 28 },
-  { id: 'night', name: '夜間活動', slug: 'night', usageCount: 25 },
-  { id: 'weekend', name: '週末限定', slug: 'weekend', usageCount: 22 },
-  { id: 'seasonal', name: '季節限定', slug: 'seasonal', usageCount: 20 },
-  { id: 'traditional', name: '傳統體驗', slug: 'traditional', usageCount: 18 },
-]);
+const allTags = ref<Tag[]>([]);
 
 const popularTags = computed(() =>
   allTags.value.sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0)).slice(0, 6)
@@ -1134,6 +1125,17 @@ const handleReset = () => {
   customDateRange.value = null;
   priceRangeValue.value = [0, 5000];
   showMoreTags.value = false;
+  selectedCity.value = '';
+  selectedDistrict.value = '';
+  priceType.value = 'all';
+  quickFilter.value = '';
+  showMonthSelector.value = false;
+  showCustomDateRange.value = false;
+  selectedMonths.value = [];
+  distanceRadius.value = 10;
+  enableDistanceFilter.value = false;
+  
+  console.log('重置所有篩選');
   emitFiltersChange();
   ElMessage.success('篩選條件已重置');
 };
@@ -1181,18 +1183,18 @@ const setQuickFilter = (type: string) => {
         filters.value.priceRange.max = 0;
         break;
       case 'family':
-        filters.value.tags = ['family'];
+        filters.value.categories = ['family']; // 使用分類而不是標籤
         filters.value.features = ['pet-friendly'];
         break;
       case 'indoor':
-        filters.value.tags = ['indoor'];
+        filters.value.tags = ['indoor']; // 使用實際的 slug
         break;
       case 'night':
-        filters.value.tags = ['night'];
+        filters.value.tags = ['night']; // 使用實際的 slug
         filters.value.timeOfDay = ['evening', 'night'];
         break;
       case 'outdoor':
-        filters.value.tags = ['outdoor'];
+        filters.value.tags = ['outdoor']; // 使用實際的 slug
         filters.value.features = ['outdoor'];
         break;
       case 'cultural':
@@ -1231,8 +1233,8 @@ const handleDistanceFilterToggle = (enabled: string | number | boolean) => {
 const handleCityChange = (city: string) => {
   selectedCity.value = city;
   selectedDistrict.value = '';
-  // 更新地區篩選
-  filters.value.regions = city ? [city] : [];
+  // 更新城市篩選
+  filters.value.cities = city ? [city] : [];
   emitFiltersChange();
 };
 
@@ -1304,8 +1306,26 @@ watch(customDateRange, (newRange) => {
   }
 });
 
+// 載入標籤資料
+const loadTags = async () => {
+  try {
+    const { getTags } = useSqlite();
+    const tags = await getTags();
+    allTags.value = tags.map((tag: any) => ({
+      id: tag.slug, // 使用 slug 作為篩選的 ID
+      name: tag.name,
+      slug: tag.slug,
+      usageCount: tag.usage_count || 0,
+    }));
+  } catch (error) {
+    console.error('載入標籤失敗:', error);
+  }
+};
+
 // 初始化
 onMounted(() => {
+  // 載入標籤資料
+  loadTags();
   // 發送初始篩選狀態
   emitFiltersChange();
 });

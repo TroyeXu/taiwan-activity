@@ -4,7 +4,7 @@
     :size="size"
     :loading="loading"
     @click="toggleFavorite"
-    :disabled="!activityId"
+    :disabled="!activity"
   >
     <ElIcon>
       <StarFilled v-if="isFavorited" />
@@ -16,10 +16,11 @@
 
 <script setup lang="ts">
 import { Star, StarFilled } from '@element-plus/icons-vue';
+import type { Activity } from '~/types';
 
 // Props
 interface Props {
-  activityId: string;
+  activity: Activity;
   size?: 'small' | 'default' | 'large';
 }
 
@@ -36,28 +37,18 @@ const {
 } = useFavorites();
 
 // 檢查是否已收藏
-const isCurrentlyFavorited = computed(() => checkIsFavorite(props.activityId));
+const isCurrentlyFavorited = computed(() => props.activity ? checkIsFavorite(props.activity.id) : false);
 
 // 切換收藏狀態
 const toggleFavorite = async () => {
-  if (!props.activityId) return;
+  if (!props.activity) return;
 
   try {
     if (isCurrentlyFavorited.value) {
-      await removeFromFavorites(props.activityId);
+      await removeFromFavorites(props.activity.id);
       ElMessage.success('已移除收藏');
     } else {
-      // 需要完整的 Activity 對象，這裡需要從 API 獲取
-      // 暫時傳遞基本資訊，實際使用時應該傳遞完整的 Activity 對象
-      const basicActivity = {
-        id: props.activityId,
-        name: '活動',
-        status: 'active' as any,
-        qualityScore: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      await addToFavorites(basicActivity);
+      await addToFavorites(props.activity);
       ElMessage.success('已加入收藏');
     }
   } catch (error) {

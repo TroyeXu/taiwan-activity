@@ -173,7 +173,7 @@
       <div class="flex justify-between items-center">
         <!-- 左側操作 -->
         <div class="flex gap-2">
-          <FavoriteButton v-if="activity" :activity-id="activity.id" size="default" />
+          <FavoriteButton v-if="activity" :activity="activity" size="default" />
           <ElButton v-if="activity" @click="shareActivity" :icon="Share"> 分享 </ElButton>
         </div>
 

@@ -225,6 +225,9 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
         category?: string;
         city?: string;
         region?: string;
+        startDate?: string;
+        endDate?: string;
+        tags?: string[];
       }
 
       const queryOptions: QueryOptions = {
@@ -251,8 +254,80 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
         queryOptions.city = searchOptions.filters.cities[0];
       }
 
+      // 處理日期篩選
+      if (searchOptions.filters?.dateRange) {
+        const { start, end } = searchOptions.filters.dateRange;
+        
+        if (start && end) {
+          queryOptions.startDate = start;
+          queryOptions.endDate = end;
+        }
+      }
+      
+      // 處理快速日期篩選（來自 FilterState）
+      if (searchOptions.filters && 'quickOption' in searchOptions.filters) {
+        const quickOption = (searchOptions.filters as any).quickOption;
+        if (quickOption) {
+          const today = new Date();
+          switch (quickOption) {
+            case 'today':
+              queryOptions.startDate = today.toISOString().split('T')[0];
+              queryOptions.endDate = today.toISOString().split('T')[0];
+              break;
+            case 'tomorrow':
+              const tomorrow = new Date(today);
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              queryOptions.startDate = tomorrow.toISOString().split('T')[0];
+              queryOptions.endDate = tomorrow.toISOString().split('T')[0];
+              break;
+            case 'this-week':
+            case 'weekend':
+              const weekEnd = new Date(today);
+              weekEnd.setDate(weekEnd.getDate() + (7 - today.getDay()));
+              queryOptions.startDate = today.toISOString().split('T')[0];
+              queryOptions.endDate = weekEnd.toISOString().split('T')[0];
+              break;
+            case 'this-month':
+              const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+              const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+              queryOptions.startDate = monthStart.toISOString().split('T')[0];
+              queryOptions.endDate = monthEnd.toISOString().split('T')[0];
+              break;
+          }
+        }
+      }
+
+      // 處理標籤篩選
+      if (searchOptions.filters?.tags?.length) {
+        queryOptions.tags = searchOptions.filters.tags;
+      }
+
+      console.log('搜尋參數:', queryOptions);
+      console.log('完整篩選條件:', searchOptions.filters);
       const results = await getActivities(queryOptions);
-      const formattedResults = results.map((row: any) => formatActivity(row as ActivityRow));
+      console.log('查詢結果數量:', results.length);
+      let formattedResults = results.map((row: any) => formatActivity(row as ActivityRow));
+
+      // 在前端進行價格篩選（因為 SQLite 查詢不支援價格範圍）
+      if (searchOptions.filters?.priceRange) {
+        const { min, max, includeFreeze } = searchOptions.filters.priceRange;
+        console.log('價格篩選:', { min, max, includeFreeze });
+        
+        formattedResults = formattedResults.filter((activity) => {
+          const price = activity.price || 0;
+          if (min === 0 && max === 0 && includeFreeze) {
+            // 只顯示免費活動
+            return price === 0;
+          } else if (min > 0) {
+            // 只顯示付費活動
+            return price >= min && price <= max;
+          }
+          // 不限價格，顯示所有
+          return true;
+        });
+        
+        console.log('價格篩選後數量:', formattedResults.length);
+      }
 
       // 如果有位置篩選，計算距離並排序
       if (searchOptions.location && searchOptions.radius) {
@@ -297,8 +372,7 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
           });
 
           // 使用所有活動
-          activities.value.length = 0;
-          activities.value.push(...formattedResults);
+          activities.value = [...formattedResults];
         } else {
           // 按距離排序
           filteredResults.sort((a, b) => {
@@ -315,14 +389,12 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
             return distA - distB;
           });
 
-          // 先清空再賦值
-          activities.value.length = 0;
-          activities.value.push(...filteredResults);
+          // 使用篩選後的活動
+          activities.value = [...filteredResults];
         }
       } else {
-        // 先清空再賦值
-        activities.value.length = 0;
-        activities.value.push(...formattedResults);
+        // 使用格式化後的活動
+        activities.value = [...formattedResults];
       }
 
       // 強制觸發響應式更新
@@ -332,6 +404,8 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
       hasMoreActivities.value = activities.value.length === 0 ? false : true;
       currentPage.value = 1;
       lastError.value = null;
+      
+      console.log('最終活動數量:', activities.value.length);
     } catch (error) {
       const dbError =
         error instanceof DatabaseError ? error : DatabaseError.fromError(error as Error);
