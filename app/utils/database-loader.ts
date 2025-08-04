@@ -42,18 +42,32 @@ export class DatabaseLoader {
     const { $config } = useNuxtApp();
     const baseURL = $config.app.baseURL || '/';
     
+    // 在客戶端環境中使用當前網址
+    const isProduction = process.env.NODE_ENV === 'production';
+    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+    const currentPathname = typeof window !== 'undefined' ? window.location.pathname : '';
+    
+    // 計算實際的基礎 URL
+    let actualBaseURL = baseURL;
+    if (isProduction && currentPathname.includes('/taiwan-activity/')) {
+      actualBaseURL = '/taiwan-activity/';
+    }
+    
     // 嘗試不同的路徑組合
     const possiblePaths = [
-      // 標準路徑
-      `${baseURL}tourism.sqlite`,
-      // 確保有斜線
-      `${baseURL.endsWith('/') ? baseURL : baseURL + '/'}tourism.sqlite`,
+      // 優先使用配置的 baseURL
+      `${actualBaseURL}tourism.sqlite`,
+      `${actualBaseURL.endsWith('/') ? actualBaseURL : actualBaseURL + '/'}tourism.sqlite`,
+      // 如果在 GitHub Pages，明確使用完整路徑
+      `${currentOrigin}/taiwan-activity/tourism.sqlite`,
+      // 相對於目前頁面的路徑
+      './tourism.sqlite',
+      '../tourism.sqlite',
+      '../../tourism.sqlite',
       // 絕對路徑
       '/tourism.sqlite',
-      // GitHub Pages 特定路徑
       '/taiwan-activity/tourism.sqlite',
-      // 相對路徑
-      './tourism.sqlite',
+      // 直接檔名
       'tourism.sqlite'
     ];
 
@@ -106,23 +120,34 @@ export class DatabaseLoader {
     }
 
     // 如果所有路徑都失敗，嘗試從 CDN 載入預設資料庫
-    try {
-      console.log('🌐 嘗試從 CDN 載入預設資料庫...');
-      const cdnUrl = 'https://raw.githubusercontent.com/TroyeXu/taiwan-activity/main/public/tourism.sqlite';
-      
-      const response = await fetch(cdnUrl, {
-        signal: AbortSignal.timeout(60000), // 60秒超時
-      });
+    const cdnUrls = [
+      'https://raw.githubusercontent.com/TroyeXu/taiwan-activity/main/public/tourism.sqlite',
+      'https://github.com/TroyeXu/taiwan-activity/raw/main/public/tourism.sqlite',
+      // 使用 jsdelivr CDN
+      'https://cdn.jsdelivr.net/gh/TroyeXu/taiwan-activity@main/public/tourism.sqlite'
+    ];
+    
+    for (const cdnUrl of cdnUrls) {
+      try {
+        console.log(`🌐 嘗試從 CDN 載入: ${cdnUrl}`);
+        
+        const response = await fetch(cdnUrl, {
+          signal: AbortSignal.timeout(60000), // 60秒超時
+          headers: {
+            'Accept': 'application/octet-stream, */*'
+          }
+        });
 
-      if (response.ok) {
-        const buffer = await response.arrayBuffer();
-        if (this.isValidSQLite(buffer)) {
-          console.log('✅ 成功從 CDN 載入資料庫');
-          return buffer;
+        if (response.ok) {
+          const buffer = await response.arrayBuffer();
+          if (this.isValidSQLite(buffer)) {
+            console.log(`✅ 成功從 CDN 載入資料庫: ${cdnUrl}`);
+            return buffer;
+          }
         }
+      } catch (error) {
+        console.error(`❌ CDN 載入失敗: ${cdnUrl}`, error);
       }
-    } catch (error) {
-      console.error('❌ CDN 載入失敗:', error);
     }
 
     throw new Error('無法載入資料庫檔案：所有路徑都失敗了');

@@ -65,11 +65,18 @@ export default defineNuxtConfig({
     // 確保資料庫檔案被複製
     publicAssets: [
       {
-        baseURL: '/taiwan-activity/',
+        baseURL: '/',
         dir: 'public',
         maxAge: 31536000
       }
     ],
+
+    // 複製檔案到輸出目錄
+    hooks: {
+      'rollup:before': () => {
+        console.log('📦 準備複製靜態資源...');
+      },
+    },
   },
 
   // 應用程式配置

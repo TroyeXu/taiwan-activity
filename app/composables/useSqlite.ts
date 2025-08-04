@@ -7,6 +7,7 @@ import {
   withRetry,
 } from '~/utils/database-health';
 import { DatabaseLoader } from '~/utils/database-loader';
+import { useGitHubPagesDatabase } from '~/composables/useGitHubPagesDatabase';
 
 // 全域 SQLite 實例
 let db: Database | null = null;
@@ -46,13 +47,30 @@ export const useSqlite = () => {
           { maxAttempts: 3, delay: 500, backoffMultiplier: 2 }
         );
 
-        // 使用 DatabaseLoader 載入資料庫檔案
+        // 使用適當的載入器
         console.log('📁 開始載入資料庫檔案...');
         
-        const buffer = await withRetry(
-          async () => await DatabaseLoader.loadDatabase(),
-          { maxAttempts: 3, delay: 1000, backoffMultiplier: 2 }
-        );
+        let buffer: ArrayBuffer;
+        
+        // 判斷是否在 GitHub Pages 環境
+        const isGitHubPages = typeof window !== 'undefined' && 
+          (window.location.hostname.includes('github.io') || 
+           window.location.pathname.includes('/taiwan-activity/'));
+        
+        if (isGitHubPages) {
+          console.log('🌐 使用 GitHub Pages 載入模式');
+          const { loadDatabase } = useGitHubPagesDatabase();
+          buffer = await withRetry(
+            async () => await loadDatabase(),
+            { maxAttempts: 3, delay: 1000, backoffMultiplier: 2 }
+          );
+        } else {
+          console.log('📦 使用標準載入模式');
+          buffer = await withRetry(
+            async () => await DatabaseLoader.loadDatabase(),
+            { maxAttempts: 3, delay: 1000, backoffMultiplier: 2 }
+          );
+        }
 
         // 建立資料庫實例
         db = new SQL.Database(new Uint8Array(buffer));
