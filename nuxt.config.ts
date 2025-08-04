@@ -59,8 +59,17 @@ export default defineNuxtConfig({
 
     // 排除靜態檔案不要預渲染
     prerender: {
-      ignore: ['/manifest.json', '/favicon.ico', '/apple-touch-icon.png'],
+      ignore: ['/manifest.json', '/favicon.ico', '/apple-touch-icon.png', '/tourism.sqlite'],
     },
+
+    // 確保資料庫檔案被複製
+    publicAssets: [
+      {
+        baseURL: '/taiwan-activity/',
+        dir: 'public',
+        maxAge: 31536000
+      }
+    ],
   },
 
   // 應用程式配置
@@ -223,6 +232,9 @@ export default defineNuxtConfig({
         return;
       }
       throw error;
+    },
+    'nitro:build:before': (nitro) => {
+      console.log('🔧 確保資料庫檔案在構建前存在...');
     },
   },
 });

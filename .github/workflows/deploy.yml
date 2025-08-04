@@ -34,6 +34,11 @@ jobs:
       - name: Build
         run: npm run generate
 
+      - name: Copy SQLite database to output
+        run: |
+          cp public/tourism.sqlite .output/public/
+          ls -la .output/public/tourism.sqlite
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

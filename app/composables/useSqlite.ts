@@ -6,6 +6,7 @@ import {
   DatabaseErrorType,
   withRetry,
 } from '~/utils/database-health';
+import { DatabaseLoader } from '~/utils/database-loader';
 
 // 全域 SQLite 實例
 let db: Database | null = null;
@@ -45,35 +46,13 @@ export const useSqlite = () => {
           { maxAttempts: 3, delay: 500, backoffMultiplier: 2 }
         );
 
-        // 載入資料庫檔案
-        const { $config } = useNuxtApp();
-        const baseURL = $config.app.baseURL || '/';
-        const dbPath = baseURL.endsWith('/')
-          ? `${baseURL}tourism.sqlite`
-          : `${baseURL}/tourism.sqlite`;
-
-        console.log('📁 載入資料庫檔案:', dbPath);
-
-        // 使用重試機制載入資料庫檔案
-        const buffer = await withRetry(async () => {
-          const response = await fetch(dbPath, {
-            signal: AbortSignal.timeout(30000), // 30秒超時
-          });
-
-          if (!response.ok) {
-            throw new DatabaseError(
-              DatabaseErrorType.CONNECTION_FAILED,
-              `無法載入資料庫檔案: ${response.status} ${response.statusText} - 路徑: ${dbPath}`
-            );
-          }
-
-          const contentLength = response.headers.get('content-length');
-          if (contentLength && parseInt(contentLength) === 0) {
-            throw new DatabaseError(DatabaseErrorType.INVALID_DATA, '資料庫檔案為空');
-          }
-
-          return await response.arrayBuffer();
-        });
+        // 使用 DatabaseLoader 載入資料庫檔案
+        console.log('📁 開始載入資料庫檔案...');
+        
+        const buffer = await withRetry(
+          async () => await DatabaseLoader.loadDatabase(),
+          { maxAttempts: 3, delay: 1000, backoffMultiplier: 2 }
+        );
 
         // 建立資料庫實例
         db = new SQL.Database(new Uint8Array(buffer));
@@ -327,6 +306,7 @@ export const useSqlite = () => {
     isInitializing = false;
     initPromise = null;
     healthMonitor.reset();
+    DatabaseLoader.clearCache();
 
     // 嘗試重新初始化
     try {
