@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>台灣觀光活動地圖</title>
+  <script>
+    // 這個腳本會將 404 頁面重定向到 index.html
+    // 保留原始路徑作為查詢參數
+    const path = window.location.pathname;
+    const query = window.location.search;
+    const hash = window.location.hash;
+    
+    // 如果是 GitHub Pages，需要處理 baseURL
+    const baseURL = '/taiwan-activity/';
+    let redirectPath = baseURL;
+    
+    if (path.startsWith(baseURL)) {
+      // 已經包含 baseURL，保持原樣
+      redirectPath = path;
+    } else {
+      // 添加 baseURL
+      redirectPath = baseURL + path.replace(/^\//, '');
+    }
+    
+    // 重定向到 index.html，保留路徑資訊
+    window.location.replace(
+      redirectPath + '?redirect=' + encodeURIComponent(path) + query + hash
+    );
+  </script>
+</head>
+<body>
+  <p>重定向中...</p>
+</body>
+</html>
