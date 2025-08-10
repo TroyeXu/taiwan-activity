@@ -172,6 +172,7 @@ export const useSqlite = () => {
       search?: string;
       category?: string;
       city?: string;
+      cities?: string[];
       region?: string;
       startDate?: string;
       endDate?: string;
@@ -204,14 +205,35 @@ export const useSqlite = () => {
       params.push(options.category);
     }
 
-    if (options.city) {
+    // 支援單一城市或多個城市
+    if (options.cities && options.cities.length > 0) {
+      console.log('SQL查詢多城市篩選:', options.cities);
+      const placeholders = options.cities.map(() => '?').join(',');
+      sql += ` AND l.city IN (${placeholders})`;
+      params.push(...options.cities);
+    } else if (options.city) {
+      console.log('SQL查詢城市篩選:', options.city);
       sql += ` AND l.city = ?`;
       params.push(options.city);
     }
 
     if (options.region) {
-      sql += ` AND l.region = ?`;
-      params.push(options.region);
+      // region 篩選應該基於城市對應的地區
+      // 例如：北部包含台北市、新北市等
+      const regionCityMap: Record<string, string[]> = {
+        north: ['台北市', '新北市', '基隆市', '桃園市', '新竹市', '新竹縣', '宜蘭縣'],
+        central: ['台中市', '苗栗縣', '彰化縣', '南投縣', '雲林縣'],
+        south: ['台南市', '高雄市', '嘉義市', '嘉義縣', '屏東縣'],
+        east: ['花蓮縣', '台東縣'],
+        outlying: ['澎湖縣', '金門縣', '連江縣']
+      };
+      
+      const cities = regionCityMap[options.region];
+      if (cities && cities.length > 0) {
+        const placeholders = cities.map(() => '?').join(',');
+        sql += ` AND l.city IN (${placeholders})`;
+        params.push(...cities);
+      }
     }
 
     // 日期篩選
@@ -251,8 +273,16 @@ export const useSqlite = () => {
 
     console.log('SQL 查詢:', sql);
     console.log('查詢參數:', params);
+    console.log('最終SQL查詢選項:', { city: options.city, region: options.region });
     
     const results = await query(sql, params);
+    console.log('查詢結果數量:', results.length);
+    
+    if (results.length === 0 && options.city) {
+      // 調試：查看城市資料
+      const cityCheck = await query('SELECT DISTINCT city FROM locations WHERE city LIKE ?', [`%${options.city}%`]);
+      console.log('資料庫中相似的城市名稱:', cityCheck);
+    }
 
     return results;
   };

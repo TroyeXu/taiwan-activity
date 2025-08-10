@@ -228,7 +228,8 @@ export default defineNuxtConfig({
   // 開發工具配置
   devServer: {
     port: 3000,
-    host: '0.0.0.0',
+    host: 'localhost', // 改為 localhost 以支援地理定位
+    https: false, // 可選：如需 HTTPS，設為 true 或提供證書配置
   },
 
   // 隱藏特定的構建警告

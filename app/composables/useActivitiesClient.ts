@@ -224,6 +224,7 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
         search?: string;
         category?: string;
         city?: string;
+        cities?: string[];
         region?: string;
         startDate?: string;
         endDate?: string;
@@ -251,7 +252,9 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
 
       if (searchOptions.filters?.cities?.length) {
         // 如果有指定城市，使用城市篩選
-        queryOptions.city = searchOptions.filters.cities[0];
+        console.log('城市篩選:', searchOptions.filters.cities);
+        // 傳遞所有選中的城市
+        queryOptions.cities = searchOptions.filters.cities;
       }
 
       // 處理日期篩選

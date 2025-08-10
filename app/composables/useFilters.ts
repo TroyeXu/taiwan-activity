@@ -148,13 +148,18 @@ export const useFilters = () => {
   };
 
   // 設定位置篩選
-  const setLocation = (location: { lat: number; lng: number }, address?: string) => {
-    filters.value.location = {
-      ...filters.value.location,
-      type: 'custom',
-      coordinates: location,
-      address,
-    };
+  const setLocation = (location: { lat: number; lng: number } | null, address?: string) => {
+    if (location) {
+      filters.value.location = {
+        ...filters.value.location,
+        type: 'custom',
+        coordinates: location,
+        address,
+      };
+    } else {
+      filters.value.location.coordinates = null;
+      filters.value.location.address = undefined;
+    }
   };
 
   const useCurrentLocation = async () => {
@@ -208,6 +213,17 @@ export const useFilters = () => {
 
   // 重置篩選
   const resetFilters = () => {
+    const defaultFilters = getDefaultFilters();
+    // 保留位置資訊（如果有）
+    const currentCoordinates = filters.value.location.coordinates;
+    filters.value = defaultFilters;
+    if (currentCoordinates) {
+      filters.value.location.coordinates = currentCoordinates;
+    }
+  };
+  
+  // 完全清除所有篩選（包括位置）
+  const clearAllFiltersIncludingLocation = () => {
     filters.value = getDefaultFilters();
   };
 
@@ -248,6 +264,8 @@ export const useFilters = () => {
     if (filters.value.dateRange.type === 'custom') count++;
     if (filters.value.timeOfDay.length > 0) count++;
     if (filters.value.features.length > 0) count++;
+    // 位置篩選：有座標或有城市選擇
+    if (filters.value.location.coordinates || filters.value.cities.length > 0) count++;
     return count;
   });
 
@@ -287,7 +305,8 @@ export const useFilters = () => {
       params.cities = filters.value.cities;
     }
 
-    if (filters.value.location.coordinates) {
+    // 只在有座標且沒有城市選擇時才使用位置篩選
+    if (filters.value.location.coordinates && filters.value.cities.length === 0) {
       params.location = filters.value.location.coordinates;
       params.radius = filters.value.location.radius;
     }

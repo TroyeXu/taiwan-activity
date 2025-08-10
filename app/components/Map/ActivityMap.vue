@@ -56,6 +56,9 @@ interface Props {
   showCategoryFilter?: boolean;
   showStats?: boolean;
   initialCategories?: string[];
+  userLocation?: { lat: number; lng: number } | null;
+  searchRadius?: number;
+  showUserLocation?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -81,6 +84,8 @@ const emit = defineEmits<Emits>();
 const selectedCategories = ref<string[]>([...props.initialCategories]);
 const map = ref<any>();
 const markers = ref<any[]>([]);
+const userMarker = ref<any>(null);
+const radiusCircle = ref<any>(null);
 
 // 可用分類列表
 const availableCategories = computed(() => {
@@ -115,17 +120,55 @@ const availableCategories = computed(() => {
   return Array.from(categoryMap.values()).sort((a, b) => b.count - a.count);
 });
 
+// 計算兩點間的距離（公里）
+const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+  const R = 6371; // 地球半徑（公里）
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLng/2) * Math.sin(dLng/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+};
+
 // 篩選後的活動
 const filteredActivities = computed(() => {
-  if (selectedCategories.value.length === 0) {
-    return props.activities;
+  console.log('地圖組件收到活動數量:', props.activities.length);
+  console.log('用戶位置:', props.userLocation);
+  console.log('搜尋半徑:', props.searchRadius);
+  
+  let filtered = props.activities;
+  
+  // 分類篩選
+  if (selectedCategories.value.length > 0) {
+    filtered = filtered.filter((activity) => {
+      return activity.categories?.some((category) =>
+        selectedCategories.value.includes(category.slug)
+      );
+    });
   }
-
-  return props.activities.filter((activity) => {
-    return activity.categories?.some((category) =>
-      selectedCategories.value.includes(category.slug)
-    );
-  });
+  
+  // 距離篩選（如果有用戶位置和搜尋範圍）
+  if (props.userLocation && props.searchRadius) {
+    console.log('啟用距離篩選');
+    filtered = filtered.filter((activity) => {
+      if (!activity.location?.latitude || !activity.location?.longitude) {
+        return false;
+      }
+      const distance = calculateDistance(
+        props.userLocation.lat,
+        props.userLocation.lng,
+        activity.location.latitude,
+        activity.location.longitude
+      );
+      return distance <= props.searchRadius;
+    });
+  }
+  
+  console.log('篩選後活動數量:', filtered.length);
+  return filtered;
 });
 
 // 初始化地圖
@@ -142,10 +185,19 @@ const initMap = async () => {
   link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
   document.head.appendChild(link);
 
-  // 等待 CSS 載入
+  // 等待 CSS 載入和 DOM 準備就緒
   setTimeout(() => {
+    // 確保 DOM 元素存在
+    const mapElement = document.getElementById('activity-map');
+    if (!mapElement) {
+      console.error('Map container not found, retrying...');
+      setTimeout(() => initMap(), 500);
+      return;
+    }
+    
     // 創建地圖
-    map.value = L.map('activity-map').setView([props.center.lat, props.center.lng], props.zoom);
+    try {
+      map.value = L.map('activity-map').setView([props.center.lat, props.center.lng], props.zoom);
 
     // 添加瓦片圖層
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -156,11 +208,19 @@ const initMap = async () => {
 
     // 添加活動標記
     updateMarkers();
+    
+    // 更新用戶位置
+    updateUserLocation();
 
     // 發送地圖準備就緒事件
     emit('mapReady', map.value);
 
     console.log('ActivityMap 已創建');
+    } catch (error) {
+      console.error('Failed to initialize map:', error);
+      // 如果初始化失敗，稍後重試
+      setTimeout(() => initMap(), 1000);
+    }
   }, 500);
 };
 
@@ -197,6 +257,9 @@ const createActivityMarker = (activity: Activity) => {
 const updateMarkers = () => {
   if (!map.value || !L) return;
 
+  console.log('更新地圖標記，活動數量:', filteredActivities.value.length);
+  console.log('篩選後的活動:', filteredActivities.value.map(a => ({ name: a.name, location: a.location })));
+
   // 清除現有標記
   markers.value.forEach((marker) => {
     if (marker && map.value) {
@@ -213,6 +276,90 @@ const updateMarkers = () => {
       marker.addTo(map.value);
     }
   });
+};
+
+// 更新用戶位置標記和範圍圓圈
+const updateUserLocation = () => {
+  if (!map.value || !L) return;
+  
+  // 清除現有的用戶標記和圓圈
+  if (userMarker.value) {
+    map.value.removeLayer(userMarker.value);
+    userMarker.value = null;
+  }
+  if (radiusCircle.value) {
+    map.value.removeLayer(radiusCircle.value);
+    radiusCircle.value = null;
+  }
+  
+  // 如果有用戶位置，添加標記和範圍圓圈
+  if (props.userLocation && props.showUserLocation) {
+    // 創建自定義圖標
+    const userIcon = L.divIcon({
+      html: `
+        <div style="
+          width: 30px;
+          height: 30px;
+          background: #3b82f6;
+          border: 3px solid white;
+          border-radius: 50%;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+        ">
+          <div style="
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+          "></div>
+          <div style="
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 2px solid #3b82f6;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+          "></div>
+        </div>
+      `,
+      className: 'user-location-marker',
+      iconSize: [30, 30],
+      iconAnchor: [15, 15]
+    });
+    
+    // 添加用戶位置標記
+    userMarker.value = L.marker(
+      [props.userLocation.lat, props.userLocation.lng],
+      { icon: userIcon }
+    )
+    .bindPopup('您的位置')
+    .addTo(map.value);
+    
+    // 如果有搜尋範圍，添加圓圈
+    if (props.searchRadius) {
+      radiusCircle.value = L.circle(
+        [props.userLocation.lat, props.userLocation.lng],
+        {
+          radius: props.searchRadius * 1000, // 轉換為公尺
+          color: '#3b82f6',
+          fillColor: '#3b82f6',
+          fillOpacity: 0.1,
+          weight: 2,
+          dashArray: '5, 10'
+        }
+      ).addTo(map.value);
+      
+      // 調整地圖視野以包含整個圓圈
+      const bounds = radiusCircle.value.getBounds();
+      map.value.fitBounds(bounds, { padding: [50, 50] });
+    } else {
+      // 只有位置沒有範圍時，聚焦到用戶位置
+      map.value.setView([props.userLocation.lat, props.userLocation.lng], 13);
+    }
+  }
 };
 
 // 事件處理
@@ -247,6 +394,15 @@ watch(
   filteredActivities,
   () => {
     updateMarkers();
+  },
+  { deep: true }
+);
+
+// 監聽用戶位置變化
+watch(
+  () => [props.userLocation, props.searchRadius, props.showUserLocation],
+  () => {
+    updateUserLocation();
   },
   { deep: true }
 );
@@ -373,6 +529,22 @@ onUnmounted(() => {
 .stats-value {
   color: #1f2937;
   font-weight: 600;
+}
+
+/* 用戶位置動畫 */
+:global(@keyframes pulse) {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
 }
 
 /* 響應式設計 */
