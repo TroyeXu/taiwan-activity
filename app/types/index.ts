@@ -25,8 +25,12 @@ export interface Activity {
   popularityScore?: number;
   // 動態計算的屬性（不存在資料庫）
   distance?: number;
-  // 活動連結
-  url?: string;
+  // 爬蟲相關欄位
+  url?: string; // 活動官方連結
+  sourceUrl?: string; // 資料來源網址
+  lastCrawledAt?: Date; // 最後爬取時間
+  dataHash?: string; // 資料雜湊值（防重複）
+  externalId?: string; // 外部系統ID
 }
 
 export interface Location {

@@ -96,7 +96,19 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
 
     // 其他
     categories?: string;
+
+    // 爬蟲相關欄位（snake_case）
     url?: string;
+    source_url?: string;
+    last_crawled_at?: number;
+    data_hash?: string;
+    external_id?: string;
+
+    // 爬蟲相關欄位（camelCase 相容性）
+    sourceUrl?: string;
+    lastCrawledAt?: number;
+    dataHash?: string;
+    externalId?: string;
   }
 
   const formatActivity = (row: ActivityRow): Activity => {
@@ -170,8 +182,15 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
             }))
             .filter((cat) => cat.name)
         : [],
-      // 活動連結（如果資料庫有此欄位）
+      // 爬蟲相關欄位
       url: row.url || undefined,
+      sourceUrl: row.source_url || row.sourceUrl || undefined,
+      lastCrawledAt:
+        row.last_crawled_at || row.lastCrawledAt
+          ? new Date((row.last_crawled_at || row.lastCrawledAt) * 1000)
+          : undefined,
+      dataHash: row.data_hash || row.dataHash || undefined,
+      externalId: row.external_id || row.externalId || undefined,
     };
 
     return data;
