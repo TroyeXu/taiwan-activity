@@ -43,7 +43,12 @@
           </el-icon>
 
           <!-- 重置按鈕 -->
-          <el-button v-if="hasActiveFilters || showFavoritesOnly" type="text" size="small" @click="handleReset">
+          <el-button
+            v-if="hasActiveFilters || showFavoritesOnly"
+            type="text"
+            size="small"
+            @click="handleReset"
+          >
             重置
           </el-button>
         </div>
@@ -51,9 +56,13 @@
 
       <!-- 我的收藏模式切換（桌面版） -->
       <div class="hidden md:block mb-4">
-        <div 
+        <div
           class="p-4 rounded-lg transition-all duration-300"
-          :class="showFavoritesOnly ? 'bg-blue-50 border-2 border-blue-300' : 'bg-gray-50 border border-gray-200'"
+          :class="
+            showFavoritesOnly
+              ? 'bg-blue-50 border-2 border-blue-300'
+              : 'bg-gray-50 border border-gray-200'
+          "
         >
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
@@ -63,9 +72,9 @@
               <div>
                 <h4 class="font-medium text-gray-900">我的收藏模式</h4>
                 <p class="text-sm text-gray-600 mt-1">
-                  {{ favoriteCount > 0 
-                    ? `您有 ${favoriteCount} 個收藏的活動` 
-                    : '尚未收藏任何活動' }}
+                  {{
+                    favoriteCount > 0 ? `您有 ${favoriteCount} 個收藏的活動` : '尚未收藏任何活動'
+                  }}
                 </p>
               </div>
             </div>
@@ -89,9 +98,7 @@
 
           <!-- 無收藏提示 -->
           <div v-if="favoriteCount === 0" class="mt-3 p-3 bg-yellow-50 rounded-md">
-            <p class="text-sm text-yellow-700">
-              請先收藏一些活動，才能使用此功能
-            </p>
+            <p class="text-sm text-yellow-700">請先收藏一些活動，才能使用此功能</p>
           </div>
         </div>
       </div>
@@ -100,9 +107,13 @@
       <div class="md:hidden">
         <!-- 我的收藏模式切換（手機版） -->
         <div class="mb-4">
-          <div 
+          <div
             class="p-4 rounded-lg transition-all duration-300"
-            :class="showFavoritesOnly ? 'bg-blue-50 border-2 border-blue-300' : 'bg-gray-50 border border-gray-200'"
+            :class="
+              showFavoritesOnly
+                ? 'bg-blue-50 border-2 border-blue-300'
+                : 'bg-gray-50 border border-gray-200'
+            "
           >
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
@@ -125,544 +136,557 @@
 
             <!-- 收藏模式提示 -->
             <div v-if="showFavoritesOnly" class="mt-2 p-2 bg-blue-100 rounded-md">
-              <p class="text-xs text-blue-700">
-                收藏模式已開啟
-              </p>
+              <p class="text-xs text-blue-700">收藏模式已開啟</p>
             </div>
           </div>
         </div>
 
         <!-- 收藏模式遮罩層（手機版） -->
         <div class="relative">
-          <div v-if="showFavoritesOnly" class="absolute inset-0 bg-gray-100 bg-opacity-50 z-10 rounded-lg cursor-not-allowed"></div>
-          <el-collapse v-model="mobileActiveNames" class="mobile-filter-collapse" :class="{ 'opacity-50 pointer-events-none': showFavoritesOnly }">
-          <!-- 快速篩選組合方案 (手機版) -->
-          <el-collapse-item name="quick-filters">
-            <template #title>
-              <div class="filter-header">
-                <el-icon><Lightning /></el-icon>
-                <span class="ml-2">選擇組合方案</span>
-                <el-tag v-if="activeQuickFilter" size="small" type="primary" class="ml-auto mr-2">
-                  {{ quickFiltersConfig.find((f) => f.id === activeQuickFilter)?.label }}
-                </el-tag>
-              </div>
-            </template>
-            <div class="p-4">
-              <div class="mb-3 text-sm text-gray-600">選擇適合您的活動方案（單選）</div>
-              <div class="grid grid-cols-2 gap-2">
-                <el-button
-                  v-for="filter in quickFiltersConfig"
-                  :key="filter.id"
-                  :type="activeQuickFilter === filter.id ? 'primary' : 'default'"
-                  @click="selectQuickFilter(filter.id)"
-                  size="small"
-                  class="mobile-quick-filter-btn"
-                >
-                  <div class="flex flex-col items-center">
-                    <span class="text-xl mb-1">{{ filter.icon }}</span>
-                    <span class="text-xs">{{ filter.label }}</span>
+          <div
+            v-if="showFavoritesOnly"
+            class="absolute inset-0 bg-gray-100 bg-opacity-50 z-10 rounded-lg cursor-not-allowed"
+          ></div>
+          <el-collapse
+            v-model="mobileActiveNames"
+            class="mobile-filter-collapse"
+            :class="{ 'opacity-50 pointer-events-none': showFavoritesOnly }"
+          >
+            <!-- 快速篩選組合方案 (手機版) -->
+            <el-collapse-item name="quick-filters">
+              <template #title>
+                <div class="filter-header">
+                  <el-icon><Lightning /></el-icon>
+                  <span class="ml-2">選擇組合方案</span>
+                  <el-tag v-if="activeQuickFilter" size="small" type="primary" class="ml-auto mr-2">
+                    {{ quickFiltersConfig.find((f) => f.id === activeQuickFilter)?.label }}
+                  </el-tag>
+                </div>
+              </template>
+              <div class="p-4">
+                <div class="mb-3 text-sm text-gray-600">選擇適合您的活動方案（單選）</div>
+                <div class="grid grid-cols-2 gap-2">
+                  <el-button
+                    v-for="filter in quickFiltersConfig"
+                    :key="filter.id"
+                    :type="activeQuickFilter === filter.id ? 'primary' : 'default'"
+                    @click="selectQuickFilter(filter.id)"
+                    size="small"
+                    class="mobile-quick-filter-btn"
+                  >
+                    <div class="flex flex-col items-center">
+                      <span class="text-xl mb-1">{{ filter.icon }}</span>
+                      <span class="text-xs">{{ filter.label }}</span>
+                    </div>
+                  </el-button>
+                </div>
+                <div v-if="activeQuickFilter" class="mt-3 pt-3 border-t">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs text-gray-600"> 已套用組合 </span>
+                    <el-button text size="small" @click="selectQuickFilter('')"> 清除 </el-button>
                   </div>
-                </el-button>
-              </div>
-              <div v-if="activeQuickFilter" class="mt-3 pt-3 border-t">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs text-gray-600"> 已套用組合 </span>
-                  <el-button text size="small" @click="selectQuickFilter('')"> 清除 </el-button>
                 </div>
               </div>
-            </div>
-          </el-collapse-item>
+            </el-collapse-item>
 
-          <!-- 位置篩選 -->
-          <el-collapse-item name="location">
-            <template #title>
-              <div class="filter-header">
-                <el-icon><Location /></el-icon>
-                <span class="ml-2">位置與距離</span>
-                <el-badge v-if="hasLocationFilter" value="✓" type="primary" class="ml-auto mr-2" />
-              </div>
-            </template>
+            <!-- 位置篩選 -->
+            <el-collapse-item name="location">
+              <template #title>
+                <div class="filter-header">
+                  <el-icon><Location /></el-icon>
+                  <span class="ml-2">位置與距離</span>
+                  <el-badge
+                    v-if="hasLocationFilter"
+                    value="✓"
+                    type="primary"
+                    class="ml-auto mr-2"
+                  />
+                </div>
+              </template>
 
-            <div class="p-4 space-y-4">
-              <!-- 位置篩選模式選擇 -->
-              <div>
-                <h5 class="text-sm font-medium text-gray-700 mb-3">選擇搜尋方式</h5>
-                <el-radio-group
-                  v-model="locationMode"
-                  @change="handleLocationModeChange"
-                  class="location-mode-group"
-                >
-                  <div class="space-y-3">
-                    <!-- 附近活動模式 -->
-                    <el-radio value="nearby" class="w-full">
-                      <div class="flex items-center">
-                        <el-icon class="mr-2"><Location /></el-icon>
-                        <span>搜尋我附近的活動</span>
-                      </div>
-                    </el-radio>
+              <div class="p-4 space-y-4">
+                <!-- 位置篩選模式選擇 -->
+                <div>
+                  <h5 class="text-sm font-medium text-gray-700 mb-3">選擇搜尋方式</h5>
+                  <el-radio-group
+                    v-model="locationMode"
+                    @change="handleLocationModeChange"
+                    class="location-mode-group"
+                  >
+                    <div class="space-y-3">
+                      <!-- 附近活動模式 -->
+                      <el-radio value="nearby" class="w-full">
+                        <div class="flex items-center">
+                          <el-icon class="mr-2"><Location /></el-icon>
+                          <span>搜尋我附近的活動</span>
+                        </div>
+                      </el-radio>
 
-                    <!-- 附近活動的設定 -->
-                    <div v-if="locationMode === 'nearby'" class="ml-6 space-y-3">
-                      <!-- 定位狀態 -->
-                      <div class="bg-blue-50 p-3 rounded-md">
-                        <div v-if="coordinates" class="text-sm">
-                          <p class="text-blue-700 font-medium">📍 定位成功</p>
-                          <p class="text-xs text-gray-600 mt-1">
-                            {{ address || '已取得您的位置' }}
+                      <!-- 附近活動的設定 -->
+                      <div v-if="locationMode === 'nearby'" class="ml-6 space-y-3">
+                        <!-- 定位狀態 -->
+                        <div class="bg-blue-50 p-3 rounded-md">
+                          <div v-if="coordinates" class="text-sm">
+                            <p class="text-blue-700 font-medium">📍 定位成功</p>
+                            <p class="text-xs text-gray-600 mt-1">
+                              {{ address || '已取得您的位置' }}
+                            </p>
+                            <el-button
+                              text
+                              size="small"
+                              @click="handleGetCurrentLocation"
+                              class="mt-2"
+                            >
+                              重新定位
+                            </el-button>
+                          </div>
+                          <div v-else class="text-sm space-y-2">
+                            <div
+                              v-if="locationError"
+                              class="text-red-600 text-xs bg-red-50 p-2 rounded"
+                            >
+                              {{ locationError }}
+                            </div>
+                            <p v-else class="text-gray-600 text-xs">需要您的位置來搜尋附近活動</p>
+
+                            <el-button
+                              type="primary"
+                              size="small"
+                              :loading="locationLoading"
+                              @click="handleGetCurrentLocation"
+                              class="w-full"
+                            >
+                              <el-icon class="mr-1"><Location /></el-icon>
+                              {{
+                                locationLoading
+                                  ? '定位中...'
+                                  : locationError
+                                    ? '重新定位'
+                                    : '開始定位'
+                              }}
+                            </el-button>
+
+                            <div v-if="locationError" class="text-xs text-gray-500">
+                              <p class="font-medium">如果定位失敗，請嘗試：</p>
+                              <ul class="list-disc list-inside mt-1 space-y-1">
+                                <li>確認瀏覽器允許此網站使用定位服務</li>
+                                <li>檢查設備的定位服務是否開啟</li>
+                                <li>嘗試重新整理頁面</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- 距離範圍設定 -->
+                        <div v-if="coordinates" class="space-y-2">
+                          <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">搜尋範圍</span>
+                            <span class="text-sm font-medium text-primary-600"
+                              >{{ distanceRadius }} 公里內</span
+                            >
+                          </div>
+                          <div class="px-2">
+                            <el-slider
+                              v-model="distanceRadius"
+                              :min="1"
+                              :max="50"
+                              :marks="{ 5: '5km', 15: '15km', 30: '30km', 50: '50km' }"
+                              @change="handleDistanceRadiusChange"
+                            />
+                          </div>
+                          <p class="text-xs text-gray-500">
+                            將顯示距離您 {{ distanceRadius }} 公里內的所有活動
                           </p>
-                          <el-button
-                            text
-                            size="small"
-                            @click="handleGetCurrentLocation"
-                            class="mt-2"
-                          >
-                            重新定位
-                          </el-button>
-                        </div>
-                        <div v-else class="text-sm space-y-2">
-                          <div
-                            v-if="locationError"
-                            class="text-red-600 text-xs bg-red-50 p-2 rounded"
-                          >
-                            {{ locationError }}
-                          </div>
-                          <p v-else class="text-gray-600 text-xs">需要您的位置來搜尋附近活動</p>
-
-                          <el-button
-                            type="primary"
-                            size="small"
-                            :loading="locationLoading"
-                            @click="handleGetCurrentLocation"
-                            class="w-full"
-                          >
-                            <el-icon class="mr-1"><Location /></el-icon>
-                            {{
-                              locationLoading
-                                ? '定位中...'
-                                : locationError
-                                  ? '重新定位'
-                                  : '開始定位'
-                            }}
-                          </el-button>
-
-                          <div v-if="locationError" class="text-xs text-gray-500">
-                            <p class="font-medium">如果定位失敗，請嘗試：</p>
-                            <ul class="list-disc list-inside mt-1 space-y-1">
-                              <li>確認瀏覽器允許此網站使用定位服務</li>
-                              <li>檢查設備的定位服務是否開啟</li>
-                              <li>嘗試重新整理頁面</li>
-                            </ul>
-                          </div>
                         </div>
                       </div>
 
-                      <!-- 距離範圍設定 -->
-                      <div v-if="coordinates" class="space-y-2">
-                        <div class="flex items-center justify-between">
-                          <span class="text-sm text-gray-600">搜尋範圍</span>
-                          <span class="text-sm font-medium text-primary-600"
-                            >{{ distanceRadius }} 公里內</span
+                      <!-- 地區模式 -->
+                      <el-radio value="region" class="w-full">
+                        <div class="flex items-center">
+                          <el-icon class="mr-2"><MapLocation /></el-icon>
+                          <span>搜尋指定地區的活動</span>
+                        </div>
+                      </el-radio>
+
+                      <!-- 地區選擇 -->
+                      <div v-if="locationMode === 'region'" class="ml-6">
+                        <el-select
+                          v-model="selectedCities"
+                          placeholder="選擇縣市（預設為全部）"
+                          multiple
+                          filterable
+                          clearable
+                          @change="handleCitiesChange"
+                          style="width: 100%"
+                          size="small"
+                          collapse-tags
+                          collapse-tags-tooltip
+                          :max-collapse-tags="2"
+                        >
+                          <el-option
+                            label="全部縣市"
+                            value="all"
+                            :disabled="selectedCities.length > 0 && !selectedCities.includes('all')"
                           >
-                        </div>
-                        <div class="px-2">
-                          <el-slider
-                            v-model="distanceRadius"
-                            :min="1"
-                            :max="50"
-                            :marks="{ 5: '5km', 15: '15km', 30: '30km', 50: '50km' }"
-                            @change="handleDistanceRadiusChange"
+                            <span style="font-weight: 600; color: #3b82f6">全部縣市</span>
+                          </el-option>
+                          <el-option
+                            v-for="city in cityOptions"
+                            :key="city.value"
+                            :label="city.label"
+                            :value="city.value"
+                            :disabled="selectedCities.includes('all')"
                           />
-                        </div>
-                        <p class="text-xs text-gray-500">
-                          將顯示距離您 {{ distanceRadius }} 公里內的所有活動
+                        </el-select>
+                        <p class="text-xs text-gray-500 mt-2">
+                          {{
+                            selectedCities.length === 0 || selectedCities.includes('all')
+                              ? '顯示全部縣市的活動'
+                              : `顯示 ${selectedCities.length} 個縣市的活動`
+                          }}
                         </p>
                       </div>
                     </div>
+                  </el-radio-group>
+                </div>
 
-                    <!-- 地區模式 -->
-                    <el-radio value="region" class="w-full">
-                      <div class="flex items-center">
-                        <el-icon class="mr-2"><MapLocation /></el-icon>
-                        <span>搜尋指定地區的活動</span>
-                      </div>
-                    </el-radio>
-
-                    <!-- 地區選擇 -->
-                    <div v-if="locationMode === 'region'" class="ml-6">
-                      <el-select
-                        v-model="selectedCities"
-                        placeholder="選擇縣市（預設為全部）"
-                        multiple
-                        filterable
-                        clearable
-                        @change="handleCitiesChange"
-                        style="width: 100%"
-                        size="small"
-                        collapse-tags
-                        collapse-tags-tooltip
-                        :max-collapse-tags="2"
-                      >
-                        <el-option
-                          label="全部縣市"
-                          value="all"
-                          :disabled="selectedCities.length > 0 && !selectedCities.includes('all')"
-                        >
-                          <span style="font-weight: 600; color: #3b82f6">全部縣市</span>
-                        </el-option>
-                        <el-option
-                          v-for="city in cityOptions"
-                          :key="city.value"
-                          :label="city.label"
-                          :value="city.value"
-                          :disabled="selectedCities.includes('all')"
-                        />
-                      </el-select>
-                      <p class="text-xs text-gray-500 mt-2">
-                        {{
-                          selectedCities.length === 0 || selectedCities.includes('all')
-                            ? '顯示全部縣市的活動'
-                            : `顯示 ${selectedCities.length} 個縣市的活動`
-                        }}
-                      </p>
+                <!-- 距離顯示開關（獨立功能） -->
+                <div class="pt-3 border-t">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <h5 class="text-sm font-medium text-gray-700">顯示距離資訊</h5>
+                      <p class="text-xs text-gray-500 mt-1">在活動卡片上顯示距離</p>
                     </div>
+                    <el-switch
+                      v-model="showDistance"
+                      @change="handleDistanceToggle"
+                      size="small"
+                      :disabled="!coordinates"
+                    />
                   </div>
+                  <p v-if="!coordinates" class="text-xs text-orange-600 mt-2">
+                    需要先定位才能顯示距離資訊
+                  </p>
+                </div>
+              </div>
+            </el-collapse-item>
+
+            <!-- 活動類型篩選 -->
+            <el-collapse-item name="categories">
+              <template #title>
+                <div class="filter-header">
+                  <el-icon><Collection /></el-icon>
+                  <span class="ml-2">活動類型</span>
+                  <el-badge
+                    v-if="filters.categories.length > 0"
+                    :value="filters.categories.length"
+                    type="primary"
+                    class="ml-auto mr-2"
+                  />
+                </div>
+              </template>
+
+              <div class="p-4">
+                <!-- 分類選項 -->
+                <div class="grid grid-cols-2 gap-3">
+                  <label
+                    v-for="category in categoryOptions"
+                    :key="category.id"
+                    class="flex items-center p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors border border-gray-200"
+                    :class="{
+                      'bg-blue-50 border-blue-300': filters.categories.includes(category.id),
+                    }"
+                  >
+                    <el-checkbox
+                      :model-value="filters.categories.includes(category.id)"
+                      @change="
+                        (checked: boolean | string | number) =>
+                          handleCategoryToggle(category.id, checked)
+                      "
+                      size="small"
+                    />
+                    <span
+                      class="w-5 h-5 rounded-full mr-2 ml-2 flex items-center justify-center text-sm"
+                      :style="{ backgroundColor: category.color, color: 'white' }"
+                    >
+                      {{ category.icon }}
+                    </span>
+                    <span class="text-sm text-gray-700 font-medium">{{ category.name }}</span>
+                  </label>
+                </div>
+              </div>
+            </el-collapse-item>
+
+            <!-- 時間篩選 -->
+            <el-collapse-item name="time">
+              <template #title>
+                <div class="filter-header">
+                  <el-icon><Calendar /></el-icon>
+                  <span class="ml-2">活動時間</span>
+                  <el-badge v-if="hasDateFilter" value="✓" type="primary" class="ml-auto mr-2" />
+                </div>
+              </template>
+
+              <div class="p-4 space-y-4">
+                <!-- 時間篩選選項 -->
+                <div>
+                  <div class="grid grid-cols-2 gap-2">
+                    <el-button
+                      v-for="(option, index) in quickTimeButtons"
+                      :key="option.value"
+                      :type="filters.dateRange.quickOption === option.value ? 'primary' : 'default'"
+                      size="small"
+                      @click="handleQuickTimeSelect(option.value)"
+                      :class="['text-xs', 'ml-3']"
+                    >
+                      {{ option.label }}
+                    </el-button>
+                  </div>
+                </div>
+
+                <!-- 自訂日期範圍 -->
+                <div v-if="showCustomDateRange">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">自訂日期</label>
+                  <el-date-picker
+                    v-model="customDateRange"
+                    type="daterange"
+                    range-separator="至"
+                    start-placeholder="開始日期"
+                    end-placeholder="結束日期"
+                    @change="handleCustomDateChange"
+                    size="small"
+                    style="width: 100%"
+                  />
+                </div>
+              </div>
+            </el-collapse-item>
+
+            <!-- 費用篩選 -->
+            <el-collapse-item name="price">
+              <template #title>
+                <div class="filter-header">
+                  <el-icon><Wallet /></el-icon>
+                  <span class="ml-2">費用</span>
+                  <el-badge v-if="hasPriceFilter" value="✓" type="primary" class="ml-auto mr-2" />
+                </div>
+              </template>
+
+              <div class="p-4">
+                <el-radio-group
+                  v-model="priceType"
+                  @change="handlePriceTypeChange"
+                  class="grid grid-cols-3 gap-2"
+                >
+                  <el-radio value="all" class="text-sm">不限</el-radio>
+                  <el-radio value="free" class="text-sm">免費</el-radio>
+                  <el-radio value="paid" class="text-sm">收費</el-radio>
                 </el-radio-group>
               </div>
+            </el-collapse-item>
 
-              <!-- 距離顯示開關（獨立功能） -->
-              <div class="pt-3 border-t">
-                <div class="flex items-center justify-between">
-                  <div>
-                    <h5 class="text-sm font-medium text-gray-700">顯示距離資訊</h5>
-                    <p class="text-xs text-gray-500 mt-1">在活動卡片上顯示距離</p>
-                  </div>
-                  <el-switch
-                    v-model="showDistance"
-                    @change="handleDistanceToggle"
-                    size="small"
-                    :disabled="!coordinates"
+            <!-- 標籤篩選 -->
+            <el-collapse-item name="tags">
+              <template #title>
+                <div class="filter-header">
+                  <el-icon><Discount /></el-icon>
+                  <span class="ml-2">活動標籤</span>
+                  <el-badge
+                    v-if="filters.tags.length > 0"
+                    :value="filters.tags.length"
+                    type="primary"
+                    class="ml-auto mr-2"
                   />
                 </div>
-                <p v-if="!coordinates" class="text-xs text-orange-600 mt-2">
-                  需要先定位才能顯示距離資訊
-                </p>
-              </div>
-            </div>
-          </el-collapse-item>
+              </template>
 
-          <!-- 活動類型篩選 -->
-          <el-collapse-item name="categories">
-            <template #title>
-              <div class="filter-header">
-                <el-icon><Collection /></el-icon>
-                <span class="ml-2">活動類型</span>
-                <el-badge
-                  v-if="filters.categories.length > 0"
-                  :value="filters.categories.length"
-                  type="primary"
-                  class="ml-auto mr-2"
-                />
-              </div>
-            </template>
-
-            <div class="p-4">
-              <!-- 分類選項 -->
-              <div class="grid grid-cols-2 gap-3">
-                <label
-                  v-for="category in categoryOptions"
-                  :key="category.id"
-                  class="flex items-center p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors border border-gray-200"
-                  :class="{
-                    'bg-blue-50 border-blue-300': filters.categories.includes(category.id),
-                  }"
+              <div class="p-4 space-y-3">
+                <!-- 智慧推薦標籤 -->
+                <div
+                  v-if="filters.categories.length > 0 || filters.dateRange?.quickOption"
+                  class="mb-3 p-3 bg-blue-50 rounded-lg"
                 >
-                  <el-checkbox
-                    :model-value="filters.categories.includes(category.id)"
-                    @change="
-                      (checked: boolean | string | number) =>
-                        handleCategoryToggle(category.id, checked)
-                    "
-                    size="small"
-                  />
-                  <span
-                    class="w-5 h-5 rounded-full mr-2 ml-2 flex items-center justify-center text-sm"
-                    :style="{ backgroundColor: category.color, color: 'white' }"
-                  >
-                    {{ category.icon }}
-                  </span>
-                  <span class="text-sm text-gray-700 font-medium">{{ category.name }}</span>
-                </label>
-              </div>
-            </div>
-          </el-collapse-item>
+                  <div class="text-xs font-medium text-blue-700 mb-2">🤖 根據您的選擇推薦</div>
+                  <div class="flex flex-wrap gap-1">
+                    <el-tag
+                      v-for="tag in groupedTags.primary"
+                      :key="tag"
+                      :type="filters.tags.includes(tag) ? 'primary' : 'info'"
+                      :effect="filters.tags.includes(tag) ? 'dark' : 'light'"
+                      class="cursor-pointer"
+                      @click="handleTagToggle(tag)"
+                    >
+                      {{ getTagDisplay(tag) }}
+                    </el-tag>
+                  </div>
+                </div>
 
-          <!-- 時間篩選 -->
-          <el-collapse-item name="time">
-            <template #title>
-              <div class="filter-header">
-                <el-icon><Calendar /></el-icon>
-                <span class="ml-2">活動時間</span>
-                <el-badge v-if="hasDateFilter" value="✓" type="primary" class="ml-auto mr-2" />
-              </div>
-            </template>
+                <!-- 基礎通用標籤 -->
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1">⭐ 熱門標籤</label>
+                  <div class="flex flex-wrap gap-1">
+                    <el-tag
+                      v-for="tag in tagModules.base"
+                      :key="tag"
+                      :type="filters.tags.includes(tag) ? 'primary' : 'info'"
+                      :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
+                      class="cursor-pointer text-xs"
+                      size="small"
+                      @click="handleTagToggle(tag)"
+                    >
+                      {{ getTagDisplay(tag) }}
+                    </el-tag>
+                  </div>
+                </div>
 
-            <div class="p-4 space-y-4">
-              <!-- 時間篩選選項 -->
-              <div>
-                <div class="grid grid-cols-2 gap-2">
-                  <el-button
-                    v-for="(option, index) in quickTimeButtons"
-                    :key="option.value"
-                    :type="filters.dateRange.quickOption === option.value ? 'primary' : 'default'"
-                    size="small"
-                    @click="handleQuickTimeSelect(option.value)"
-                    :class="['text-xs', 'ml-3']"
-                  >
-                    {{ option.label }}
-                  </el-button>
+                <!-- 特色標籤 -->
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1">✨ 活動特色</label>
+                  <div class="flex flex-wrap gap-1">
+                    <el-tag
+                      v-for="tag in [
+                        'pet-friendly',
+                        'accessible',
+                        'photo',
+                        'instagram',
+                        'romantic',
+                        'educational',
+                        'group',
+                        'solo',
+                        'reservation',
+                        'walkin',
+                      ]"
+                      :key="tag"
+                      :type="filters.tags.includes(tag) ? 'primary' : 'info'"
+                      :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
+                      class="cursor-pointer text-xs"
+                      size="small"
+                      @click="handleTagToggle(tag)"
+                    >
+                      {{ getTagDisplay(tag) }}
+                    </el-tag>
+                  </div>
+                </div>
+
+                <!-- 場地標籤 -->
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1">📍 場地類型</label>
+                  <div class="flex flex-wrap gap-1">
+                    <el-tag
+                      v-for="tag in ['indoor', 'outdoor']"
+                      :key="tag"
+                      :type="filters.tags.includes(tag) ? 'primary' : 'info'"
+                      :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
+                      class="cursor-pointer text-xs"
+                      size="small"
+                      @click="handleTagToggle(tag)"
+                    >
+                      {{ getTagDisplay(tag) }}
+                    </el-tag>
+                  </div>
+                </div>
+
+                <!-- 交通便利 -->
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1">🚗 交通便利</label>
+                  <div class="flex flex-wrap gap-1">
+                    <el-tag
+                      v-for="tag in ['parking', 'mrt', 'bus']"
+                      :key="tag"
+                      :type="filters.tags.includes(tag) ? 'primary' : 'info'"
+                      :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
+                      class="cursor-pointer text-xs"
+                      size="small"
+                      @click="handleTagToggle(tag)"
+                    >
+                      {{ getTagDisplay(tag) }}
+                    </el-tag>
+                  </div>
+                </div>
+
+                <!-- 活動時長 -->
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1">⏱️ 活動時長</label>
+                  <div class="flex flex-wrap gap-1">
+                    <el-tag
+                      v-for="tag in ['quick', 'halfday', 'fullday', 'multiday']"
+                      :key="tag"
+                      :type="filters.tags.includes(tag) ? 'primary' : 'info'"
+                      :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
+                      class="cursor-pointer text-xs"
+                      size="small"
+                      @click="handleTagToggle(tag)"
+                    >
+                      {{ getTagDisplay(tag) }}
+                    </el-tag>
+                  </div>
+                </div>
+
+                <!-- 適合年齡 -->
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1">👨‍👩‍👧‍👦 適合年齡</label>
+                  <div class="flex flex-wrap gap-1">
+                    <el-tag
+                      v-for="tag in ['kids', 'teens', 'adults', 'seniors']"
+                      :key="tag"
+                      :type="filters.tags.includes(tag) ? 'primary' : 'info'"
+                      :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
+                      class="cursor-pointer text-xs"
+                      size="small"
+                      @click="handleTagToggle(tag)"
+                    >
+                      {{ getTagDisplay(tag) }}
+                    </el-tag>
+                  </div>
+                </div>
+
+                <!-- 季節限定 -->
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1">🌸 季節限定</label>
+                  <div class="flex flex-wrap gap-1">
+                    <el-tag
+                      v-for="tag in ['spring', 'summer', 'autumn', 'winter', 'rainy']"
+                      :key="tag"
+                      :type="filters.tags.includes(tag) ? 'primary' : 'info'"
+                      :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
+                      class="cursor-pointer text-xs"
+                      size="small"
+                      @click="handleTagToggle(tag)"
+                    >
+                      {{ getTagDisplay(tag) }}
+                    </el-tag>
+                  </div>
+                </div>
+
+                <!-- 時間相關 -->
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1">🕐 時間相關</label>
+                  <div class="flex flex-wrap gap-1">
+                    <el-tag
+                      v-for="tag in ['night', 'weekend', 'free']"
+                      :key="tag"
+                      :type="filters.tags.includes(tag) ? 'primary' : 'info'"
+                      :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
+                      class="cursor-pointer text-xs"
+                      size="small"
+                      @click="handleTagToggle(tag)"
+                    >
+                      {{ getTagDisplay(tag) }}
+                    </el-tag>
+                  </div>
                 </div>
               </div>
-
-              <!-- 自訂日期範圍 -->
-              <div v-if="showCustomDateRange">
-                <label class="block text-sm font-medium text-gray-700 mb-2">自訂日期</label>
-                <el-date-picker
-                  v-model="customDateRange"
-                  type="daterange"
-                  range-separator="至"
-                  start-placeholder="開始日期"
-                  end-placeholder="結束日期"
-                  @change="handleCustomDateChange"
-                  size="small"
-                  style="width: 100%"
-                />
-              </div>
-            </div>
-          </el-collapse-item>
-
-          <!-- 費用篩選 -->
-          <el-collapse-item name="price">
-            <template #title>
-              <div class="filter-header">
-                <el-icon><Wallet /></el-icon>
-                <span class="ml-2">費用</span>
-                <el-badge v-if="hasPriceFilter" value="✓" type="primary" class="ml-auto mr-2" />
-              </div>
-            </template>
-
-            <div class="p-4">
-              <el-radio-group
-                v-model="priceType"
-                @change="handlePriceTypeChange"
-                class="grid grid-cols-3 gap-2"
-              >
-                <el-radio value="all" class="text-sm">不限</el-radio>
-                <el-radio value="free" class="text-sm">免費</el-radio>
-                <el-radio value="paid" class="text-sm">收費</el-radio>
-              </el-radio-group>
-            </div>
-          </el-collapse-item>
-
-          <!-- 標籤篩選 -->
-          <el-collapse-item name="tags">
-            <template #title>
-              <div class="filter-header">
-                <el-icon><Discount /></el-icon>
-                <span class="ml-2">活動標籤</span>
-                <el-badge
-                  v-if="filters.tags.length > 0"
-                  :value="filters.tags.length"
-                  type="primary"
-                  class="ml-auto mr-2"
-                />
-              </div>
-            </template>
-
-            <div class="p-4 space-y-3">
-              <!-- 智慧推薦標籤 -->
-              <div
-                v-if="filters.categories.length > 0 || filters.dateRange?.quickOption"
-                class="mb-3 p-3 bg-blue-50 rounded-lg"
-              >
-                <div class="text-xs font-medium text-blue-700 mb-2">🤖 根據您的選擇推薦</div>
-                <div class="flex flex-wrap gap-1">
-                  <el-tag
-                    v-for="tag in groupedTags.primary"
-                    :key="tag"
-                    :type="filters.tags.includes(tag) ? 'primary' : 'info'"
-                    :effect="filters.tags.includes(tag) ? 'dark' : 'light'"
-                    class="cursor-pointer"
-                    @click="handleTagToggle(tag)"
-                  >
-                    {{ getTagDisplay(tag) }}
-                  </el-tag>
-                </div>
-              </div>
-
-              <!-- 基礎通用標籤 -->
-              <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">⭐ 熱門標籤</label>
-                <div class="flex flex-wrap gap-1">
-                  <el-tag
-                    v-for="tag in tagModules.base"
-                    :key="tag"
-                    :type="filters.tags.includes(tag) ? 'primary' : 'info'"
-                    :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs"
-                    size="small"
-                    @click="handleTagToggle(tag)"
-                  >
-                    {{ getTagDisplay(tag) }}
-                  </el-tag>
-                </div>
-              </div>
-
-              <!-- 特色標籤 -->
-              <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">✨ 活動特色</label>
-                <div class="flex flex-wrap gap-1">
-                  <el-tag
-                    v-for="tag in [
-                      'pet-friendly',
-                      'accessible',
-                      'photo',
-                      'instagram',
-                      'romantic',
-                      'educational',
-                      'group',
-                      'solo',
-                      'reservation',
-                      'walkin',
-                    ]"
-                    :key="tag"
-                    :type="filters.tags.includes(tag) ? 'primary' : 'info'"
-                    :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs"
-                    size="small"
-                    @click="handleTagToggle(tag)"
-                  >
-                    {{ getTagDisplay(tag) }}
-                  </el-tag>
-                </div>
-              </div>
-
-              <!-- 場地標籤 -->
-              <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">📍 場地類型</label>
-                <div class="flex flex-wrap gap-1">
-                  <el-tag
-                    v-for="tag in ['indoor', 'outdoor']"
-                    :key="tag"
-                    :type="filters.tags.includes(tag) ? 'primary' : 'info'"
-                    :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs"
-                    size="small"
-                    @click="handleTagToggle(tag)"
-                  >
-                    {{ getTagDisplay(tag) }}
-                  </el-tag>
-                </div>
-              </div>
-
-              <!-- 交通便利 -->
-              <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">🚗 交通便利</label>
-                <div class="flex flex-wrap gap-1">
-                  <el-tag
-                    v-for="tag in ['parking', 'mrt', 'bus']"
-                    :key="tag"
-                    :type="filters.tags.includes(tag) ? 'primary' : 'info'"
-                    :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs"
-                    size="small"
-                    @click="handleTagToggle(tag)"
-                  >
-                    {{ getTagDisplay(tag) }}
-                  </el-tag>
-                </div>
-              </div>
-
-              <!-- 活動時長 -->
-              <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">⏱️ 活動時長</label>
-                <div class="flex flex-wrap gap-1">
-                  <el-tag
-                    v-for="tag in ['quick', 'halfday', 'fullday', 'multiday']"
-                    :key="tag"
-                    :type="filters.tags.includes(tag) ? 'primary' : 'info'"
-                    :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs"
-                    size="small"
-                    @click="handleTagToggle(tag)"
-                  >
-                    {{ getTagDisplay(tag) }}
-                  </el-tag>
-                </div>
-              </div>
-
-              <!-- 適合年齡 -->
-              <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">👨‍👩‍👧‍👦 適合年齡</label>
-                <div class="flex flex-wrap gap-1">
-                  <el-tag
-                    v-for="tag in ['kids', 'teens', 'adults', 'seniors']"
-                    :key="tag"
-                    :type="filters.tags.includes(tag) ? 'primary' : 'info'"
-                    :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs"
-                    size="small"
-                    @click="handleTagToggle(tag)"
-                  >
-                    {{ getTagDisplay(tag) }}
-                  </el-tag>
-                </div>
-              </div>
-
-              <!-- 季節限定 -->
-              <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">🌸 季節限定</label>
-                <div class="flex flex-wrap gap-1">
-                  <el-tag
-                    v-for="tag in ['spring', 'summer', 'autumn', 'winter', 'rainy']"
-                    :key="tag"
-                    :type="filters.tags.includes(tag) ? 'primary' : 'info'"
-                    :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs"
-                    size="small"
-                    @click="handleTagToggle(tag)"
-                  >
-                    {{ getTagDisplay(tag) }}
-                  </el-tag>
-                </div>
-              </div>
-
-              <!-- 時間相關 -->
-              <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">🕐 時間相關</label>
-                <div class="flex flex-wrap gap-1">
-                  <el-tag
-                    v-for="tag in ['night', 'weekend', 'free']"
-                    :key="tag"
-                    :type="filters.tags.includes(tag) ? 'primary' : 'info'"
-                    :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs"
-                    size="small"
-                    @click="handleTagToggle(tag)"
-                  >
-                    {{ getTagDisplay(tag) }}
-                  </el-tag>
-                </div>
-              </div>
-            </div>
-          </el-collapse-item>
-        </el-collapse>
+            </el-collapse-item>
+          </el-collapse>
         </div>
       </div>
 
       <!-- 桌面版摺疊篩選 -->
       <div class="hidden md:block">
         <!-- 收藏模式遮罩提示 -->
-        <div v-if="showFavoritesOnly" class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <div
+          v-if="showFavoritesOnly"
+          class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg"
+        >
           <p class="text-sm text-yellow-800">
             <el-icon class="align-middle"><WarningFilled /></el-icon>
             收藏模式已開啟，其他篩選條件暫時無法使用。如需使用其他篩選，請先關閉收藏模式。
@@ -671,538 +695,547 @@
 
         <!-- 收藏模式遮罩層 -->
         <div class="relative">
-          <div v-if="showFavoritesOnly" class="absolute inset-0 bg-gray-100 bg-opacity-50 z-10 rounded-lg cursor-not-allowed"></div>
-          <el-collapse v-model="activeNames" class="filter-collapse" :class="{ 'opacity-50 pointer-events-none': showFavoritesOnly }">
-          <!-- 1. 快速篩選組合方案 -->
-          <el-collapse-item name="quick-filters">
-            <template #title>
-              <div class="filter-header">
-                <el-icon><Lightning /></el-icon>
-                <span class="ml-2 font-medium">選擇組合方案</span>
-                <el-tag v-if="activeQuickFilter" size="small" type="primary" class="ml-auto mr-2">
-                  {{ quickFiltersConfig.find((f) => f.id === activeQuickFilter)?.label }}
-                </el-tag>
-              </div>
-            </template>
-            <div class="p-4">
-              <div class="mb-3 text-sm text-gray-600">選擇適合您的活動方案（單選）</div>
-              <div class="flex flex-wrap gap-2">
-                <el-button
-                  v-for="filter in quickFiltersConfig"
-                  :key="filter.id"
-                  :type="activeQuickFilter === filter.id ? 'primary' : 'default'"
-                  @click="selectQuickFilter(filter.id)"
-                  size="small"
-                  class="quick-filter-compact-btn"
-                >
-                  <span class="text-lg">{{ filter.icon }}</span>
-                  <span class="ml-2 text-xs">{{ filter.label }}</span>
-                </el-button>
-              </div>
-              <div v-if="activeQuickFilter" class="mt-3 pt-3 border-t">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs text-gray-600">
-                    已套用「{{
-                      quickFiltersConfig.find((f) => f.id === activeQuickFilter)?.label
-                    }}」組合
-                  </span>
-                  <el-button text size="small" @click="selectQuickFilter('')"> 清除組合 </el-button>
+          <div
+            v-if="showFavoritesOnly"
+            class="absolute inset-0 bg-gray-100 bg-opacity-50 z-10 rounded-lg cursor-not-allowed"
+          ></div>
+          <el-collapse
+            v-model="activeNames"
+            class="filter-collapse"
+            :class="{ 'opacity-50 pointer-events-none': showFavoritesOnly }"
+          >
+            <!-- 1. 快速篩選組合方案 -->
+            <el-collapse-item name="quick-filters">
+              <template #title>
+                <div class="filter-header">
+                  <el-icon><Lightning /></el-icon>
+                  <span class="ml-2 font-medium">選擇組合方案</span>
+                  <el-tag v-if="activeQuickFilter" size="small" type="primary" class="ml-auto mr-2">
+                    {{ quickFiltersConfig.find((f) => f.id === activeQuickFilter)?.label }}
+                  </el-tag>
+                </div>
+              </template>
+              <div class="p-4">
+                <div class="mb-3 text-sm text-gray-600">選擇適合您的活動方案（單選）</div>
+                <div class="flex flex-wrap gap-2">
+                  <el-button
+                    v-for="filter in quickFiltersConfig"
+                    :key="filter.id"
+                    :type="activeQuickFilter === filter.id ? 'primary' : 'default'"
+                    @click="selectQuickFilter(filter.id)"
+                    size="small"
+                    class="quick-filter-compact-btn"
+                  >
+                    <span class="text-lg">{{ filter.icon }}</span>
+                    <span class="ml-2 text-xs">{{ filter.label }}</span>
+                  </el-button>
+                </div>
+                <div v-if="activeQuickFilter" class="mt-3 pt-3 border-t">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs text-gray-600">
+                      已套用「{{
+                        quickFiltersConfig.find((f) => f.id === activeQuickFilter)?.label
+                      }}」組合
+                    </span>
+                    <el-button text size="small" @click="selectQuickFilter('')">
+                      清除組合
+                    </el-button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </el-collapse-item>
+            </el-collapse-item>
 
-          <!-- 2. 位置篩選 (簡化版) -->
-          <el-collapse-item name="location">
-            <template #title>
-              <div class="filter-header">
-                <el-icon><Location /></el-icon>
-                <span class="ml-2">位置與距離</span>
-              </div>
-            </template>
+            <!-- 2. 位置篩選 (簡化版) -->
+            <el-collapse-item name="location">
+              <template #title>
+                <div class="filter-header">
+                  <el-icon><Location /></el-icon>
+                  <span class="ml-2">位置與距離</span>
+                </div>
+              </template>
 
-            <div class="p-4 space-y-4">
-              <!-- 位置篩選模式選擇 -->
-              <div>
-                <h5 class="text-sm font-medium text-gray-700 mb-3">選擇搜尋方式</h5>
-                <el-radio-group
-                  v-model="locationMode"
-                  @change="handleLocationModeChange"
-                  class="location-mode-group"
-                >
-                  <div class="space-y-3">
-                    <!-- 附近活動模式 -->
-                    <el-radio value="nearby" class="w-full">
-                      <div class="flex items-center">
-                        <el-icon class="mr-2"><Location /></el-icon>
-                        <span>搜尋我附近的活動</span>
-                      </div>
-                    </el-radio>
+              <div class="p-4 space-y-4">
+                <!-- 位置篩選模式選擇 -->
+                <div>
+                  <h5 class="text-sm font-medium text-gray-700 mb-3">選擇搜尋方式</h5>
+                  <el-radio-group
+                    v-model="locationMode"
+                    @change="handleLocationModeChange"
+                    class="location-mode-group"
+                  >
+                    <div class="space-y-3">
+                      <!-- 附近活動模式 -->
+                      <el-radio value="nearby" class="w-full">
+                        <div class="flex items-center">
+                          <el-icon class="mr-2"><Location /></el-icon>
+                          <span>搜尋我附近的活動</span>
+                        </div>
+                      </el-radio>
 
-                    <!-- 附近活動的設定 -->
-                    <div v-if="locationMode === 'nearby'" class="ml-6 space-y-3">
-                      <!-- 定位狀態 -->
-                      <div class="bg-blue-50 p-3 rounded-md">
-                        <div v-if="coordinates" class="text-sm">
-                          <p class="text-blue-700 font-medium">📍 定位成功</p>
-                          <p class="text-xs text-gray-600 mt-1">
-                            {{ address || '已取得您的位置' }}
+                      <!-- 附近活動的設定 -->
+                      <div v-if="locationMode === 'nearby'" class="ml-6 space-y-3">
+                        <!-- 定位狀態 -->
+                        <div class="bg-blue-50 p-3 rounded-md">
+                          <div v-if="coordinates" class="text-sm">
+                            <p class="text-blue-700 font-medium">📍 定位成功</p>
+                            <p class="text-xs text-gray-600 mt-1">
+                              {{ address || '已取得您的位置' }}
+                            </p>
+                            <el-button
+                              text
+                              size="small"
+                              @click="handleGetCurrentLocation"
+                              class="mt-2"
+                            >
+                              重新定位
+                            </el-button>
+                          </div>
+                          <div v-else class="text-sm space-y-2">
+                            <div
+                              v-if="locationError"
+                              class="text-red-600 text-xs bg-red-50 p-2 rounded"
+                            >
+                              {{ locationError }}
+                            </div>
+                            <p v-else class="text-gray-600 text-xs">需要您的位置來搜尋附近活動</p>
+
+                            <el-button
+                              type="primary"
+                              size="small"
+                              :loading="locationLoading"
+                              @click="handleGetCurrentLocation"
+                              class="w-full"
+                            >
+                              <el-icon class="mr-1"><Location /></el-icon>
+                              {{
+                                locationLoading
+                                  ? '定位中...'
+                                  : locationError
+                                    ? '重新定位'
+                                    : '開始定位'
+                              }}
+                            </el-button>
+
+                            <div v-if="locationError" class="text-xs text-gray-500">
+                              <p class="font-medium">如果定位失敗，請嘗試：</p>
+                              <ul class="list-disc list-inside mt-1 space-y-1">
+                                <li>確認瀏覽器允許此網站使用定位服務</li>
+                                <li>檢查設備的定位服務是否開啟</li>
+                                <li>嘗試重新整理頁面</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- 距離範圍設定 -->
+                        <div v-if="coordinates" class="space-y-2">
+                          <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">搜尋範圍</span>
+                            <span class="text-sm font-medium text-primary-600"
+                              >{{ distanceRadius }} 公里內</span
+                            >
+                          </div>
+                          <div class="px-2">
+                            <el-slider
+                              v-model="distanceRadius"
+                              :min="1"
+                              :max="50"
+                              :marks="{ 5: '5km', 15: '15km', 30: '30km', 50: '50km' }"
+                              @change="handleDistanceRadiusChange"
+                            />
+                          </div>
+                          <p class="text-xs text-gray-500">
+                            將顯示距離您 {{ distanceRadius }} 公里內的所有活動
                           </p>
-                          <el-button
-                            text
-                            size="small"
-                            @click="handleGetCurrentLocation"
-                            class="mt-2"
-                          >
-                            重新定位
-                          </el-button>
-                        </div>
-                        <div v-else class="text-sm space-y-2">
-                          <div
-                            v-if="locationError"
-                            class="text-red-600 text-xs bg-red-50 p-2 rounded"
-                          >
-                            {{ locationError }}
-                          </div>
-                          <p v-else class="text-gray-600 text-xs">需要您的位置來搜尋附近活動</p>
-
-                          <el-button
-                            type="primary"
-                            size="small"
-                            :loading="locationLoading"
-                            @click="handleGetCurrentLocation"
-                            class="w-full"
-                          >
-                            <el-icon class="mr-1"><Location /></el-icon>
-                            {{
-                              locationLoading
-                                ? '定位中...'
-                                : locationError
-                                  ? '重新定位'
-                                  : '開始定位'
-                            }}
-                          </el-button>
-
-                          <div v-if="locationError" class="text-xs text-gray-500">
-                            <p class="font-medium">如果定位失敗，請嘗試：</p>
-                            <ul class="list-disc list-inside mt-1 space-y-1">
-                              <li>確認瀏覽器允許此網站使用定位服務</li>
-                              <li>檢查設備的定位服務是否開啟</li>
-                              <li>嘗試重新整理頁面</li>
-                            </ul>
-                          </div>
                         </div>
                       </div>
 
-                      <!-- 距離範圍設定 -->
-                      <div v-if="coordinates" class="space-y-2">
-                        <div class="flex items-center justify-between">
-                          <span class="text-sm text-gray-600">搜尋範圍</span>
-                          <span class="text-sm font-medium text-primary-600"
-                            >{{ distanceRadius }} 公里內</span
+                      <!-- 地區模式 -->
+                      <el-radio value="region" class="w-full">
+                        <div class="flex items-center">
+                          <el-icon class="mr-2"><MapLocation /></el-icon>
+                          <span>搜尋指定地區的活動</span>
+                        </div>
+                      </el-radio>
+
+                      <!-- 地區選擇 -->
+                      <div v-if="locationMode === 'region'" class="ml-6">
+                        <el-select
+                          v-model="selectedCities"
+                          placeholder="選擇縣市（預設為全部）"
+                          multiple
+                          filterable
+                          clearable
+                          @change="handleCitiesChange"
+                          style="width: 100%"
+                          size="small"
+                          collapse-tags
+                          collapse-tags-tooltip
+                          :max-collapse-tags="2"
+                        >
+                          <el-option
+                            label="全部縣市"
+                            value="all"
+                            :disabled="selectedCities.length > 0 && !selectedCities.includes('all')"
                           >
-                        </div>
-                        <div class="px-2">
-                          <el-slider
-                            v-model="distanceRadius"
-                            :min="1"
-                            :max="50"
-                            :marks="{ 5: '5km', 15: '15km', 30: '30km', 50: '50km' }"
-                            @change="handleDistanceRadiusChange"
+                            <span style="font-weight: 600; color: #3b82f6">全部縣市</span>
+                          </el-option>
+                          <el-option
+                            v-for="city in cityOptions"
+                            :key="city.value"
+                            :label="city.label"
+                            :value="city.value"
+                            :disabled="selectedCities.includes('all')"
                           />
-                        </div>
-                        <p class="text-xs text-gray-500">
-                          將顯示距離您 {{ distanceRadius }} 公里內的所有活動
+                        </el-select>
+                        <p class="text-xs text-gray-500 mt-2">
+                          {{
+                            selectedCities.length === 0 || selectedCities.includes('all')
+                              ? '顯示全部縣市的活動'
+                              : `顯示 ${selectedCities.length} 個縣市的活動`
+                          }}
                         </p>
                       </div>
                     </div>
+                  </el-radio-group>
+                </div>
 
-                    <!-- 地區模式 -->
-                    <el-radio value="region" class="w-full">
-                      <div class="flex items-center">
-                        <el-icon class="mr-2"><MapLocation /></el-icon>
-                        <span>搜尋指定地區的活動</span>
-                      </div>
-                    </el-radio>
-
-                    <!-- 地區選擇 -->
-                    <div v-if="locationMode === 'region'" class="ml-6">
-                      <el-select
-                        v-model="selectedCities"
-                        placeholder="選擇縣市（預設為全部）"
-                        multiple
-                        filterable
-                        clearable
-                        @change="handleCitiesChange"
-                        style="width: 100%"
-                        size="small"
-                        collapse-tags
-                        collapse-tags-tooltip
-                        :max-collapse-tags="2"
-                      >
-                        <el-option
-                          label="全部縣市"
-                          value="all"
-                          :disabled="selectedCities.length > 0 && !selectedCities.includes('all')"
-                        >
-                          <span style="font-weight: 600; color: #3b82f6">全部縣市</span>
-                        </el-option>
-                        <el-option
-                          v-for="city in cityOptions"
-                          :key="city.value"
-                          :label="city.label"
-                          :value="city.value"
-                          :disabled="selectedCities.includes('all')"
-                        />
-                      </el-select>
-                      <p class="text-xs text-gray-500 mt-2">
-                        {{
-                          selectedCities.length === 0 || selectedCities.includes('all')
-                            ? '顯示全部縣市的活動'
-                            : `顯示 ${selectedCities.length} 個縣市的活動`
-                        }}
-                      </p>
+                <!-- 距離顯示開關（獨立功能） -->
+                <div class="pt-3 border-t">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <h5 class="text-sm font-medium text-gray-700">顯示距離資訊</h5>
+                      <p class="text-xs text-gray-500 mt-1">在活動卡片上顯示距離</p>
                     </div>
+                    <el-switch
+                      v-model="showDistance"
+                      @change="handleDistanceToggle"
+                      size="small"
+                      :disabled="!coordinates"
+                    />
+                  </div>
+                  <p v-if="!coordinates" class="text-xs text-orange-600 mt-2">
+                    需要先定位才能顯示距離資訊
+                  </p>
+                </div>
+              </div>
+            </el-collapse-item>
+
+            <!-- 桌面版活動類型 -->
+            <el-collapse-item name="categories">
+              <template #title>
+                <div class="filter-header">
+                  <el-icon><Collection /></el-icon>
+                  <span class="ml-2">活動類型</span>
+                </div>
+              </template>
+
+              <div class="p-4">
+                <div class="grid grid-cols-2 gap-3">
+                  <label
+                    v-for="category in categoryOptions"
+                    :key="category.id"
+                    class="flex items-center p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors border border-gray-200"
+                    :class="{
+                      'bg-blue-50 border-blue-300': filters.categories.includes(category.id),
+                    }"
+                  >
+                    <el-checkbox
+                      :model-value="filters.categories.includes(category.id)"
+                      @change="
+                        (checked: boolean | string | number) =>
+                          handleCategoryToggle(category.id, checked)
+                      "
+                      size="small"
+                    />
+                    <span
+                      class="w-5 h-5 rounded-full mr-2 ml-2 flex items-center justify-center text-sm"
+                      :style="{ backgroundColor: category.color, color: 'white' }"
+                    >
+                      {{ category.icon }}
+                    </span>
+                    <span class="text-sm text-gray-700 font-medium">{{ category.name }}</span>
+                  </label>
+                </div>
+              </div>
+            </el-collapse-item>
+
+            <!-- 桌面版時間篩選 -->
+            <el-collapse-item name="time">
+              <template #title>
+                <div class="filter-header">
+                  <el-icon><Calendar /></el-icon>
+                  <span class="ml-2">活動時間</span>
+                </div>
+              </template>
+
+              <div class="p-4 space-y-4">
+                <!-- 快速時間選擇 -->
+                <div>
+                  <div class="grid grid-cols-2 gap-2">
+                    <el-button
+                      v-for="option in quickTimeButtons"
+                      :key="option.value"
+                      :type="filters.dateRange.quickOption === option.value ? 'primary' : 'default'"
+                      size="small"
+                      @click="handleQuickTimeSelect(option.value)"
+                      class="text-xs"
+                    >
+                      {{ option.label }}
+                    </el-button>
+                  </div>
+                </div>
+
+                <!-- 月份選擇器 -->
+                <div v-if="false">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">選擇月份</label>
+                  <div class="grid grid-cols-3 gap-2">
+                    <div
+                      v-for="(month, index) in monthOptions"
+                      :key="index"
+                      class="month-selector-item"
+                      :class="{
+                        selected: selectedMonths.includes(index),
+                        'has-activities': month.activityCount > 0,
+                      }"
+                      @click="toggleMonth(index)"
+                    >
+                      <div class="month-name">{{ month.name }}</div>
+                      <div class="activity-count">{{ month.activityCount }}個</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 自訂日期範圍 -->
+                <div v-if="showCustomDateRange">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">自訂日期</label>
+                  <el-date-picker
+                    v-model="customDateRange"
+                    type="daterange"
+                    range-separator="至"
+                    start-placeholder="開始日期"
+                    end-placeholder="結束日期"
+                    @change="handleCustomDateChange"
+                    size="small"
+                    style="width: 100%"
+                  />
+                </div>
+              </div>
+            </el-collapse-item>
+
+            <!-- 桌面版費用篩選 -->
+            <el-collapse-item name="price">
+              <template #title>
+                <div class="filter-header">
+                  <el-icon><Wallet /></el-icon>
+                  <span class="ml-2">費用</span>
+                </div>
+              </template>
+
+              <div class="p-4">
+                <el-radio-group v-model="priceType" @change="handlePriceTypeChange">
+                  <div class="space-y-2">
+                    <el-radio value="all">不限費用</el-radio>
+                    <el-radio value="free">免費活動</el-radio>
+                    <el-radio value="paid">收費活動</el-radio>
                   </div>
                 </el-radio-group>
               </div>
+            </el-collapse-item>
 
-              <!-- 距離顯示開關（獨立功能） -->
-              <div class="pt-3 border-t">
-                <div class="flex items-center justify-between">
-                  <div>
-                    <h5 class="text-sm font-medium text-gray-700">顯示距離資訊</h5>
-                    <p class="text-xs text-gray-500 mt-1">在活動卡片上顯示距離</p>
-                  </div>
-                  <el-switch
-                    v-model="showDistance"
-                    @change="handleDistanceToggle"
-                    size="small"
-                    :disabled="!coordinates"
+            <!-- 桌面版標籤篩選 -->
+            <el-collapse-item name="tags">
+              <template #title>
+                <div class="filter-header">
+                  <el-icon><Discount /></el-icon>
+                  <span class="ml-2">活動標籤</span>
+                  <el-badge
+                    v-if="filters.tags.length > 0"
+                    :value="filters.tags.length"
+                    type="primary"
+                    class="ml-auto mr-2"
                   />
                 </div>
-                <p v-if="!coordinates" class="text-xs text-orange-600 mt-2">
-                  需要先定位才能顯示距離資訊
-                </p>
-              </div>
-            </div>
-          </el-collapse-item>
+              </template>
 
-          <!-- 桌面版活動類型 -->
-          <el-collapse-item name="categories">
-            <template #title>
-              <div class="filter-header">
-                <el-icon><Collection /></el-icon>
-                <span class="ml-2">活動類型</span>
-              </div>
-            </template>
-
-            <div class="p-4">
-              <div class="grid grid-cols-2 gap-3">
-                <label
-                  v-for="category in categoryOptions"
-                  :key="category.id"
-                  class="flex items-center p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors border border-gray-200"
-                  :class="{
-                    'bg-blue-50 border-blue-300': filters.categories.includes(category.id),
-                  }"
+              <div class="p-4 space-y-3">
+                <!-- 智慧推薦標籤 -->
+                <div
+                  v-if="filters.categories.length > 0 || filters.dateRange?.quickOption"
+                  class="mb-3 p-3 bg-blue-50 rounded-lg"
                 >
-                  <el-checkbox
-                    :model-value="filters.categories.includes(category.id)"
-                    @change="
-                      (checked: boolean | string | number) =>
-                        handleCategoryToggle(category.id, checked)
-                    "
-                    size="small"
-                  />
-                  <span
-                    class="w-5 h-5 rounded-full mr-2 ml-2 flex items-center justify-center text-sm"
-                    :style="{ backgroundColor: category.color, color: 'white' }"
-                  >
-                    {{ category.icon }}
-                  </span>
-                  <span class="text-sm text-gray-700 font-medium">{{ category.name }}</span>
-                </label>
-              </div>
-            </div>
-          </el-collapse-item>
-
-          <!-- 桌面版時間篩選 -->
-          <el-collapse-item name="time">
-            <template #title>
-              <div class="filter-header">
-                <el-icon><Calendar /></el-icon>
-                <span class="ml-2">活動時間</span>
-              </div>
-            </template>
-
-            <div class="p-4 space-y-4">
-              <!-- 快速時間選擇 -->
-              <div>
-                <div class="grid grid-cols-2 gap-2">
-                  <el-button
-                    v-for="option in quickTimeButtons"
-                    :key="option.value"
-                    :type="filters.dateRange.quickOption === option.value ? 'primary' : 'default'"
-                    size="small"
-                    @click="handleQuickTimeSelect(option.value)"
-                    class="text-xs"
-                  >
-                    {{ option.label }}
-                  </el-button>
+                  <div class="text-xs font-medium text-blue-700 mb-2">🤖 根據您的選擇推薦</div>
+                  <div class="flex flex-wrap gap-1">
+                    <el-tag
+                      v-for="tag in groupedTags.primary"
+                      :key="tag"
+                      :type="filters.tags.includes(tag) ? 'primary' : 'info'"
+                      :effect="filters.tags.includes(tag) ? 'dark' : 'light'"
+                      class="cursor-pointer"
+                      @click="handleTagToggle(tag)"
+                    >
+                      {{ getTagDisplay(tag) }}
+                    </el-tag>
+                  </div>
                 </div>
-              </div>
 
-              <!-- 月份選擇器 -->
-              <div v-if="false">
-                <label class="block text-sm font-medium text-gray-700 mb-2">選擇月份</label>
-                <div class="grid grid-cols-3 gap-2">
-                  <div
-                    v-for="(month, index) in monthOptions"
-                    :key="index"
-                    class="month-selector-item"
-                    :class="{
-                      selected: selectedMonths.includes(index),
-                      'has-activities': month.activityCount > 0,
-                    }"
-                    @click="toggleMonth(index)"
-                  >
-                    <div class="month-name">{{ month.name }}</div>
-                    <div class="activity-count">{{ month.activityCount }}個</div>
+                <!-- 基礎通用標籤 -->
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1">⭐ 熱門標籤</label>
+                  <div class="flex flex-wrap gap-1">
+                    <el-tag
+                      v-for="tag in tagModules.base"
+                      :key="tag"
+                      :type="filters.tags.includes(tag) ? 'primary' : 'info'"
+                      :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
+                      class="cursor-pointer text-xs"
+                      size="small"
+                      @click="handleTagToggle(tag)"
+                    >
+                      {{ getTagDisplay(tag) }}
+                    </el-tag>
+                  </div>
+                </div>
+
+                <!-- 特色標籤 -->
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1">✨ 活動特色</label>
+                  <div class="flex flex-wrap gap-1">
+                    <el-tag
+                      v-for="tag in [
+                        'pet-friendly',
+                        'accessible',
+                        'photo',
+                        'instagram',
+                        'romantic',
+                        'educational',
+                        'group',
+                        'solo',
+                        'reservation',
+                        'walkin',
+                      ]"
+                      :key="tag"
+                      :type="filters.tags.includes(tag) ? 'primary' : 'info'"
+                      :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
+                      class="cursor-pointer text-xs"
+                      size="small"
+                      @click="handleTagToggle(tag)"
+                    >
+                      {{ getTagDisplay(tag) }}
+                    </el-tag>
+                  </div>
+                </div>
+
+                <!-- 場地標籤 -->
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1">📍 場地類型</label>
+                  <div class="flex flex-wrap gap-1">
+                    <el-tag
+                      v-for="tag in ['indoor', 'outdoor']"
+                      :key="tag"
+                      :type="filters.tags.includes(tag) ? 'primary' : 'info'"
+                      :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
+                      class="cursor-pointer text-xs"
+                      size="small"
+                      @click="handleTagToggle(tag)"
+                    >
+                      {{ getTagDisplay(tag) }}
+                    </el-tag>
+                  </div>
+                </div>
+
+                <!-- 交通便利 -->
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1">🚗 交通便利</label>
+                  <div class="flex flex-wrap gap-1">
+                    <el-tag
+                      v-for="tag in ['parking', 'mrt', 'bus']"
+                      :key="tag"
+                      :type="filters.tags.includes(tag) ? 'primary' : 'info'"
+                      :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
+                      class="cursor-pointer text-xs"
+                      size="small"
+                      @click="handleTagToggle(tag)"
+                    >
+                      {{ getTagDisplay(tag) }}
+                    </el-tag>
+                  </div>
+                </div>
+
+                <!-- 活動時長 -->
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1">⏱️ 活動時長</label>
+                  <div class="flex flex-wrap gap-1">
+                    <el-tag
+                      v-for="tag in ['quick', 'halfday', 'fullday', 'multiday']"
+                      :key="tag"
+                      :type="filters.tags.includes(tag) ? 'primary' : 'info'"
+                      :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
+                      class="cursor-pointer text-xs"
+                      size="small"
+                      @click="handleTagToggle(tag)"
+                    >
+                      {{ getTagDisplay(tag) }}
+                    </el-tag>
+                  </div>
+                </div>
+
+                <!-- 適合年齡 -->
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1">👨‍👩‍👧‍👦 適合年齡</label>
+                  <div class="flex flex-wrap gap-1">
+                    <el-tag
+                      v-for="tag in ['kids', 'teens', 'adults', 'seniors']"
+                      :key="tag"
+                      :type="filters.tags.includes(tag) ? 'primary' : 'info'"
+                      :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
+                      class="cursor-pointer text-xs"
+                      size="small"
+                      @click="handleTagToggle(tag)"
+                    >
+                      {{ getTagDisplay(tag) }}
+                    </el-tag>
+                  </div>
+                </div>
+
+                <!-- 季節限定 -->
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1">🌸 季節限定</label>
+                  <div class="flex flex-wrap gap-1">
+                    <el-tag
+                      v-for="tag in ['spring', 'summer', 'autumn', 'winter', 'rainy']"
+                      :key="tag"
+                      :type="filters.tags.includes(tag) ? 'primary' : 'info'"
+                      :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
+                      class="cursor-pointer text-xs"
+                      size="small"
+                      @click="handleTagToggle(tag)"
+                    >
+                      {{ getTagDisplay(tag) }}
+                    </el-tag>
+                  </div>
+                </div>
+
+                <!-- 時間相關 -->
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1">🕐 時間相關</label>
+                  <div class="flex flex-wrap gap-1">
+                    <el-tag
+                      v-for="tag in ['night', 'weekend', 'free']"
+                      :key="tag"
+                      :type="filters.tags.includes(tag) ? 'primary' : 'info'"
+                      :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
+                      class="cursor-pointer text-xs"
+                      size="small"
+                      @click="handleTagToggle(tag)"
+                    >
+                      {{ getTagDisplay(tag) }}
+                    </el-tag>
                   </div>
                 </div>
               </div>
-
-              <!-- 自訂日期範圍 -->
-              <div v-if="showCustomDateRange">
-                <label class="block text-sm font-medium text-gray-700 mb-2">自訂日期</label>
-                <el-date-picker
-                  v-model="customDateRange"
-                  type="daterange"
-                  range-separator="至"
-                  start-placeholder="開始日期"
-                  end-placeholder="結束日期"
-                  @change="handleCustomDateChange"
-                  size="small"
-                  style="width: 100%"
-                />
-              </div>
-            </div>
-          </el-collapse-item>
-
-          <!-- 桌面版費用篩選 -->
-          <el-collapse-item name="price">
-            <template #title>
-              <div class="filter-header">
-                <el-icon><Wallet /></el-icon>
-                <span class="ml-2">費用</span>
-              </div>
-            </template>
-
-            <div class="p-4">
-              <el-radio-group v-model="priceType" @change="handlePriceTypeChange">
-                <div class="space-y-2">
-                  <el-radio value="all">不限費用</el-radio>
-                  <el-radio value="free">免費活動</el-radio>
-                  <el-radio value="paid">收費活動</el-radio>
-                </div>
-              </el-radio-group>
-            </div>
-          </el-collapse-item>
-
-          <!-- 桌面版標籤篩選 -->
-          <el-collapse-item name="tags">
-            <template #title>
-              <div class="filter-header">
-                <el-icon><Discount /></el-icon>
-                <span class="ml-2">活動標籤</span>
-                <el-badge
-                  v-if="filters.tags.length > 0"
-                  :value="filters.tags.length"
-                  type="primary"
-                  class="ml-auto mr-2"
-                />
-              </div>
-            </template>
-
-            <div class="p-4 space-y-3">
-              <!-- 智慧推薦標籤 -->
-              <div
-                v-if="filters.categories.length > 0 || filters.dateRange?.quickOption"
-                class="mb-3 p-3 bg-blue-50 rounded-lg"
-              >
-                <div class="text-xs font-medium text-blue-700 mb-2">🤖 根據您的選擇推薦</div>
-                <div class="flex flex-wrap gap-1">
-                  <el-tag
-                    v-for="tag in groupedTags.primary"
-                    :key="tag"
-                    :type="filters.tags.includes(tag) ? 'primary' : 'info'"
-                    :effect="filters.tags.includes(tag) ? 'dark' : 'light'"
-                    class="cursor-pointer"
-                    @click="handleTagToggle(tag)"
-                  >
-                    {{ getTagDisplay(tag) }}
-                  </el-tag>
-                </div>
-              </div>
-
-              <!-- 基礎通用標籤 -->
-              <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">⭐ 熱門標籤</label>
-                <div class="flex flex-wrap gap-1">
-                  <el-tag
-                    v-for="tag in tagModules.base"
-                    :key="tag"
-                    :type="filters.tags.includes(tag) ? 'primary' : 'info'"
-                    :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs"
-                    size="small"
-                    @click="handleTagToggle(tag)"
-                  >
-                    {{ getTagDisplay(tag) }}
-                  </el-tag>
-                </div>
-              </div>
-
-              <!-- 特色標籤 -->
-              <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">✨ 活動特色</label>
-                <div class="flex flex-wrap gap-1">
-                  <el-tag
-                    v-for="tag in [
-                      'pet-friendly',
-                      'accessible',
-                      'photo',
-                      'instagram',
-                      'romantic',
-                      'educational',
-                      'group',
-                      'solo',
-                      'reservation',
-                      'walkin',
-                    ]"
-                    :key="tag"
-                    :type="filters.tags.includes(tag) ? 'primary' : 'info'"
-                    :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs"
-                    size="small"
-                    @click="handleTagToggle(tag)"
-                  >
-                    {{ getTagDisplay(tag) }}
-                  </el-tag>
-                </div>
-              </div>
-
-              <!-- 場地標籤 -->
-              <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">📍 場地類型</label>
-                <div class="flex flex-wrap gap-1">
-                  <el-tag
-                    v-for="tag in ['indoor', 'outdoor']"
-                    :key="tag"
-                    :type="filters.tags.includes(tag) ? 'primary' : 'info'"
-                    :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs"
-                    size="small"
-                    @click="handleTagToggle(tag)"
-                  >
-                    {{ getTagDisplay(tag) }}
-                  </el-tag>
-                </div>
-              </div>
-
-              <!-- 交通便利 -->
-              <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">🚗 交通便利</label>
-                <div class="flex flex-wrap gap-1">
-                  <el-tag
-                    v-for="tag in ['parking', 'mrt', 'bus']"
-                    :key="tag"
-                    :type="filters.tags.includes(tag) ? 'primary' : 'info'"
-                    :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs"
-                    size="small"
-                    @click="handleTagToggle(tag)"
-                  >
-                    {{ getTagDisplay(tag) }}
-                  </el-tag>
-                </div>
-              </div>
-
-              <!-- 活動時長 -->
-              <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">⏱️ 活動時長</label>
-                <div class="flex flex-wrap gap-1">
-                  <el-tag
-                    v-for="tag in ['quick', 'halfday', 'fullday', 'multiday']"
-                    :key="tag"
-                    :type="filters.tags.includes(tag) ? 'primary' : 'info'"
-                    :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs"
-                    size="small"
-                    @click="handleTagToggle(tag)"
-                  >
-                    {{ getTagDisplay(tag) }}
-                  </el-tag>
-                </div>
-              </div>
-
-              <!-- 適合年齡 -->
-              <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">👨‍👩‍👧‍👦 適合年齡</label>
-                <div class="flex flex-wrap gap-1">
-                  <el-tag
-                    v-for="tag in ['kids', 'teens', 'adults', 'seniors']"
-                    :key="tag"
-                    :type="filters.tags.includes(tag) ? 'primary' : 'info'"
-                    :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs"
-                    size="small"
-                    @click="handleTagToggle(tag)"
-                  >
-                    {{ getTagDisplay(tag) }}
-                  </el-tag>
-                </div>
-              </div>
-
-              <!-- 季節限定 -->
-              <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">🌸 季節限定</label>
-                <div class="flex flex-wrap gap-1">
-                  <el-tag
-                    v-for="tag in ['spring', 'summer', 'autumn', 'winter', 'rainy']"
-                    :key="tag"
-                    :type="filters.tags.includes(tag) ? 'primary' : 'info'"
-                    :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs"
-                    size="small"
-                    @click="handleTagToggle(tag)"
-                  >
-                    {{ getTagDisplay(tag) }}
-                  </el-tag>
-                </div>
-              </div>
-
-              <!-- 時間相關 -->
-              <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">🕐 時間相關</label>
-                <div class="flex flex-wrap gap-1">
-                  <el-tag
-                    v-for="tag in ['night', 'weekend', 'free']"
-                    :key="tag"
-                    :type="filters.tags.includes(tag) ? 'primary' : 'info'"
-                    :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs"
-                    size="small"
-                    @click="handleTagToggle(tag)"
-                  >
-                    {{ getTagDisplay(tag) }}
-                  </el-tag>
-                </div>
-              </div>
-            </div>
-          </el-collapse-item>
-        </el-collapse>
+            </el-collapse-item>
+          </el-collapse>
         </div>
       </div>
     </div>
@@ -2117,20 +2150,20 @@ const handleDistanceToggle = (show: string | number | boolean) => {
 // 處理收藏篩選切換
 const handleFavoritesToggle = (show: string | number | boolean) => {
   showFavoritesOnly.value = Boolean(show);
-  
+
   if (showFavoritesOnly.value) {
     // 開啟收藏模式時，重置所有其他篩選條件
     console.log('開啟收藏模式，重置其他篩選');
-    
+
     // 保存當前位置資訊（如果需要的話）
     const currentLocation = filters.value.location;
-    
+
     // 重置所有篩選
     resetFilters();
-    
+
     // 恢復位置資訊（可選）
     // filters.value.location = currentLocation;
-    
+
     // 清除其他狀態
     customLocationInput.value = '';
     customDateRange.value = null;
@@ -2145,27 +2178,27 @@ const handleFavoritesToggle = (show: string | number | boolean) => {
     distanceRadius.value = 10;
     enableDistanceFilter.value = false;
     locationMode.value = 'nearby';
-    
+
     // 收合所有篩選面板
     activeNames.value = [];
     mobileActiveNames.value = [];
-    
+
     // 設定收藏模式標記
     filters.value.showFavoritesOnly = true;
-    
+
     ElMessage.info('已切換至收藏模式，僅顯示您收藏的活動');
   } else {
     // 關閉收藏模式
     console.log('關閉收藏模式');
     filters.value.showFavoritesOnly = false;
-    
+
     // 重新展開常用篩選面板
     activeNames.value = ['quick-filters', 'categories', 'location'];
     mobileActiveNames.value = ['quick-filters'];
-    
+
     ElMessage.info('已關閉收藏模式');
   }
-  
+
   emitFiltersChange();
 };
 

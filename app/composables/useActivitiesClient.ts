@@ -260,13 +260,13 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
       // 處理日期篩選
       if (searchOptions.filters?.dateRange) {
         const { start, end } = searchOptions.filters.dateRange;
-        
+
         if (start && end) {
           queryOptions.startDate = start;
           queryOptions.endDate = end;
         }
       }
-      
+
       // 處理快速日期篩選（來自 FilterState）
       if (searchOptions.filters && 'quickOption' in searchOptions.filters) {
         const quickOption = (searchOptions.filters as any).quickOption;
@@ -315,7 +315,7 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
       if (searchOptions.filters?.priceRange) {
         const { min, max, includeFreeze } = searchOptions.filters.priceRange;
         console.log('價格篩選:', { min, max, includeFreeze });
-        
+
         formattedResults = formattedResults.filter((activity) => {
           const price = activity.price || 0;
           if (min === 0 && max === 0 && includeFreeze) {
@@ -328,7 +328,7 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
           // 不限價格，顯示所有
           return true;
         });
-        
+
         console.log('價格篩選後數量:', formattedResults.length);
       }
 
@@ -339,7 +339,7 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
         const favoriteIdSet = favoriteIds.value;
         console.log('目前收藏的 ID:', Array.from(favoriteIdSet));
         console.log('篩選前活動數量:', formattedResults.length);
-        
+
         formattedResults = formattedResults.filter((activity) => {
           const isFavorited = favoriteIdSet.has(activity.id);
           if (isFavorited) {
@@ -347,9 +347,12 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
           }
           return isFavorited;
         });
-        
+
         console.log('收藏篩選後數量:', formattedResults.length);
-        console.log('收藏篩選後的活動:', formattedResults.map(a => ({ id: a.id, name: a.name })));
+        console.log(
+          '收藏篩選後的活動:',
+          formattedResults.map((a) => ({ id: a.id, name: a.name }))
+        );
       }
 
       // 如果有位置篩選，計算距離並排序
@@ -427,7 +430,7 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
       hasMoreActivities.value = activities.value.length === 0 ? false : true;
       currentPage.value = 1;
       lastError.value = null;
-      
+
       console.log('最終活動數量:', activities.value.length);
     } catch (error) {
       const dbError =

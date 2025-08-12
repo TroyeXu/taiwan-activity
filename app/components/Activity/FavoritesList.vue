@@ -4,35 +4,23 @@
     <div v-if="favorites.length > 0" class="controls-section">
       <div class="flex gap-3 mb-4">
         <!-- 分組方式 -->
-        <ElSelect 
-          v-model="groupBy" 
-          placeholder="分組方式"
-          size="small"
-          style="width: 120px"
-        >
+        <ElSelect v-model="groupBy" placeholder="分組方式" size="small" style="width: 120px">
           <ElOption label="不分組" value="none" />
           <ElOption label="按區域" value="region" />
           <ElOption label="按分類" value="category" />
           <ElOption label="按月份" value="month" />
         </ElSelect>
-        
+
         <!-- 排序方式 -->
-        <ElSelect 
-          v-model="sortBy" 
-          placeholder="排序方式"
-          size="small"
-          style="width: 140px"
-        >
+        <ElSelect v-model="sortBy" placeholder="排序方式" size="small" style="width: 140px">
           <ElOption label="最近加入" value="recent" />
           <ElOption label="活動名稱" value="name" />
           <ElOption label="活動日期" value="date" />
           <ElOption label="地區排序" value="location" />
         </ElSelect>
-        
+
         <!-- 統計資訊 -->
-        <div class="flex-1 text-right text-sm text-gray-500">
-          共 {{ favorites.length }} 個收藏
-        </div>
+        <div class="flex-1 text-right text-sm text-gray-500">共 {{ favorites.length }} 個收藏</div>
       </div>
     </div>
 
@@ -63,7 +51,7 @@
             <ElBadge :value="group.items.length" class="ml-2" />
           </div>
         </div>
-        
+
         <!-- 組內活動 -->
         <div class="group-items">
           <ElCard
@@ -108,7 +96,7 @@
         </div>
       </div>
     </div>
-    
+
     <!-- 無分組列表 -->
     <div v-else class="ungrouped-favorites">
       <ElCard
@@ -164,14 +152,14 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue';
 import { ElMessage } from 'element-plus';
-import { 
-  LocationFilled, 
-  Calendar, 
+import {
+  LocationFilled,
+  Calendar,
   Delete,
   PriceTag,
   Location,
   MapLocation,
-  Timer
+  Timer,
 } from '@element-plus/icons-vue';
 import type { Activity } from '~/types';
 
@@ -200,49 +188,49 @@ onMounted(async () => {
 
 // 區域對應
 const regionMap: Record<string, { name: string; icon: any; order: number }> = {
-  '北部': { name: '北部地區', icon: 'Location', order: 1 },
-  '中部': { name: '中部地區', icon: 'MapLocation', order: 2 },
-  '南部': { name: '南部地區', icon: 'MapLocation', order: 3 },
-  '東部': { name: '東部地區', icon: 'MapLocation', order: 4 },
-  '離島': { name: '離島地區', icon: 'MapLocation', order: 5 },
-  '其他': { name: '其他地區', icon: 'Location', order: 6 }
+  北部: { name: '北部地區', icon: 'Location', order: 1 },
+  中部: { name: '中部地區', icon: 'MapLocation', order: 2 },
+  南部: { name: '南部地區', icon: 'MapLocation', order: 3 },
+  東部: { name: '東部地區', icon: 'MapLocation', order: 4 },
+  離島: { name: '離島地區', icon: 'MapLocation', order: 5 },
+  其他: { name: '其他地區', icon: 'Location', order: 6 },
 };
 
 // 取得區域分組
 const getRegionGroup = (location: any) => {
   if (!location) return '其他';
-  
+
   const region = location.region;
   const city = location.city;
-  
+
   // 北部
-  if (['台北', '臺北', '新北', '基隆', '桃園', '新竹', '宜蘭'].some(c => city?.includes(c))) {
+  if (['台北', '臺北', '新北', '基隆', '桃園', '新竹', '宜蘭'].some((c) => city?.includes(c))) {
     return '北部';
   }
   // 中部
-  if (['台中', '臺中', '彰化', '南投', '苗栗', '雲林'].some(c => city?.includes(c))) {
+  if (['台中', '臺中', '彰化', '南投', '苗栗', '雲林'].some((c) => city?.includes(c))) {
     return '中部';
   }
   // 南部
-  if (['台南', '臺南', '高雄', '屏東', '嘉義'].some(c => city?.includes(c))) {
+  if (['台南', '臺南', '高雄', '屏東', '嘉義'].some((c) => city?.includes(c))) {
     return '南部';
   }
   // 東部
-  if (['花蓮', '台東', '臺東'].some(c => city?.includes(c))) {
+  if (['花蓮', '台東', '臺東'].some((c) => city?.includes(c))) {
     return '東部';
   }
   // 離島
-  if (['澎湖', '金門', '馬祖', '綠島', '蘭嶼'].some(c => city?.includes(c))) {
+  if (['澎湖', '金門', '馬祖', '綠島', '蘭嶼'].some((c) => city?.includes(c))) {
     return '離島';
   }
-  
+
   return region || '其他';
 };
 
 // 排序後的收藏
 const sortedFavorites = computed(() => {
   const sorted = [...favorites.value];
-  
+
   switch (sortBy.value) {
     case 'name':
       return sorted.sort((a, b) => a.activity.name.localeCompare(b.activity.name, 'zh-TW'));
@@ -267,12 +255,12 @@ const sortedFavorites = computed(() => {
 // 分組後的收藏
 const groupedFavorites = computed(() => {
   if (groupBy.value === 'none') return null;
-  
+
   const groups = new Map<string, any>();
-  
-  sortedFavorites.value.forEach(favorite => {
+
+  sortedFavorites.value.forEach((favorite) => {
     let groupKey = '';
-    
+
     switch (groupBy.value) {
       case 'region':
         groupKey = getRegionGroup(favorite.activity.location);
@@ -289,20 +277,20 @@ const groupedFavorites = computed(() => {
         }
         break;
     }
-    
+
     if (!groups.has(groupKey)) {
       groups.set(groupKey, {
         key: groupKey,
         name: groupBy.value === 'region' ? regionMap[groupKey]?.name || groupKey : groupKey,
         icon: groupBy.value === 'region' ? regionMap[groupKey]?.icon : null,
         order: groupBy.value === 'region' ? regionMap[groupKey]?.order || 999 : 0,
-        items: []
+        items: [],
       });
     }
-    
+
     groups.get(groupKey)!.items.push(favorite);
   });
-  
+
   // 轉換為陣列並排序
   return Array.from(groups.values()).sort((a, b) => {
     if (groupBy.value === 'region') {
@@ -334,17 +322,17 @@ const handleActivityClick = (activity: any) => {
 // 移除收藏
 const removeFavorite = async (favoriteId: string) => {
   console.log('Removing favorite with ID:', favoriteId);
-  
+
   // 從 favorites 列表中找出對應的活動 ID
-  const favorite = favorites.value.find(fav => fav.id === favoriteId);
+  const favorite = favorites.value.find((fav) => fav.id === favoriteId);
   if (!favorite) {
     console.error('Favorite not found:', favoriteId);
     return;
   }
-  
+
   const activityId = favorite.activityId;
   console.log('Found activity ID:', activityId);
-  
+
   try {
     await removeFav(activityId);
   } catch (error) {

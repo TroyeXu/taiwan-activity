@@ -10,21 +10,20 @@ const error = ref<string | null>(null);
 let isInitialized = false;
 
 export const useFavorites = () => {
-  
   // 初始化（只執行一次）
   const initializeFavorites = () => {
     if (!import.meta.client || isInitialized) return;
-    
+
     console.log('初始化收藏系統...');
     isInitialized = true;
-    
+
     try {
       // 載入完整的收藏資料
       const storedFull = localStorage.getItem('tourism-favorites-full');
       if (storedFull) {
         const parsed = JSON.parse(storedFull) as FavoriteActivity[];
         favorites.value = parsed;
-        favoriteIds.value = new Set(parsed.map(fav => fav.activityId));
+        favoriteIds.value = new Set(parsed.map((fav) => fav.activityId));
         console.log('從 localStorage 載入收藏:', parsed.length, '個項目');
       } else {
         // 嘗試載入舊格式
@@ -126,7 +125,7 @@ export const useFavorites = () => {
         message: 'ℹ️ 此活動已在收藏中',
         type: 'info',
         duration: 1500,
-        offset: 20
+        offset: 20,
       });
       return; // 已經在收藏中
     }
@@ -155,7 +154,7 @@ export const useFavorites = () => {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
-        
+
         // 使用響應式更新
         favorites.value = [...favorites.value, favoriteActivity];
         console.log('已加入到 favorites 列表，目前總數:', favorites.value.length);
@@ -164,10 +163,13 @@ export const useFavorites = () => {
 
       saveFavoritesToStorage();
       console.log('已儲存到 localStorage');
-      
+
       // 驗證儲存
       const saved = localStorage.getItem('tourism-favorites-full');
-      console.log('驗證 localStorage 內容:', saved ? JSON.parse(saved).length + ' 個項目' : '無資料');
+      console.log(
+        '驗證 localStorage 內容:',
+        saved ? JSON.parse(saved).length + ' 個項目' : '無資料'
+      );
 
       // 顯示成功訊息 - 使用特殊樣式
       ElMessage({
@@ -176,14 +178,14 @@ export const useFavorites = () => {
         customClass: 'favorite-add-message',
         duration: 2000,
         showClose: true,
-        offset: 20
+        offset: 20,
       });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '加入收藏失敗';
       error.value = errorMessage;
       ElMessage.error(errorMessage);
       console.error('加入收藏失敗:', err);
-      
+
       // 回滾
       favoriteIds.value.delete(activity.id);
     } finally {
@@ -210,10 +212,13 @@ export const useFavorites = () => {
 
       console.log('已移除收藏，剩餘收藏數量:', favorites.value.length);
       saveFavoritesToStorage();
-      
+
       // 驗證儲存
       const saved = localStorage.getItem('tourism-favorites-full');
-      console.log('移除後 localStorage 內容:', saved ? JSON.parse(saved).length + ' 個項目' : '無資料');
+      console.log(
+        '移除後 localStorage 內容:',
+        saved ? JSON.parse(saved).length + ' 個項目' : '無資料'
+      );
 
       // 顯示成功訊息 - 使用警告樣式
       ElMessage({
@@ -222,14 +227,14 @@ export const useFavorites = () => {
         customClass: 'favorite-remove-message',
         duration: 2000,
         showClose: true,
-        offset: 20
+        offset: 20,
       });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '移除收藏失敗';
       error.value = errorMessage;
       ElMessage.error(errorMessage);
       console.error('移除收藏失敗:', err);
-      
+
       // 回滾
       favoriteIds.value.add(activityId);
     } finally {
@@ -242,7 +247,7 @@ export const useFavorites = () => {
     console.log('toggleFavorite called with:', activity.id, activity.name);
     const isCurrentlyFavorited = isFavorite(activity.id);
     console.log('Is currently favorited:', isCurrentlyFavorited);
-    
+
     if (isCurrentlyFavorited) {
       console.log('Removing from favorites...');
       await removeFromFavorites(activity.id);
@@ -277,7 +282,7 @@ export const useFavorites = () => {
         customClass: 'favorite-clear-message',
         duration: 2000,
         showClose: true,
-        offset: 20
+        offset: 20,
       });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '清空收藏失敗';

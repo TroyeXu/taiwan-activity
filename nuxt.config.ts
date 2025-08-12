@@ -68,8 +68,8 @@ export default defineNuxtConfig({
       {
         baseURL: '/',
         dir: 'public',
-        maxAge: 31536000
-      }
+        maxAge: 31536000,
+      },
     ],
 
     // 複製檔案到輸出目錄
