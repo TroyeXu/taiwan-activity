@@ -43,16 +43,99 @@
           </el-icon>
 
           <!-- 重置按鈕 -->
-          <el-button v-if="hasActiveFilters" type="text" size="small" @click="handleReset">
+          <el-button v-if="hasActiveFilters || showFavoritesOnly" type="text" size="small" @click="handleReset">
             重置
           </el-button>
         </div>
       </div>
 
+      <!-- 我的收藏模式切換（桌面版） -->
+      <div class="hidden md:block mb-4">
+        <div 
+          class="p-4 rounded-lg transition-all duration-300"
+          :class="showFavoritesOnly ? 'bg-blue-50 border-2 border-blue-300' : 'bg-gray-50 border border-gray-200'"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <el-icon :size="24" :class="showFavoritesOnly ? 'text-blue-600' : 'text-gray-600'">
+                <Star />
+              </el-icon>
+              <div>
+                <h4 class="font-medium text-gray-900">我的收藏模式</h4>
+                <p class="text-sm text-gray-600 mt-1">
+                  {{ favoriteCount > 0 
+                    ? `您有 ${favoriteCount} 個收藏的活動` 
+                    : '尚未收藏任何活動' }}
+                </p>
+              </div>
+            </div>
+            <el-switch
+              v-model="showFavoritesOnly"
+              @change="handleFavoritesToggle"
+              size="large"
+              :disabled="favoriteCount === 0"
+              active-text="開啟"
+              inactive-text="關閉"
+            />
+          </div>
+
+          <!-- 收藏模式提示 -->
+          <div v-if="showFavoritesOnly" class="mt-3 p-3 bg-blue-100 rounded-md">
+            <p class="text-sm text-blue-700">
+              <el-icon class="align-middle"><InfoFilled /></el-icon>
+              收藏模式已開啟，目前只顯示您收藏的活動
+            </p>
+          </div>
+
+          <!-- 無收藏提示 -->
+          <div v-if="favoriteCount === 0" class="mt-3 p-3 bg-yellow-50 rounded-md">
+            <p class="text-sm text-yellow-700">
+              請先收藏一些活動，才能使用此功能
+            </p>
+          </div>
+        </div>
+      </div>
 
       <!-- 手機版口風琴篩選 -->
       <div class="md:hidden">
-        <el-collapse v-model="mobileActiveNames" class="mobile-filter-collapse">
+        <!-- 我的收藏模式切換（手機版） -->
+        <div class="mb-4">
+          <div 
+            class="p-4 rounded-lg transition-all duration-300"
+            :class="showFavoritesOnly ? 'bg-blue-50 border-2 border-blue-300' : 'bg-gray-50 border border-gray-200'"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <el-icon :size="20" :class="showFavoritesOnly ? 'text-blue-600' : 'text-gray-600'">
+                  <Star />
+                </el-icon>
+                <div>
+                  <h4 class="font-medium text-gray-900 text-sm">我的收藏</h4>
+                  <p class="text-xs text-gray-600">
+                    {{ favoriteCount > 0 ? `${favoriteCount} 個活動` : '無收藏' }}
+                  </p>
+                </div>
+              </div>
+              <el-switch
+                v-model="showFavoritesOnly"
+                @change="handleFavoritesToggle"
+                :disabled="favoriteCount === 0"
+              />
+            </div>
+
+            <!-- 收藏模式提示 -->
+            <div v-if="showFavoritesOnly" class="mt-2 p-2 bg-blue-100 rounded-md">
+              <p class="text-xs text-blue-700">
+                收藏模式已開啟
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 收藏模式遮罩層（手機版） -->
+        <div class="relative">
+          <div v-if="showFavoritesOnly" class="absolute inset-0 bg-gray-100 bg-opacity-50 z-10 rounded-lg cursor-not-allowed"></div>
+          <el-collapse v-model="mobileActiveNames" class="mobile-filter-collapse" :class="{ 'opacity-50 pointer-events-none': showFavoritesOnly }">
           <!-- 快速篩選組合方案 (手機版) -->
           <el-collapse-item name="quick-filters">
             <template #title>
@@ -60,14 +143,12 @@
                 <el-icon><Lightning /></el-icon>
                 <span class="ml-2">選擇組合方案</span>
                 <el-tag v-if="activeQuickFilter" size="small" type="primary" class="ml-auto mr-2">
-                  {{ quickFiltersConfig.find(f => f.id === activeQuickFilter)?.label }}
+                  {{ quickFiltersConfig.find((f) => f.id === activeQuickFilter)?.label }}
                 </el-tag>
               </div>
             </template>
             <div class="p-4">
-              <div class="mb-3 text-sm text-gray-600">
-                選擇適合您的活動方案（單選）
-              </div>
+              <div class="mb-3 text-sm text-gray-600">選擇適合您的活動方案（單選）</div>
               <div class="grid grid-cols-2 gap-2">
                 <el-button
                   v-for="filter in quickFiltersConfig"
@@ -85,12 +166,8 @@
               </div>
               <div v-if="activeQuickFilter" class="mt-3 pt-3 border-t">
                 <div class="flex items-center justify-between">
-                  <span class="text-xs text-gray-600">
-                    已套用組合
-                  </span>
-                  <el-button text size="small" @click="selectQuickFilter('')">
-                    清除
-                  </el-button>
+                  <span class="text-xs text-gray-600"> 已套用組合 </span>
+                  <el-button text size="small" @click="selectQuickFilter('')"> 清除 </el-button>
                 </div>
               </div>
             </div>
@@ -403,12 +480,14 @@
 
             <div class="p-4 space-y-3">
               <!-- 智慧推薦標籤 -->
-              <div v-if="filters.categories.length > 0 || filters.dateRange?.quickOption" 
-                   class="mb-3 p-3 bg-blue-50 rounded-lg">
+              <div
+                v-if="filters.categories.length > 0 || filters.dateRange?.quickOption"
+                class="mb-3 p-3 bg-blue-50 rounded-lg"
+              >
                 <div class="text-xs font-medium text-blue-700 mb-2">🤖 根據您的選擇推薦</div>
                 <div class="flex flex-wrap gap-1">
-                  <el-tag 
-                    v-for="tag in groupedTags.primary" 
+                  <el-tag
+                    v-for="tag in groupedTags.primary"
                     :key="tag"
                     :type="filters.tags.includes(tag) ? 'primary' : 'info'"
                     :effect="filters.tags.includes(tag) ? 'dark' : 'light'"
@@ -419,17 +498,17 @@
                   </el-tag>
                 </div>
               </div>
-              
+
               <!-- 基礎通用標籤 -->
               <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">⭐ 熱門標籤</label>
                 <div class="flex flex-wrap gap-1">
-                  <el-tag 
-                    v-for="tag in tagModules.base" 
+                  <el-tag
+                    v-for="tag in tagModules.base"
                     :key="tag"
                     :type="filters.tags.includes(tag) ? 'primary' : 'info'"
                     :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs" 
+                    class="cursor-pointer text-xs"
                     size="small"
                     @click="handleTagToggle(tag)"
                   >
@@ -442,10 +521,24 @@
               <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">✨ 活動特色</label>
                 <div class="flex flex-wrap gap-1">
-                  <el-tag v-for="tag in ['pet-friendly', 'accessible', 'photo', 'instagram', 'romantic', 'educational', 'group', 'solo', 'reservation', 'walkin']" :key="tag"
+                  <el-tag
+                    v-for="tag in [
+                      'pet-friendly',
+                      'accessible',
+                      'photo',
+                      'instagram',
+                      'romantic',
+                      'educational',
+                      'group',
+                      'solo',
+                      'reservation',
+                      'walkin',
+                    ]"
+                    :key="tag"
                     :type="filters.tags.includes(tag) ? 'primary' : 'info'"
                     :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs" size="small"
+                    class="cursor-pointer text-xs"
+                    size="small"
                     @click="handleTagToggle(tag)"
                   >
                     {{ getTagDisplay(tag) }}
@@ -457,10 +550,13 @@
               <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">📍 場地類型</label>
                 <div class="flex flex-wrap gap-1">
-                  <el-tag v-for="tag in ['indoor', 'outdoor']" :key="tag"
+                  <el-tag
+                    v-for="tag in ['indoor', 'outdoor']"
+                    :key="tag"
                     :type="filters.tags.includes(tag) ? 'primary' : 'info'"
                     :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs" size="small"
+                    class="cursor-pointer text-xs"
+                    size="small"
                     @click="handleTagToggle(tag)"
                   >
                     {{ getTagDisplay(tag) }}
@@ -472,10 +568,13 @@
               <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">🚗 交通便利</label>
                 <div class="flex flex-wrap gap-1">
-                  <el-tag v-for="tag in ['parking', 'mrt', 'bus']" :key="tag"
+                  <el-tag
+                    v-for="tag in ['parking', 'mrt', 'bus']"
+                    :key="tag"
                     :type="filters.tags.includes(tag) ? 'primary' : 'info'"
                     :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs" size="small"
+                    class="cursor-pointer text-xs"
+                    size="small"
                     @click="handleTagToggle(tag)"
                   >
                     {{ getTagDisplay(tag) }}
@@ -487,10 +586,13 @@
               <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">⏱️ 活動時長</label>
                 <div class="flex flex-wrap gap-1">
-                  <el-tag v-for="tag in ['quick', 'halfday', 'fullday', 'multiday']" :key="tag"
+                  <el-tag
+                    v-for="tag in ['quick', 'halfday', 'fullday', 'multiday']"
+                    :key="tag"
                     :type="filters.tags.includes(tag) ? 'primary' : 'info'"
                     :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs" size="small"
+                    class="cursor-pointer text-xs"
+                    size="small"
                     @click="handleTagToggle(tag)"
                   >
                     {{ getTagDisplay(tag) }}
@@ -502,10 +604,13 @@
               <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">👨‍👩‍👧‍👦 適合年齡</label>
                 <div class="flex flex-wrap gap-1">
-                  <el-tag v-for="tag in ['kids', 'teens', 'adults', 'seniors']" :key="tag"
+                  <el-tag
+                    v-for="tag in ['kids', 'teens', 'adults', 'seniors']"
+                    :key="tag"
                     :type="filters.tags.includes(tag) ? 'primary' : 'info'"
                     :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs" size="small"
+                    class="cursor-pointer text-xs"
+                    size="small"
                     @click="handleTagToggle(tag)"
                   >
                     {{ getTagDisplay(tag) }}
@@ -517,10 +622,13 @@
               <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">🌸 季節限定</label>
                 <div class="flex flex-wrap gap-1">
-                  <el-tag v-for="tag in ['spring', 'summer', 'autumn', 'winter', 'rainy']" :key="tag"
+                  <el-tag
+                    v-for="tag in ['spring', 'summer', 'autumn', 'winter', 'rainy']"
+                    :key="tag"
                     :type="filters.tags.includes(tag) ? 'primary' : 'info'"
                     :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs" size="small"
+                    class="cursor-pointer text-xs"
+                    size="small"
                     @click="handleTagToggle(tag)"
                   >
                     {{ getTagDisplay(tag) }}
@@ -532,10 +640,13 @@
               <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">🕐 時間相關</label>
                 <div class="flex flex-wrap gap-1">
-                  <el-tag v-for="tag in ['night', 'weekend', 'free']" :key="tag"
+                  <el-tag
+                    v-for="tag in ['night', 'weekend', 'free']"
+                    :key="tag"
                     :type="filters.tags.includes(tag) ? 'primary' : 'info'"
                     :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs" size="small"
+                    class="cursor-pointer text-xs"
+                    size="small"
                     @click="handleTagToggle(tag)"
                   >
                     {{ getTagDisplay(tag) }}
@@ -545,11 +656,23 @@
             </div>
           </el-collapse-item>
         </el-collapse>
+        </div>
       </div>
 
       <!-- 桌面版摺疊篩選 -->
       <div class="hidden md:block">
-        <el-collapse v-model="activeNames" class="filter-collapse">
+        <!-- 收藏模式遮罩提示 -->
+        <div v-if="showFavoritesOnly" class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p class="text-sm text-yellow-800">
+            <el-icon class="align-middle"><WarningFilled /></el-icon>
+            收藏模式已開啟，其他篩選條件暫時無法使用。如需使用其他篩選，請先關閉收藏模式。
+          </p>
+        </div>
+
+        <!-- 收藏模式遮罩層 -->
+        <div class="relative">
+          <div v-if="showFavoritesOnly" class="absolute inset-0 bg-gray-100 bg-opacity-50 z-10 rounded-lg cursor-not-allowed"></div>
+          <el-collapse v-model="activeNames" class="filter-collapse" :class="{ 'opacity-50 pointer-events-none': showFavoritesOnly }">
           <!-- 1. 快速篩選組合方案 -->
           <el-collapse-item name="quick-filters">
             <template #title>
@@ -557,14 +680,12 @@
                 <el-icon><Lightning /></el-icon>
                 <span class="ml-2 font-medium">選擇組合方案</span>
                 <el-tag v-if="activeQuickFilter" size="small" type="primary" class="ml-auto mr-2">
-                  {{ quickFiltersConfig.find(f => f.id === activeQuickFilter)?.label }}
+                  {{ quickFiltersConfig.find((f) => f.id === activeQuickFilter)?.label }}
                 </el-tag>
               </div>
             </template>
             <div class="p-4">
-              <div class="mb-3 text-sm text-gray-600">
-                選擇適合您的活動方案（單選）
-              </div>
+              <div class="mb-3 text-sm text-gray-600">選擇適合您的活動方案（單選）</div>
               <div class="flex flex-wrap gap-2">
                 <el-button
                   v-for="filter in quickFiltersConfig"
@@ -581,11 +702,11 @@
               <div v-if="activeQuickFilter" class="mt-3 pt-3 border-t">
                 <div class="flex items-center justify-between">
                   <span class="text-xs text-gray-600">
-                    已套用「{{ quickFiltersConfig.find(f => f.id === activeQuickFilter)?.label }}」組合
+                    已套用「{{
+                      quickFiltersConfig.find((f) => f.id === activeQuickFilter)?.label
+                    }}」組合
                   </span>
-                  <el-button text size="small" @click="selectQuickFilter('')">
-                    清除組合
-                  </el-button>
+                  <el-button text size="small" @click="selectQuickFilter('')"> 清除組合 </el-button>
                 </div>
               </div>
             </div>
@@ -906,12 +1027,14 @@
 
             <div class="p-4 space-y-3">
               <!-- 智慧推薦標籤 -->
-              <div v-if="filters.categories.length > 0 || filters.dateRange?.quickOption" 
-                   class="mb-3 p-3 bg-blue-50 rounded-lg">
+              <div
+                v-if="filters.categories.length > 0 || filters.dateRange?.quickOption"
+                class="mb-3 p-3 bg-blue-50 rounded-lg"
+              >
                 <div class="text-xs font-medium text-blue-700 mb-2">🤖 根據您的選擇推薦</div>
                 <div class="flex flex-wrap gap-1">
-                  <el-tag 
-                    v-for="tag in groupedTags.primary" 
+                  <el-tag
+                    v-for="tag in groupedTags.primary"
                     :key="tag"
                     :type="filters.tags.includes(tag) ? 'primary' : 'info'"
                     :effect="filters.tags.includes(tag) ? 'dark' : 'light'"
@@ -922,17 +1045,17 @@
                   </el-tag>
                 </div>
               </div>
-              
+
               <!-- 基礎通用標籤 -->
               <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">⭐ 熱門標籤</label>
                 <div class="flex flex-wrap gap-1">
-                  <el-tag 
-                    v-for="tag in tagModules.base" 
+                  <el-tag
+                    v-for="tag in tagModules.base"
                     :key="tag"
                     :type="filters.tags.includes(tag) ? 'primary' : 'info'"
                     :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs" 
+                    class="cursor-pointer text-xs"
                     size="small"
                     @click="handleTagToggle(tag)"
                   >
@@ -945,10 +1068,24 @@
               <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">✨ 活動特色</label>
                 <div class="flex flex-wrap gap-1">
-                  <el-tag v-for="tag in ['pet-friendly', 'accessible', 'photo', 'instagram', 'romantic', 'educational', 'group', 'solo', 'reservation', 'walkin']" :key="tag"
+                  <el-tag
+                    v-for="tag in [
+                      'pet-friendly',
+                      'accessible',
+                      'photo',
+                      'instagram',
+                      'romantic',
+                      'educational',
+                      'group',
+                      'solo',
+                      'reservation',
+                      'walkin',
+                    ]"
+                    :key="tag"
                     :type="filters.tags.includes(tag) ? 'primary' : 'info'"
                     :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs" size="small"
+                    class="cursor-pointer text-xs"
+                    size="small"
                     @click="handleTagToggle(tag)"
                   >
                     {{ getTagDisplay(tag) }}
@@ -960,10 +1097,13 @@
               <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">📍 場地類型</label>
                 <div class="flex flex-wrap gap-1">
-                  <el-tag v-for="tag in ['indoor', 'outdoor']" :key="tag"
+                  <el-tag
+                    v-for="tag in ['indoor', 'outdoor']"
+                    :key="tag"
                     :type="filters.tags.includes(tag) ? 'primary' : 'info'"
                     :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs" size="small"
+                    class="cursor-pointer text-xs"
+                    size="small"
                     @click="handleTagToggle(tag)"
                   >
                     {{ getTagDisplay(tag) }}
@@ -975,10 +1115,13 @@
               <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">🚗 交通便利</label>
                 <div class="flex flex-wrap gap-1">
-                  <el-tag v-for="tag in ['parking', 'mrt', 'bus']" :key="tag"
+                  <el-tag
+                    v-for="tag in ['parking', 'mrt', 'bus']"
+                    :key="tag"
                     :type="filters.tags.includes(tag) ? 'primary' : 'info'"
                     :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs" size="small"
+                    class="cursor-pointer text-xs"
+                    size="small"
                     @click="handleTagToggle(tag)"
                   >
                     {{ getTagDisplay(tag) }}
@@ -990,10 +1133,13 @@
               <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">⏱️ 活動時長</label>
                 <div class="flex flex-wrap gap-1">
-                  <el-tag v-for="tag in ['quick', 'halfday', 'fullday', 'multiday']" :key="tag"
+                  <el-tag
+                    v-for="tag in ['quick', 'halfday', 'fullday', 'multiday']"
+                    :key="tag"
                     :type="filters.tags.includes(tag) ? 'primary' : 'info'"
                     :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs" size="small"
+                    class="cursor-pointer text-xs"
+                    size="small"
                     @click="handleTagToggle(tag)"
                   >
                     {{ getTagDisplay(tag) }}
@@ -1005,10 +1151,13 @@
               <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">👨‍👩‍👧‍👦 適合年齡</label>
                 <div class="flex flex-wrap gap-1">
-                  <el-tag v-for="tag in ['kids', 'teens', 'adults', 'seniors']" :key="tag"
+                  <el-tag
+                    v-for="tag in ['kids', 'teens', 'adults', 'seniors']"
+                    :key="tag"
                     :type="filters.tags.includes(tag) ? 'primary' : 'info'"
                     :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs" size="small"
+                    class="cursor-pointer text-xs"
+                    size="small"
                     @click="handleTagToggle(tag)"
                   >
                     {{ getTagDisplay(tag) }}
@@ -1020,10 +1169,13 @@
               <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">🌸 季節限定</label>
                 <div class="flex flex-wrap gap-1">
-                  <el-tag v-for="tag in ['spring', 'summer', 'autumn', 'winter', 'rainy']" :key="tag"
+                  <el-tag
+                    v-for="tag in ['spring', 'summer', 'autumn', 'winter', 'rainy']"
+                    :key="tag"
                     :type="filters.tags.includes(tag) ? 'primary' : 'info'"
                     :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs" size="small"
+                    class="cursor-pointer text-xs"
+                    size="small"
                     @click="handleTagToggle(tag)"
                   >
                     {{ getTagDisplay(tag) }}
@@ -1035,10 +1187,13 @@
               <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">🕐 時間相關</label>
                 <div class="flex flex-wrap gap-1">
-                  <el-tag v-for="tag in ['night', 'weekend', 'free']" :key="tag"
+                  <el-tag
+                    v-for="tag in ['night', 'weekend', 'free']"
+                    :key="tag"
                     :type="filters.tags.includes(tag) ? 'primary' : 'info'"
                     :effect="filters.tags.includes(tag) ? 'dark' : 'plain'"
-                    class="cursor-pointer text-xs" size="small"
+                    class="cursor-pointer text-xs"
+                    size="small"
                     @click="handleTagToggle(tag)"
                   >
                     {{ getTagDisplay(tag) }}
@@ -1048,6 +1203,7 @@
             </div>
           </el-collapse-item>
         </el-collapse>
+        </div>
       </div>
     </div>
 
@@ -1067,11 +1223,13 @@ import {
   Collection,
   Discount,
   Filter,
+  InfoFilled,
   Lightning,
   Location,
   MapLocation,
-  User,
+  Star,
   Wallet,
+  WarningFilled,
 } from '@element-plus/icons-vue';
 import { useDebounceFn } from '@vueuse/core';
 import { ElMessage } from 'element-plus';
@@ -1112,6 +1270,7 @@ const {
 } = useFilters();
 
 const { coordinates, address, getCurrentPosition, geocodeAddress } = useGeolocation();
+const { favoriteIds, favoritesCount } = useFavorites();
 
 // 響應式狀態
 const customLocationInput = ref('');
@@ -1135,19 +1294,20 @@ const distanceRadius = ref(10);
 const enableDistanceFilter = ref(false);
 const locationError = ref<string>('');
 const locationMode = ref<'nearby' | 'region'>('nearby');
+const showFavoritesOnly = ref(false);
 
 // 快速篩選組合配置 - 更多元的組合選項
 const quickFiltersConfig = [
-  { 
+  {
     id: 'weekend-family',
     label: '週末親子遊',
     icon: '👨‍👩‍👧‍👦',
     filters: {
       time: 'weekend',
-      price: 'free', 
+      price: 'free',
       tags: ['outdoor', 'kids', 'parking'],
-      categories: ['sightseeing', 'education']
-    }
+      categories: ['sightseeing', 'education'],
+    },
   },
   {
     id: 'couple-date',
@@ -1155,17 +1315,17 @@ const quickFiltersConfig = [
     icon: '💑',
     filters: {
       tags: ['romantic', 'photo', 'instagram'],
-      categories: ['food', 'entertainment']
-    }
+      categories: ['food', 'entertainment'],
+    },
   },
   {
     id: 'rainy-day',
-    label: '雨天備案', 
+    label: '雨天備案',
     icon: '☔',
     filters: {
       tags: ['indoor', 'mrt', 'rainy'],
-      categories: ['culture', 'shopping', 'food']
-    }
+      categories: ['culture', 'shopping', 'food'],
+    },
   },
   {
     id: 'student-budget',
@@ -1174,8 +1334,8 @@ const quickFiltersConfig = [
     filters: {
       price: 'free',
       tags: ['educational', 'teens', 'group'],
-      categories: ['education', 'culture']
-    }
+      categories: ['education', 'culture'],
+    },
   },
   {
     id: 'senior-leisure',
@@ -1183,8 +1343,8 @@ const quickFiltersConfig = [
     icon: '👴',
     filters: {
       tags: ['accessible', 'seniors', 'halfday'],
-      categories: ['wellness', 'culture']
-    }
+      categories: ['wellness', 'culture'],
+    },
   },
   {
     id: 'night-owl',
@@ -1192,8 +1352,8 @@ const quickFiltersConfig = [
     icon: '🌙',
     filters: {
       tags: ['night', 'walkin'],
-      categories: ['food', 'entertainment']
-    }
+      categories: ['food', 'entertainment'],
+    },
   },
   {
     id: 'instagram-spots',
@@ -1201,8 +1361,8 @@ const quickFiltersConfig = [
     icon: '📸',
     filters: {
       tags: ['photo', 'instagram', 'hot'],
-      categories: ['sightseeing']
-    }
+      categories: ['sightseeing'],
+    },
   },
   {
     id: 'spontaneous',
@@ -1211,8 +1371,8 @@ const quickFiltersConfig = [
     filters: {
       time: 'today',
       tags: ['walkin', 'quick'],
-      distance: 5
-    }
+      distance: 5,
+    },
   },
   {
     id: 'outdoor-adventure',
@@ -1220,8 +1380,8 @@ const quickFiltersConfig = [
     icon: '🏔️',
     filters: {
       tags: ['outdoor', 'fullday'],
-      categories: ['adventure', 'sightseeing']
-    }
+      categories: ['adventure', 'sightseeing'],
+    },
   },
   {
     id: 'culture-tour',
@@ -1229,8 +1389,8 @@ const quickFiltersConfig = [
     icon: '🎭',
     filters: {
       tags: ['educational', 'indoor'],
-      categories: ['culture', 'education']
-    }
+      categories: ['culture', 'education'],
+    },
   },
   {
     id: 'foodie-paradise',
@@ -1238,8 +1398,8 @@ const quickFiltersConfig = [
     icon: '🍜',
     filters: {
       tags: ['walkin', 'instagram'],
-      categories: ['food']
-    }
+      categories: ['food'],
+    },
   },
   {
     id: 'morning-exercise',
@@ -1247,8 +1407,8 @@ const quickFiltersConfig = [
     icon: '🌅',
     filters: {
       tags: ['outdoor', 'quick'],
-      categories: ['wellness', 'adventure']
-    }
+      categories: ['wellness', 'adventure'],
+    },
   },
   {
     id: 'shopping-therapy',
@@ -1256,8 +1416,8 @@ const quickFiltersConfig = [
     icon: '🛍️',
     filters: {
       tags: ['indoor', 'mrt', 'parking'],
-      categories: ['shopping', 'food']
-    }
+      categories: ['shopping', 'food'],
+    },
   },
   {
     id: 'pet-friendly',
@@ -1265,8 +1425,8 @@ const quickFiltersConfig = [
     icon: '🐾',
     filters: {
       tags: ['pet-friendly', 'outdoor'],
-      categories: ['sightseeing', 'food']
-    }
+      categories: ['sightseeing', 'food'],
+    },
   },
   {
     id: 'solo-adventure',
@@ -1274,8 +1434,8 @@ const quickFiltersConfig = [
     icon: '🚶',
     filters: {
       tags: ['solo', 'mrt', 'quick'],
-      categories: ['culture', 'sightseeing']
-    }
+      categories: ['culture', 'sightseeing'],
+    },
   },
   {
     id: 'budget-friendly',
@@ -1284,9 +1444,9 @@ const quickFiltersConfig = [
     filters: {
       price: 'free',
       tags: ['free', 'outdoor'],
-      categories: ['sightseeing', 'culture']
-    }
-  }
+      categories: ['sightseeing', 'culture'],
+    },
+  },
 ];
 
 // 快速時間按鈕選項
@@ -1357,31 +1517,31 @@ const accessibilityOptions = [
 const tagModules = {
   // 基礎標籤（始終顯示）
   base: ['hot', 'new', 'discount', 'pet-friendly', 'accessible', 'instagram'],
-  
+
   // 活動類型相關標籤
   categories: {
-    'sightseeing': ['photo', 'parking', 'mrt', 'bus', 'spring', 'summer', 'autumn', 'winter'],
-    'culture': ['educational', 'reservation', 'indoor', 'group', 'seniors'],
-    'adventure': ['outdoor', 'quick', 'halfday', 'fullday', 'spring', 'summer', 'rainy'],
-    'food': ['night', 'walkin', 'indoor', 'romantic', 'instagram'],
-    'shopping': ['mrt', 'parking', 'indoor', 'weekend', 'discount'],
-    'wellness': ['seniors', 'accessible', 'halfday', 'outdoor', 'indoor'],
-    'entertainment': ['night', 'weekend', 'kids', 'teens', 'group', 'indoor'],
-    'education': ['educational', 'kids', 'teens', 'reservation', 'group']
+    sightseeing: ['photo', 'parking', 'mrt', 'bus', 'spring', 'summer', 'autumn', 'winter'],
+    culture: ['educational', 'reservation', 'indoor', 'group', 'seniors'],
+    adventure: ['outdoor', 'quick', 'halfday', 'fullday', 'spring', 'summer', 'rainy'],
+    food: ['night', 'walkin', 'indoor', 'romantic', 'instagram'],
+    shopping: ['mrt', 'parking', 'indoor', 'weekend', 'discount'],
+    wellness: ['seniors', 'accessible', 'halfday', 'outdoor', 'indoor'],
+    entertainment: ['night', 'weekend', 'kids', 'teens', 'group', 'indoor'],
+    education: ['educational', 'kids', 'teens', 'reservation', 'group'],
   },
-  
+
   // 時間相關標籤
   time: {
-    'today': ['walkin', 'quick', 'limited'],
-    'weekend': ['weekend', 'group', 'family', 'hot'],
-    'night': ['night', 'romantic', 'indoor']
+    today: ['walkin', 'quick', 'limited'],
+    weekend: ['weekend', 'group', 'family', 'hot'],
+    night: ['night', 'romantic', 'indoor'],
   },
-  
+
   // 價格相關標籤
   price: {
-    'free': ['free', 'outdoor', 'photo'],
-    'paid': ['reservation', 'limited', 'hot']
-  }
+    free: ['free', 'outdoor', 'photo'],
+    paid: ['reservation', 'limited', 'hot'],
+  },
 };
 
 // 標籤相關
@@ -1390,25 +1550,25 @@ const allTags = ref<Tag[]>([]);
 // 根據當前篩選條件動態獲取相關標籤
 const relevantTags = computed(() => {
   const tags = new Set([...tagModules.base]);
-  
+
   // 根據選擇的活動類型添加相關標籤
-  filters.value.categories.forEach(category => {
+  filters.value.categories.forEach((category) => {
     const categoryTags = tagModules.categories[category] || [];
-    categoryTags.forEach(tag => tags.add(tag));
+    categoryTags.forEach((tag) => tags.add(tag));
   });
-  
+
   // 根據時間篩選添加相關標籤
   if (filters.value.dateRange?.quickOption) {
     const timeTags = tagModules.time[filters.value.dateRange.quickOption] || [];
-    timeTags.forEach(tag => tags.add(tag));
+    timeTags.forEach((tag) => tags.add(tag));
   }
-  
+
   // 根據價格類型添加相關標籤
   if (priceType.value !== 'all') {
     const priceTags = tagModules.price[priceType.value] || [];
-    priceTags.forEach(tag => tags.add(tag));
+    priceTags.forEach((tag) => tags.add(tag));
   }
-  
+
   return Array.from(tags);
 });
 
@@ -1416,9 +1576,9 @@ const relevantTags = computed(() => {
 const groupedTags = computed(() => {
   const relevant = relevantTags.value;
   return {
-    primary: relevant.slice(0, 6),    // 主要標籤
-    secondary: relevant.slice(6, 12),  // 次要標籤
-    more: relevant.slice(12)           // 更多標籤
+    primary: relevant.slice(0, 6), // 主要標籤
+    secondary: relevant.slice(6, 12), // 次要標籤
+    more: relevant.slice(12), // 更多標籤
   };
 });
 
@@ -1457,6 +1617,9 @@ const showTimeSlotFilter = computed(() => {
 
   return false;
 });
+
+// 計算屬性 - 收藏數量
+const favoriteCount = computed(() => favoritesCount.value);
 
 // 計算屬性 - 篩選狀態檢查
 const hasLocationFilter = computed(
@@ -1682,50 +1845,50 @@ const handlePriceRangeChange = (value: number[]) => {
 const getTagDisplay = (tagSlug: string): string => {
   const tagMap: Record<string, string> = {
     // 熱門推薦
-    'new': '🆕 最新活動',
-    'hot': '🔥 熱門推薦',
-    'discount': '💰 優惠活動',
-    'limited': '⏰ 限量名額',
+    new: '🆕 最新活動',
+    hot: '🔥 熱門推薦',
+    discount: '💰 優惠活動',
+    limited: '⏰ 限量名額',
     // 活動特色
     'pet-friendly': '🐾 寵物友善',
-    'accessible': '♿ 無障礙',
-    'photo': '📸 適合拍照',
-    'instagram': '📷 網美打卡',
-    'romantic': '💝 浪漫約會',
-    'educational': '📚 教育學習',
-    'group': '👥 團體活動',
-    'solo': '👤 獨自體驗',
-    'reservation': '📝 需預約',
-    'walkin': '🚶 免預約',
+    accessible: '♿ 無障礙',
+    photo: '📸 適合拍照',
+    instagram: '📷 網美打卡',
+    romantic: '💝 浪漫約會',
+    educational: '📚 教育學習',
+    group: '👥 團體活動',
+    solo: '👤 獨自體驗',
+    reservation: '📝 需預約',
+    walkin: '🚶 免預約',
     // 場地
-    'indoor': '🏠 室內',
-    'outdoor': '🌳 戶外',
+    indoor: '🏠 室內',
+    outdoor: '🌳 戶外',
     // 交通
-    'parking': '🅿️ 有停車場',
-    'mrt': '🚇 捷運可達',
-    'bus': '🚌 公車可達',
+    parking: '🅿️ 有停車場',
+    mrt: '🚇 捷運可達',
+    bus: '🚌 公車可達',
     // 時長
-    'quick': '⚡ 快速體驗',
-    'halfday': '🌤️ 半日遊',
-    'fullday': '☀️ 全日遊',
-    'multiday': '🗓️ 多日行程',
+    quick: '⚡ 快速體驗',
+    halfday: '🌤️ 半日遊',
+    fullday: '☀️ 全日遊',
+    multiday: '🗓️ 多日行程',
     // 年齡
-    'kids': '👶 幼兒適合',
-    'teens': '🧑 青少年',
-    'adults': '👨 成人限定',
-    'seniors': '👴 銀髮友善',
+    kids: '👶 幼兒適合',
+    teens: '🧑 青少年',
+    adults: '👨 成人限定',
+    seniors: '👴 銀髮友善',
     // 季節
-    'spring': '🌸 春季限定',
-    'summer': '☀️ 夏季限定',
-    'autumn': '🍁 秋季限定',
-    'winter': '❄️ 冬季限定',
-    'rainy': '☔ 雨天備案',
+    spring: '🌸 春季限定',
+    summer: '☀️ 夏季限定',
+    autumn: '🍁 秋季限定',
+    winter: '❄️ 冬季限定',
+    rainy: '☔ 雨天備案',
     // 時間
-    'night': '🌙 夜間活動',
-    'weekend': '📅 週末活動',
-    'free': '🆓 免費活動'
+    night: '🌙 夜間活動',
+    weekend: '📅 週末活動',
+    free: '🆓 免費活動',
   };
-  
+
   return tagMap[tagSlug] || tagSlug;
 };
 
@@ -1774,6 +1937,7 @@ const handleReset = () => {
   distanceRadius.value = 10;
   enableDistanceFilter.value = false;
   locationMode.value = 'nearby';
+  showFavoritesOnly.value = false;
 
   console.log('重置所有篩選');
   emitFiltersChange();
@@ -1816,7 +1980,7 @@ const selectQuickFilter = (filterId: string) => {
     emitFiltersChange();
     return;
   }
-  
+
   // 設定新的選擇
   activeQuickFilter.value = filterId;
   applyQuickFilter(filterId);
@@ -1826,16 +1990,16 @@ const selectQuickFilter = (filterId: string) => {
 const applyQuickFilter = (filterId: string) => {
   // 重置所有篩選
   resetFilters();
-  
-  const config = quickFiltersConfig.find(f => f.id === filterId);
+
+  const config = quickFiltersConfig.find((f) => f.id === filterId);
   if (!config) return;
-  
+
   // 應用時間篩選
   if (config.filters.time) {
     filters.value.dateRange.type = 'quick';
     filters.value.dateRange.quickOption = config.filters.time;
   }
-  
+
   // 應用價格篩選
   if (config.filters.price === 'free') {
     priceType.value = 'free';
@@ -1843,17 +2007,17 @@ const applyQuickFilter = (filterId: string) => {
     filters.value.priceRange.max = 0;
     filters.value.priceRange.includeFreeze = true;
   }
-  
+
   // 應用標籤篩選
   if (config.filters.tags) {
     filters.value.tags = [...config.filters.tags];
   }
-  
+
   // 應用活動類型篩選
   if (config.filters.categories) {
     filters.value.categories = [...config.filters.categories];
   }
-  
+
   // 應用距離篩選
   if (config.filters.distance) {
     filters.value.location.type = 'current';
@@ -1862,7 +2026,7 @@ const applyQuickFilter = (filterId: string) => {
     locationMode.value = 'nearby';
     handleGetCurrentLocation();
   }
-  
+
   emitFiltersChange();
 };
 
@@ -1950,6 +2114,61 @@ const handleDistanceToggle = (show: string | number | boolean) => {
   emitFiltersChange();
 };
 
+// 處理收藏篩選切換
+const handleFavoritesToggle = (show: string | number | boolean) => {
+  showFavoritesOnly.value = Boolean(show);
+  
+  if (showFavoritesOnly.value) {
+    // 開啟收藏模式時，重置所有其他篩選條件
+    console.log('開啟收藏模式，重置其他篩選');
+    
+    // 保存當前位置資訊（如果需要的話）
+    const currentLocation = filters.value.location;
+    
+    // 重置所有篩選
+    resetFilters();
+    
+    // 恢復位置資訊（可選）
+    // filters.value.location = currentLocation;
+    
+    // 清除其他狀態
+    customLocationInput.value = '';
+    customDateRange.value = null;
+    priceRangeValue.value = [0, 5000];
+    showMoreTags.value = false;
+    selectedCities.value = [];
+    selectedDistrict.value = '';
+    priceType.value = 'all';
+    quickFilter.value = '';
+    activeQuickFilter.value = '';
+    showCustomDateRange.value = false;
+    distanceRadius.value = 10;
+    enableDistanceFilter.value = false;
+    locationMode.value = 'nearby';
+    
+    // 收合所有篩選面板
+    activeNames.value = [];
+    mobileActiveNames.value = [];
+    
+    // 設定收藏模式標記
+    filters.value.showFavoritesOnly = true;
+    
+    ElMessage.info('已切換至收藏模式，僅顯示您收藏的活動');
+  } else {
+    // 關閉收藏模式
+    console.log('關閉收藏模式');
+    filters.value.showFavoritesOnly = false;
+    
+    // 重新展開常用篩選面板
+    activeNames.value = ['quick-filters', 'categories', 'location'];
+    mobileActiveNames.value = ['quick-filters'];
+    
+    ElMessage.info('已關閉收藏模式');
+  }
+  
+  emitFiltersChange();
+};
+
 // 處理距離範圍變更
 const handleDistanceRadiusChange = (radius: number | number[]) => {
   distanceRadius.value = Array.isArray(radius) ? (radius[0] ?? 10) : radius;
@@ -1978,7 +2197,7 @@ const handleCitiesChange = (cities: string[]) => {
   } else {
     selectedCities.value = cities;
     filters.value.cities = cities;
-    
+
     // 當選擇特定地區時，清除距離篩選
     if (cities.length > 0) {
       filters.value.location.coordinates = null;
@@ -2272,7 +2491,7 @@ onMounted(() => {
   .filter-panel {
     @apply fixed inset-0 z-50;
   }
-  
+
   .quick-filter-card {
     min-height: 70px;
   }

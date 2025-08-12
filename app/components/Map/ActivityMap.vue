@@ -87,6 +87,9 @@ const markers = ref<any[]>([]);
 const userMarker = ref<any>(null);
 const radiusCircle = ref<any>(null);
 
+// 使用收藏功能
+const { favoriteIds } = useFavorites();
+
 // 可用分類列表
 const availableCategories = computed(() => {
   const categoryMap = new Map<
@@ -151,9 +154,10 @@ const filteredActivities = computed(() => {
   }
   
   // 距離篩選（如果有用戶位置和搜尋範圍）
+  // 改進：如果範圍內沒有活動，仍顯示所有活動
   if (props.userLocation && props.searchRadius) {
-    console.log('啟用距離篩選');
-    filtered = filtered.filter((activity) => {
+    console.log('檢查距離篩選');
+    const withinRadius = filtered.filter((activity) => {
       if (!activity.location?.latitude || !activity.location?.longitude) {
         return false;
       }
@@ -165,6 +169,14 @@ const filteredActivities = computed(() => {
       );
       return distance <= props.searchRadius;
     });
+    
+    if (withinRadius.length > 0) {
+      console.log(`找到 ${withinRadius.length} 個在範圍內的活動`);
+      filtered = withinRadius;
+    } else {
+      console.log('範圍內沒有活動，顯示所有活動');
+      // 保持顯示所有活動，讓使用者看到地圖上有內容
+    }
   }
   
   console.log('篩選後活動數量:', filtered.length);
@@ -230,7 +242,38 @@ const createActivityMarker = (activity: Activity) => {
     return null;
   }
 
-  const marker = L.marker([activity.location.latitude, activity.location.longitude]);
+  // 檢查是否已收藏 - 直接使用響應式的 favoriteIds
+  const isFavorited = favoriteIds.value.has(activity.id);
+  
+  console.log(`創建標記 ${activity.name}: 收藏狀態 = ${isFavorited}`);
+
+  // 根據收藏狀態創建不同顏色的圖標
+  const markerIcon = L.divIcon({
+    html: `
+      <div class="custom-marker ${isFavorited ? 'is-favorited' : ''}" data-activity-id="${activity.id}">
+        <svg width="30" height="40" viewBox="0 0 30 40" xmlns="http://www.w3.org/2000/svg">
+          <path d="M15 0C6.716 0 0 6.716 0 15c0 8.284 15 25 15 25s15-16.716 15-25C30 6.716 23.284 0 15 0z" 
+                fill="${isFavorited ? '#fbbf24' : '#3b82f6'}"/>
+          <circle cx="15" cy="15" r="8" fill="white"/>
+          ${isFavorited ? 
+            '<path d="M15 10l1.545 3.13L20 13.635l-2.5 2.435L18.09 20 15 18.27 11.91 20l.59-3.93L10 13.635l3.455-.505z" fill="#fbbf24"/>' :
+            '<circle cx="15" cy="15" r="3" fill="#3b82f6"/>'
+          }
+        </svg>
+      </div>
+    `,
+    className: 'custom-div-icon',
+    iconSize: [30, 40],
+    iconAnchor: [15, 40],
+    popupAnchor: [0, -40]
+  });
+
+  const marker = L.marker([activity.location.latitude, activity.location.longitude], {
+    icon: markerIcon
+  });
+  
+  // 儲存活動資料到標記
+  (marker as any).activityId = activity.id;
 
   // 創建彈出窗口內容
   const popupContent = `
@@ -239,6 +282,7 @@ const createActivityMarker = (activity: Activity) => {
       <p>${activity.summary || activity.description || ''}</p>
       <div class="popup-info">
         <div>📍 ${activity.location.address}</div>
+        ${isFavorited ? '<div class="favorited-badge">⭐ 已收藏</div>' : ''}
       </div>
     </div>
   `;
@@ -384,10 +428,11 @@ watch(
 
 watch(
   () => props.activities,
-  () => {
+  (newActivities) => {
+    console.log('ActivityMap: activities prop 變更, 新數量:', newActivities.length);
     updateMarkers();
   },
-  { deep: true }
+  { deep: true, immediate: true }
 );
 
 watch(
@@ -403,6 +448,16 @@ watch(
   () => [props.userLocation, props.searchRadius, props.showUserLocation],
   () => {
     updateUserLocation();
+  },
+  { deep: true }
+);
+
+// 監聽收藏狀態變化 - 使用 favoriteIds 而非 favorites
+watch(
+  favoriteIds,
+  () => {
+    console.log('收藏狀態改變，更新地圖標記');
+    updateMarkers();
   },
   { deep: true }
 );
@@ -433,6 +488,51 @@ onUnmounted(() => {
   height: 100%;
   border-radius: 8px;
   overflow: hidden;
+}
+
+/* 自定義標記樣式 */
+:global(.custom-div-icon) {
+  background: transparent !important;
+  border: none !important;
+}
+
+:global(.custom-marker) {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+:global(.custom-marker:hover) {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  transform: translateY(-2px);
+}
+
+:global(.custom-marker.is-favorited) {
+  animation: pulse 0.5s ease-in-out;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 彈出窗口中的收藏標記 */
+:global(.favorited-badge) {
+  margin-top: 8px;
+  padding: 4px 8px;
+  background: #fef3c7;
+  color: #d97706;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
 }
 
 .category-filter {

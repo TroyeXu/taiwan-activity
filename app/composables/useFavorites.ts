@@ -2,12 +2,43 @@ import { ref, computed, readonly } from 'vue';
 import { ElMessage } from 'element-plus';
 import type { Activity, FavoriteActivity } from '~/types';
 
+// 全域共享的收藏狀態
+const favorites = ref<FavoriteActivity[]>([]);
+const favoriteIds = ref<Set<string>>(new Set());
+const loading = ref(false);
+const error = ref<string | null>(null);
+let isInitialized = false;
+
 export const useFavorites = () => {
-  // 響應式狀態
-  const favorites = ref<FavoriteActivity[]>([]);
-  const favoriteIds = ref<Set<string>>(new Set());
-  const loading = ref(false);
-  const error = ref<string | null>(null);
+  
+  // 初始化（只執行一次）
+  const initializeFavorites = () => {
+    if (!import.meta.client || isInitialized) return;
+    
+    console.log('初始化收藏系統...');
+    isInitialized = true;
+    
+    try {
+      // 載入完整的收藏資料
+      const storedFull = localStorage.getItem('tourism-favorites-full');
+      if (storedFull) {
+        const parsed = JSON.parse(storedFull) as FavoriteActivity[];
+        favorites.value = parsed;
+        favoriteIds.value = new Set(parsed.map(fav => fav.activityId));
+        console.log('從 localStorage 載入收藏:', parsed.length, '個項目');
+      } else {
+        // 嘗試載入舊格式
+        const storedIds = localStorage.getItem('tourism-favorites');
+        if (storedIds) {
+          const ids = JSON.parse(storedIds) as string[];
+          favoriteIds.value = new Set(ids);
+          console.log('從舊格式載入收藏 ID:', ids.length, '個');
+        }
+      }
+    } catch (err) {
+      console.warn('初始化收藏失敗:', err);
+    }
+  };
 
   // 從 localStorage 載入收藏（未登入使用者）
   const loadFavoritesFromStorage = () => {
@@ -91,7 +122,12 @@ export const useFavorites = () => {
 
     if (favoriteIds.value.has(activity.id)) {
       console.log('活動已在收藏中:', activity.id);
-      ElMessage.info('此活動已在收藏中');
+      ElMessage({
+        message: 'ℹ️ 此活動已在收藏中',
+        type: 'info',
+        duration: 1500,
+        offset: 20
+      });
       return; // 已經在收藏中
     }
 
@@ -100,6 +136,7 @@ export const useFavorites = () => {
 
     try {
       console.log('開始加入收藏流程...');
+      console.log('活動資料:', activity);
 
       // 本地處理
       favoriteIds.value.add(activity.id);
@@ -118,20 +155,37 @@ export const useFavorites = () => {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
-        favorites.value.push(favoriteActivity);
+        
+        // 使用響應式更新
+        favorites.value = [...favorites.value, favoriteActivity];
         console.log('已加入到 favorites 列表，目前總數:', favorites.value.length);
+        console.log('當前 favorites 內容:', favorites.value);
       }
 
       saveFavoritesToStorage();
       console.log('已儲存到 localStorage');
+      
+      // 驗證儲存
+      const saved = localStorage.getItem('tourism-favorites-full');
+      console.log('驗證 localStorage 內容:', saved ? JSON.parse(saved).length + ' 個項目' : '無資料');
 
-      // 顯示成功訊息
-      ElMessage.success('已加入收藏');
+      // 顯示成功訊息 - 使用特殊樣式
+      ElMessage({
+        message: '✨ 已加入收藏',
+        type: 'success',
+        customClass: 'favorite-add-message',
+        duration: 2000,
+        showClose: true,
+        offset: 20
+      });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '加入收藏失敗';
       error.value = errorMessage;
       ElMessage.error(errorMessage);
       console.error('加入收藏失敗:', err);
+      
+      // 回滾
+      favoriteIds.value.delete(activity.id);
     } finally {
       loading.value = false;
     }
@@ -150,20 +204,34 @@ export const useFavorites = () => {
     error.value = null;
 
     try {
-      // 本地處理
+      // 本地處理 - 使用響應式更新
       favoriteIds.value.delete(activityId);
-      favorites.value = favorites.value.filter((fav) => fav.activityId !== activityId);
+      favorites.value = [...favorites.value.filter((fav) => fav.activityId !== activityId)];
 
       console.log('已移除收藏，剩餘收藏數量:', favorites.value.length);
       saveFavoritesToStorage();
+      
+      // 驗證儲存
+      const saved = localStorage.getItem('tourism-favorites-full');
+      console.log('移除後 localStorage 內容:', saved ? JSON.parse(saved).length + ' 個項目' : '無資料');
 
-      // 顯示成功訊息
-      ElMessage.success('已從收藏移除');
+      // 顯示成功訊息 - 使用警告樣式
+      ElMessage({
+        message: '🗑️ 已從收藏移除',
+        type: 'warning',
+        customClass: 'favorite-remove-message',
+        duration: 2000,
+        showClose: true,
+        offset: 20
+      });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '移除收藏失敗';
       error.value = errorMessage;
       ElMessage.error(errorMessage);
       console.error('移除收藏失敗:', err);
+      
+      // 回滾
+      favoriteIds.value.add(activityId);
     } finally {
       loading.value = false;
     }
@@ -171,9 +239,15 @@ export const useFavorites = () => {
 
   // 切換收藏狀態
   const toggleFavorite = async (activity: Activity) => {
-    if (isFavorite(activity.id)) {
+    console.log('toggleFavorite called with:', activity.id, activity.name);
+    const isCurrentlyFavorited = isFavorite(activity.id);
+    console.log('Is currently favorited:', isCurrentlyFavorited);
+    
+    if (isCurrentlyFavorited) {
+      console.log('Removing from favorites...');
       await removeFromFavorites(activity.id);
     } else {
+      console.log('Adding to favorites...');
       await addToFavorites(activity);
     }
   };
@@ -197,7 +271,14 @@ export const useFavorites = () => {
       saveFavoritesToStorage();
 
       console.log('已清空所有收藏');
-      ElMessage.success('已清空所有收藏');
+      ElMessage({
+        message: '🧹 已清空所有收藏',
+        type: 'info',
+        customClass: 'favorite-clear-message',
+        duration: 2000,
+        showClose: true,
+        offset: 20
+      });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '清空收藏失敗';
       error.value = errorMessage;
@@ -275,15 +356,13 @@ export const useFavorites = () => {
   const hasFavorites = computed(() => favoritesCount.value > 0);
   const isEmpty = computed(() => !loading.value && favoritesCount.value === 0);
 
-  // 初始化（只在客戶端載入）
-  if (import.meta.client) {
-    loadFavoritesFromStorage();
-  }
+  // 初始化
+  initializeFavorites();
 
   return {
     // 狀態
     favorites: readonly(favorites),
-    favoriteIds: readonly(favoriteIds),
+    favoriteIds: favoriteIds, // 不使用 readonly，讓地圖組件可以監聽變化
     loading: readonly(loading),
     error: readonly(error),
 

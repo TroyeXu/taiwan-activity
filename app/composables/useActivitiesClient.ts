@@ -332,6 +332,26 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
         console.log('價格篩選後數量:', formattedResults.length);
       }
 
+      // 處理收藏篩選
+      if (searchOptions.filters?.showFavoritesOnly) {
+        console.log('套用收藏篩選...');
+        const { favoriteIds } = useFavorites();
+        const favoriteIdSet = favoriteIds.value;
+        console.log('目前收藏的 ID:', Array.from(favoriteIdSet));
+        console.log('篩選前活動數量:', formattedResults.length);
+        
+        formattedResults = formattedResults.filter((activity) => {
+          const isFavorited = favoriteIdSet.has(activity.id);
+          if (isFavorited) {
+            console.log('找到收藏活動:', activity.name, activity.id);
+          }
+          return isFavorited;
+        });
+        
+        console.log('收藏篩選後數量:', formattedResults.length);
+        console.log('收藏篩選後的活動:', formattedResults.map(a => ({ id: a.id, name: a.name })));
+      }
+
       // 如果有位置篩選，計算距離並排序
       if (searchOptions.location && searchOptions.radius) {
         const { lat, lng } = searchOptions.location;

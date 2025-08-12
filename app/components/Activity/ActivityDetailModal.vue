@@ -1,11 +1,11 @@
 <template>
   <ElDialog
     v-model="dialogVisible"
-    :title="activity?.name || '活動詳情'"
-    width="90%"
-    :max-width="800"
+    :title="''"
+    width="850px"
     destroy-on-close
     @close="handleClose"
+    class="activity-detail-modal"
   >
     <!-- 載入中 -->
     <div v-if="loading" class="p-8">
@@ -13,149 +13,162 @@
     </div>
 
     <!-- 活動詳情內容 -->
-    <div v-else-if="activity" class="space-y-6">
-      <!-- 活動圖片 -->
-      <div v-if="activity.images && activity.images.length > 0" class="mb-4">
-        <ElCarousel height="200px" indicator-position="outside">
-          <ElCarouselItem v-for="image in activity.images" :key="image.id">
-            <img
-              :src="image.url"
-              :alt="image.alt || activity.name"
-              class="w-full h-full object-cover"
-            />
-          </ElCarouselItem>
-        </ElCarousel>
+    <div v-else-if="activity" class="activity-detail-content">
+      <!-- 標題區塊 -->
+      <div class="header-section">
+        <div class="flex items-start justify-between">
+          <div class="flex-1">
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">{{ activity.name }}</h2>
+            <div class="flex items-center gap-3 mb-3">
+              <ElTag 
+                :type="getStatusTagType(activity.status)" 
+                size="default"
+                effect="dark"
+              >
+                {{ getStatusText(activity.status) }}
+              </ElTag>
+              <span v-if="activity.categories?.[0]" class="text-sm text-gray-600">
+                {{ activity.categories[0].icon }} {{ activity.categories[0].name }}
+              </span>
+            </div>
+          </div>
+          <FavoriteButton v-if="activity" :activity="activity" size="large" />
+        </div>
       </div>
 
-      <!-- 基本資訊 -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- 左側 - 活動資訊 -->
-        <div class="space-y-4">
-          <!-- 活動摘要 -->
-          <div v-if="activity.summary" class="p-4 bg-blue-50 rounded-lg">
-            <h3 class="font-medium text-blue-800 mb-2">活動摘要</h3>
-            <p class="text-blue-700 text-sm">{{ activity.summary }}</p>
+      <!-- 重要資訊區 -->
+      <div class="info-cards">
+        <!-- 時間卡片 -->
+        <div class="info-card">
+          <div class="info-card-header">
+            <ElIcon size="18"><Calendar /></ElIcon>
+            <span>活動時間</span>
           </div>
-
-          <!-- 活動描述 -->
-          <div v-if="activity.description">
-            <h3 class="font-medium mb-2">活動詳情</h3>
-            <p class="text-gray-700 text-sm leading-relaxed line-clamp-4">
-              {{ activity.description }}
-            </p>
-          </div>
-
-          <!-- 分類標籤 -->
-          <div v-if="activity.categories && activity.categories.length > 0">
-            <h3 class="font-medium mb-2">活動分類</h3>
-            <ElSpace wrap>
-              <ElTag
-                v-for="category in activity.categories"
-                :key="category.id"
-                :color="category.colorCode"
-                class="text-white"
-                size="small"
-              >
-                <ElIcon v-if="category.icon">
-                  <component :is="category.icon" />
-                </ElIcon>
-                {{ category.name }}
-              </ElTag>
-            </ElSpace>
-          </div>
-
-          <!-- 驗證狀態 -->
-          <div v-if="activity.validation" class="flex items-center gap-2">
-            <ElIcon :color="activity.validation.verified ? '#67C23A' : '#F56C6C'">
-              <component
-                :is="activity.validation.verified ? 'CircleCheckFilled' : 'CircleCloseFilled'"
-              />
-            </ElIcon>
-            <span
-              :class="activity.validation.verified ? 'text-green-600' : 'text-red-600'"
-              class="text-sm"
-            >
-              {{ activity.validation.verified ? '已驗證' : '未驗證' }}
-            </span>
-            <ElTag size="small"> 品質: {{ activity.validation.qualityScore }}% </ElTag>
-          </div>
-        </div>
-
-        <!-- 右側 - 時間和位置 -->
-        <div class="space-y-4">
-          <!-- 時間資訊 -->
-          <div v-if="activity.time">
-            <h3 class="font-medium mb-2 flex items-center gap-2">
-              <ElIcon><Calendar /></ElIcon>
-              活動時間
-            </h3>
-            <div class="space-y-2 text-sm text-gray-700">
-              <div>
+          <div class="info-card-content">
+            <div v-if="activity.time" class="space-y-1">
+              <div class="text-lg font-semibold text-gray-900">
                 {{ formatDateRange(activity.time.startDate, activity.time.endDate) }}
               </div>
-              <div v-if="activity.time.startTime || activity.time.endTime">
+              <div v-if="activity.time.startTime || activity.time.endTime" class="text-sm text-gray-600">
+                <ElIcon class="inline-block mr-1"><Clock /></ElIcon>
                 {{ formatTimeRange(activity.time.startTime, activity.time.endTime) }}
               </div>
-              <div v-if="activity.time.isRecurring" class="text-blue-600">定期活動</div>
-            </div>
-          </div>
-
-          <!-- 位置資訊 -->
-          <div v-if="activity.location">
-            <h3 class="font-medium mb-2 flex items-center gap-2">
-              <ElIcon><LocationFilled /></ElIcon>
-              活動地點
-            </h3>
-            <div class="space-y-1 text-sm text-gray-700">
-              <div>{{ activity.location.address }}</div>
-              <div class="text-gray-500">
-                {{ activity.location.district }}, {{ activity.location.city }},
-                {{ activity.location.region }}
+              <div v-if="activity.time.isRecurring" class="text-sm text-blue-600">
+                <ElIcon class="inline-block mr-1"><RefreshRight /></ElIcon>
+                定期舉辦
               </div>
-              <div v-if="activity.location.venue" class="text-blue-600">
+            </div>
+            <div v-else class="text-gray-500">未提供時間資訊</div>
+          </div>
+        </div>
+
+        <!-- 地點卡片 -->
+        <div class="info-card">
+          <div class="info-card-header">
+            <ElIcon size="18"><LocationFilled /></ElIcon>
+            <span>活動地點</span>
+          </div>
+          <div class="info-card-content">
+            <div v-if="activity.location" class="space-y-2">
+              <div class="text-base font-medium text-gray-900">
+                {{ activity.location.address }}
+              </div>
+              <div class="text-sm text-gray-600">
+                {{ [activity.location.district, activity.location.city, activity.location.region].filter(Boolean).join(' · ') }}
+              </div>
+              <div v-if="activity.location.venue" class="text-sm text-blue-600 font-medium">
+                <ElIcon class="inline-block mr-1"><OfficeBuilding /></ElIcon>
                 {{ activity.location.venue }}
               </div>
+              <div v-if="activity.distance" class="text-sm text-gray-500">
+                <ElIcon class="inline-block mr-1"><MapLocation /></ElIcon>
+                距離您約 {{ formatDistance(activity.distance) }}
+              </div>
             </div>
+            <div v-else class="text-gray-500">未提供地點資訊</div>
           </div>
+        </div>
 
-          <!-- 地標 -->
-          <div v-if="activity.location?.landmarks && activity.location.landmarks.length > 0">
-            <h3 class="font-medium mb-2">鄰近地標</h3>
-            <ElSpace wrap>
-              <ElTag
-                v-for="landmark in activity.location.landmarks"
-                :key="landmark"
-                type="info"
-                size="small"
-              >
-                {{ landmark }}
-              </ElTag>
-            </ElSpace>
+        <!-- 費用卡片 -->
+        <div class="info-card">
+          <div class="info-card-header">
+            <ElIcon size="18"><Ticket /></ElIcon>
+            <span>活動費用</span>
           </div>
-
-          <!-- 距離資訊 -->
-          <div v-if="activity.distance" class="text-sm text-gray-500">
-            距離您約 {{ formatDistance(activity.distance) }}
+          <div class="info-card-content">
+            <div class="text-2xl font-bold text-green-600">免費</div>
+            <div class="text-sm text-gray-500">無需報名費用</div>
           </div>
         </div>
       </div>
 
-      <!-- 小地圖 -->
-      <div
-        v-if="
-          activity.location &&
-          activity.location.latitude != null &&
-          activity.location.longitude != null
-        "
-        class="h-48 bg-gray-100 rounded-lg"
-      >
-        <ActivityMap
-          :activities="[activity]"
-          :center="{ lat: activity.location.latitude, lng: activity.location.longitude }"
-          :zoom="15"
-          :show-controls="false"
-          class="h-full rounded-lg"
-        />
+      <!-- 活動描述 -->
+      <div v-if="activity.summary || activity.description" class="description-section">
+        <h3 class="section-title">活動介紹</h3>
+        <div class="bg-gray-50 rounded-lg p-4">
+          <p v-if="activity.summary" class="text-base text-gray-800 mb-3 font-medium">
+            {{ activity.summary }}
+          </p>
+          <p v-if="activity.description" class="text-sm text-gray-700 leading-relaxed">
+            <span v-if="!showFullDescription && activity.description.length > 300">
+              {{ activity.description.substring(0, 300) }}...
+            </span>
+            <span v-else>
+              {{ activity.description }}
+            </span>
+          </p>
+          <button
+            v-if="activity.description && activity.description.length > 300"
+            @click="showFullDescription = !showFullDescription"
+            class="text-blue-600 text-sm mt-3 hover:text-blue-700 font-medium"
+          >
+            {{ showFullDescription ? '收起' : '閱讀更多' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- 地圖連結區域 -->
+      <div v-if="activity.location?.latitude && activity.location?.longitude" class="map-link-section">
+        <h3 class="section-title">位置資訊</h3>
+        <div class="map-link-container">
+          <button 
+            @click="openGoogleMaps"
+            class="google-maps-btn"
+          >
+            <ElIcon size="20"><Position /></ElIcon>
+            在 Google 地圖中查看
+          </button>
+          <div v-if="activity.location.landmarks?.length" class="landmarks-info">
+            <ElIcon class="inline-block mr-1"><Guide /></ElIcon>
+            <span class="text-sm text-gray-600">鄰近景點：{{ activity.location.landmarks.join('、') }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 特色標籤 -->
+      <div v-if="activity.categories?.length || activity.features?.length" class="tags-section">
+        <div v-if="activity.categories?.length" class="mb-3">
+          <span class="text-sm text-gray-600 mr-3">活動分類：</span>
+          <ElTag
+            v-for="category in activity.categories"
+            :key="category.id"
+            type="primary"
+            class="mr-2"
+          >
+            {{ category.icon }} {{ category.name }}
+          </ElTag>
+        </div>
+        <div v-if="activity.features?.length">
+          <span class="text-sm text-gray-600 mr-3">活動特色：</span>
+          <ElTag
+            v-for="feature in activity.features"
+            :key="feature"
+            type="warning"
+            class="mr-2"
+          >
+            {{ feature }}
+          </ElTag>
+        </div>
       </div>
     </div>
 
@@ -170,18 +183,8 @@
 
     <!-- 對話框底部 -->
     <template #footer>
-      <div class="flex justify-between items-center">
-        <!-- 左側操作 -->
-        <div class="flex gap-2">
-          <FavoriteButton v-if="activity" :activity="activity" size="default" />
-          <ElButton v-if="activity" @click="shareActivity" :icon="Share"> 分享 </ElButton>
-        </div>
-
-        <!-- 右側操作 -->
-        <div class="flex gap-2">
-          <ElButton @click="handleClose">關閉</ElButton>
-          <ElButton v-if="activity" type="primary" @click="goToDetail"> 查看完整詳情 </ElButton>
-        </div>
+      <div class="dialog-footer">
+        <ElButton @click="handleClose" size="large">關閉</ElButton>
       </div>
     </template>
   </ElDialog>
@@ -191,15 +194,22 @@
 import {
   Calendar,
   LocationFilled,
-  Share,
   CircleCheckFilled,
   CircleCloseFilled,
+  Clock,
+  Timer,
+  RefreshRight,
+  Location,
+  OfficeBuilding,
+  Guide,
+  Ticket,
+  MapLocation,
+  Position,
 } from '@element-plus/icons-vue';
 import type { Activity } from '~/types';
 import { ActivityStatus, Region } from '~/types';
 
 // 導入缺失的組件
-import ActivityMap from '~/components/Map/ActivityMap.vue';
 import FavoriteButton from '~/components/Activity/FavoriteButton.vue';
 
 // Props
@@ -227,6 +237,7 @@ const dialogVisible = computed({
 const activity = ref<Activity | null>(null);
 const loading = ref(false);
 const error = ref<Error | null>(null);
+const showFullDescription = ref(false);
 
 // 路由
 const router = useRouter();
@@ -337,37 +348,19 @@ const handleClose = () => {
   dialogVisible.value = false;
   activity.value = null;
   error.value = null;
+  showFullDescription.value = false;
 };
 
-// 前往詳情頁面
-const goToDetail = () => {
-  if (activity.value) {
-    router.push(`/activity/${activity.value.id}`);
-    handleClose();
+// 在 Google 地圖中開啟
+const openGoogleMaps = () => {
+  if (activity.value?.location) {
+    const { latitude, longitude, address } = activity.value.location;
+    const query = encodeURIComponent(address || `${latitude},${longitude}`);
+    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
   }
 };
 
-// 分享活動
-const shareActivity = async () => {
-  if (!activity.value) return;
 
-  const shareData = {
-    title: activity.value.name,
-    text: activity.value.summary || activity.value.description,
-    url: `${window.location.origin}/activity/${activity.value.id}`,
-  };
-
-  try {
-    if (navigator.share) {
-      await navigator.share(shareData);
-    } else {
-      await navigator.clipboard.writeText(shareData.url);
-      ElMessage.success('連結已複製到剪貼簿');
-    }
-  } catch (error) {
-    console.error('分享失敗:', error);
-  }
-};
 
 // 格式化函數
 const formatDateRange = (
@@ -407,20 +400,203 @@ const formatDistance = (distance: number) => {
   }
   return `${(distance / 1000).toFixed(1)}km`;
 };
+
+// 狀態相關函數
+const getStatusColor = (status: string) => {
+  const colors: Record<string, string> = {
+    active: '#67C23A',
+    upcoming: '#E6A23C',
+    ended: '#909399',
+    cancelled: '#F56C6C',
+    pending: '#409EFF',
+  };
+  return colors[status] || '#909399';
+};
+
+const getStatusIcon = (status: string) => {
+  const icons: Record<string, any> = {
+    active: 'CircleCheckFilled',
+    upcoming: 'Clock',
+    ended: 'CircleCloseFilled',
+    cancelled: 'CircleCloseFilled',
+    pending: 'Timer',
+  };
+  return icons[status] || 'InfoFilled';
+};
+
+const getStatusText = (status: string) => {
+  const statusTextMap = {
+    active: '進行中',
+    upcoming: '即將開始',
+    ended: '已結束',
+    cancelled: '已取消',
+    pending: '待確認',
+  };
+  return statusTextMap[status as keyof typeof statusTextMap] || '未知';
+};
+
+const getStatusTagType = (status: string): 'success' | 'warning' | 'info' | 'danger' | '' => {
+  const statusMap: Record<string, 'success' | 'warning' | 'info' | 'danger' | ''> = {
+    active: 'success',
+    upcoming: 'warning',
+    ended: 'info',
+    cancelled: 'danger',
+    pending: '',
+  };
+  return statusMap[status] || '';
+};
 </script>
 
 <style scoped>
-.line-clamp-4 {
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+/* 主要內容區 */
+.activity-detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-/* 小螢幕適配 */
+/* 標題區塊 */
+.header-section {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* 資訊卡片 */
+.info-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.info-card {
+  background: #f9fafb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+}
+
+.info-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+}
+
+.info-card-content {
+  color: #374151;
+}
+
+/* 區塊標題 */
+.section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* 描述區塊 */
+.description-section {
+  background: white;
+  border-radius: 0.5rem;
+}
+
+/* 地圖連結區塊 */
+.map-link-section {
+  background: white;
+  border-radius: 0.5rem;
+}
+
+.map-link-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.google-maps-btn {
+  background: #4285f4;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px 0 rgb(0 0 0 / 0.1);
+  width: fit-content;
+}
+
+.google-maps-btn:hover {
+  background: #357ae8;
+  box-shadow: 0 4px 6px 0 rgb(0 0 0 / 0.15);
+  transform: translateY(-1px);
+}
+
+.google-maps-btn:active {
+  transform: translateY(0);
+}
+
+.landmarks-info {
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  padding-left: 0.5rem;
+}
+
+/* 標籤區塊 */
+.tags-section {
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* 對話框樣式 */
+:deep(.activity-detail-modal .el-dialog__header) {
+  display: none;
+}
+
+:deep(.activity-detail-modal .el-dialog__body) {
+  padding: 1.5rem;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+:deep(.activity-detail-modal .el-dialog__footer) {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: center;
+}
+
+/* 響應式設計 */
 @media (max-width: 768px) {
-  .grid-cols-2 {
+  :deep(.activity-detail-modal .el-dialog) {
+    width: 95% !important;
+  }
+  
+  :deep(.activity-detail-modal .el-dialog__body) {
+    padding: 1rem;
+  }
+  
+  .info-cards {
     grid-template-columns: 1fr;
+  }
+  
+  .google-maps-btn {
+    width: 100%;
   }
 }
 </style>

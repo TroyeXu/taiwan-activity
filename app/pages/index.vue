@@ -1,5 +1,14 @@
 <template>
   <div class="min-h-screen bg-gray-50">
+    <!-- 收藏模式提示橫幅 -->
+    <div v-if="searchFilters.showFavoritesOnly" class="bg-blue-600 text-white py-2 px-4 text-center shadow-md">
+      <div class="flex items-center justify-center gap-2">
+        <ElIcon :size="20"><Star /></ElIcon>
+        <span class="font-medium">我的收藏模式</span>
+        <span class="text-sm opacity-90">- 目前只顯示您收藏的活動</span>
+      </div>
+    </div>
+
     <!-- 頁面標題 -->
     <div class="bg-white shadow-sm">
       <!-- 手機版標題 -->
@@ -133,9 +142,9 @@
                 :zoom="mapZoom"
                 :show-category-filter="false"
                 :show-stats="false"
-                :user-location="searchFilters.cities?.length > 0 ? null : coordinates"
-                :search-radius="searchFilters.cities?.length > 0 ? undefined : searchFilters.location?.radius"
-                :show-user-location="!!coordinates && !!searchFilters.location?.coordinates && searchFilters.cities?.length === 0"
+                :user-location="searchFilters.cities?.length > 0 || searchFilters.showFavoritesOnly ? null : coordinates"
+                :search-radius="searchFilters.cities?.length > 0 || searchFilters.showFavoritesOnly ? undefined : searchFilters.location?.radius"
+                :show-user-location="!!coordinates && !!searchFilters.location?.coordinates && searchFilters.cities?.length === 0 && !searchFilters.showFavoritesOnly"
                 @activity-click="handleMarkerClick"
                 @center-changed="(center) => handleMapMove(center)"
                 @map-ready="(map) => (mapInstance = map)"
@@ -340,6 +349,7 @@ const {
 });
 
 const { getCurrentPosition, hasLocation, coordinates } = useGeolocation();
+const { favorites, favoriteIds } = useFavorites();
 
 // 定位功能
 const locationLoading = ref(false);
@@ -465,10 +475,23 @@ const clearSearch = () => {
 };
 
 // 篩選變更處理
-const handleFilterChange = (filters: any) => {
+const handleFilterChange = async (filters: any) => {
   console.log('篩選條件變更:', filters);
+  const isToggleFavorites = filters.showFavoritesOnly !== searchFilters.value.showFavoritesOnly;
   searchFilters.value = { ...filters };
-  handleSearch();
+  
+  // 如果是切換收藏模式，立即執行搜尋（不使用 debounce）
+  if (isToggleFavorites) {
+    console.log('切換收藏模式，立即更新活動列表');
+    await searchActivities({
+      query: searchQuery.value,
+      filters: searchFilters.value,
+      location: searchFilters.value.location,
+      radius: searchFilters.value.radius,
+    });
+  } else {
+    handleSearch();
+  }
 };
 
 // 清除篩選

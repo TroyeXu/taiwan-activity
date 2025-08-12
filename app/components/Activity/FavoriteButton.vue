@@ -1,16 +1,17 @@
 <template>
   <ElButton
-    :type="isFavorited ? 'primary' : 'default'"
+    :type="isFavorited ? 'warning' : 'default'"
     :size="size"
     :loading="loading"
     @click="toggleFavorite"
     :disabled="!activity"
+    :class="{ 'is-favorited': isFavorited }"
   >
-    <ElIcon>
+    <ElIcon :size="size === 'large' ? 20 : 16">
       <StarFilled v-if="isFavorited" />
       <Star v-else />
     </ElIcon>
-    {{ isFavorited ? '已收藏' : '收藏' }}
+    <span class="ml-1">{{ isFavorited ? '已收藏' : '收藏' }}</span>
   </ElButton>
 </template>
 
@@ -33,30 +34,67 @@ const {
   isFavorite: checkIsFavorite,
   addToFavorites,
   removeFromFavorites,
+  toggleFavorite: toggleFav,
   loading,
 } = useFavorites();
 
 // 檢查是否已收藏
-const isCurrentlyFavorited = computed(() => props.activity ? checkIsFavorite(props.activity.id) : false);
+const isFavorited = computed(() => props.activity ? checkIsFavorite(props.activity.id) : false);
 
 // 切換收藏狀態
-const toggleFavorite = async () => {
-  if (!props.activity) return;
+const toggleFavorite = async (e?: Event) => {
+  if (e) {
+    e.stopPropagation();
+  }
+  
+  if (!props.activity) {
+    console.error('No activity provided');
+    return;
+  }
 
   try {
-    if (isCurrentlyFavorited.value) {
-      await removeFromFavorites(props.activity.id);
-      ElMessage.success('已移除收藏');
-    } else {
-      await addToFavorites(props.activity);
-      ElMessage.success('已加入收藏');
-    }
+    console.log('Toggle favorite for:', props.activity.id, 'Current status:', isFavorited.value);
+    await toggleFav(props.activity);
+    // 訊息已在 useFavorites 中處理
   } catch (error) {
-    ElMessage.error(isCurrentlyFavorited.value ? '移除收藏失敗' : '加入收藏失敗');
     console.error('收藏操作失敗:', error);
   }
 };
-
-// 別名，方便模板使用
-const isFavorited = computed(() => isCurrentlyFavorited.value);
 </script>
+
+<style scoped>
+/* 已收藏狀態的特殊樣式 */
+.is-favorited {
+  animation: favoriteAdded 0.3s ease-in-out;
+}
+
+.is-favorited :deep(.el-button__text--expand) {
+  font-weight: 600;
+}
+
+/* 收藏動畫 */
+@keyframes favoriteAdded {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 按鈕懸停效果 */
+:deep(.el-button--warning) {
+  --el-button-text-color: #fff;
+  --el-button-bg-color: #f59e0b;
+  --el-button-border-color: #f59e0b;
+}
+
+:deep(.el-button--warning:hover) {
+  --el-button-hover-text-color: #fff;
+  --el-button-hover-bg-color: #d97706;
+  --el-button-hover-border-color: #d97706;
+}
+</style>

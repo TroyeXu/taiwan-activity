@@ -182,6 +182,7 @@ export interface FilterState {
   accessibility: string[];
   groupSize: '' | 'small' | 'medium' | 'large' | 'xlarge';
   sorting: 'relevance' | 'distance' | 'popularity' | 'date' | 'price';
+  showFavoritesOnly?: boolean;
 }
 
 // API 相關類型
