@@ -1,21 +1,4 @@
-// 媒體相關類型
-export interface ActivityImage {
-  id?: string;
-  url: string;
-  alt?: string;
-  caption?: string;
-  width?: number;
-  height?: number;
-}
-
-export interface ActivityMedia {
-  images?: ActivityImage[];
-  videos?: {
-    url: string;
-    title?: string;
-    thumbnail?: string;
-  }[];
-}
+// 注意：媒體相關功能暫時移除，待資料庫支援後再加入
 
 // 核心類型定義
 export interface Activity {
@@ -31,8 +14,6 @@ export interface Activity {
   time?: ActivityTime;
   categories?: Category[];
   tags?: Tag[];
-  source?: DataSource;
-  validation?: ValidationInfo;
   // 價格相關
   price?: number;
   priceType?: 'free' | 'paid' | 'donation';
@@ -42,12 +23,9 @@ export interface Activity {
   favoriteCount?: number;
   clickCount?: number;
   popularityScore?: number;
-  // 新增媒體相關屬性
-  media?: ActivityMedia;
-  images?: ActivityImage[]; // 為了向後相容
-  // 新增搜尋結果相關屬性
+  // 動態計算的屬性（不存在資料庫）
   distance?: number;
-  // 新增 URL 屬性
+  // 活動連結
   url?: string;
 }
 
@@ -92,30 +70,7 @@ export interface ActivityTime {
   recurrenceRule?: RecurrenceRule;
 }
 
-export interface DataSource {
-  id: string;
-  activityId: string;
-  website: string;
-  url?: string;
-  crawledAt: Date;
-  crawlerVersion?: string;
-}
-
-export interface ValidationInfo {
-  verified: boolean;
-  verificationDate?: Date;
-  qualityScore?: number;
-  validator?: string;
-  issues?: ValidationIssue[];
-}
-
-export interface ValidationIssue {
-  field: string;
-  type: string;
-  severity: 'error' | 'warning' | 'info';
-  message: string;
-  suggestion?: string;
-}
+// 爬蟲相關欄位已移除，簡化資料結構
 
 export interface RecurrenceRule {
   type: 'daily' | 'weekly' | 'monthly' | 'yearly';
@@ -319,6 +274,12 @@ export interface AppError {
   code: string;
   message: string;
   details?: any;
+}
+
+export interface ValidationIssue {
+  field: string;
+  message: string;
+  severity: 'error' | 'warning' | 'info';
 }
 
 export interface ValidationResult {

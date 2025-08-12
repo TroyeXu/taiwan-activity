@@ -30,47 +30,97 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
   const lastError = ref<string | null>(null);
   const retryCount = ref(0);
 
-  // 格式化活動資料
+  // 格式化活動資料 - 支援 snake_case 和 camelCase
   interface ActivityRow {
+    // 基本欄位
     id: string;
     name: string;
     description?: string;
     summary?: string;
     status?: string;
+
+    // snake_case 欄位（資料庫）
+    quality_score?: number;
+    created_at?: string;
+    updated_at?: string;
+
+    // camelCase 欄位（相容性）
     qualityScore?: number;
-    createdAt: string;
-    updatedAt: string;
+    createdAt?: string;
+    updatedAt?: string;
+
+    // 位置相關
     locationId?: string;
-    address: string;
+    address?: string;
     district?: string;
-    city: string;
+    city?: string;
     region?: string;
     latitude?: number;
     longitude?: number;
     venue?: string;
     landmarks?: string;
+
+    // 時間相關（snake_case）
     timeId?: string;
     start_date?: string;
     end_date?: string;
     start_time?: string;
     end_time?: string;
     timezone?: string;
+    is_recurring?: boolean;
+    recurrence_rule?: string;
+
+    // 時間相關（camelCase 相容性）
     isRecurring?: boolean;
     recurrenceRule?: string;
+
+    // 價格相關（snake_case）
+    price?: number;
+    price_type?: string;
+    currency?: string;
+
+    // 價格相關（camelCase 相容性）
+    priceType?: string;
+
+    // 熱門度相關（snake_case）
+    view_count?: number;
+    favorite_count?: number;
+    click_count?: number;
+    popularity_score?: number;
+
+    // 熱門度相關（camelCase 相容性）
+    viewCount?: number;
+    favoriteCount?: number;
+    clickCount?: number;
+    popularityScore?: number;
+
+    // 其他
     categories?: string;
+    url?: string;
   }
 
   const formatActivity = (row: ActivityRow): Activity => {
-    // SQLite 可能返回小寫的欄位名稱
-    const data = {
+    // 統一處理資料庫 snake_case 到程式 camelCase 的轉換
+    const data: Activity = {
       id: row.id,
       name: row.name,
       description: row.description || undefined,
       summary: row.summary || undefined,
       status: (row.status as ActivityStatus) || ActivityStatus.ACTIVE,
+      // 處理 snake_case 欄位
       qualityScore: row.quality_score || row.qualityScore || 0,
       createdAt: new Date(row.created_at || row.createdAt),
       updatedAt: new Date(row.updated_at || row.updatedAt),
+      // 價格相關欄位
+      price: row.price || 0,
+      priceType: (row.price_type || row.priceType || 'free') as 'free' | 'paid' | 'donation',
+      currency: row.currency || 'TWD',
+      // 熱門度相關欄位
+      viewCount: row.view_count || row.viewCount || 0,
+      favoriteCount: row.favorite_count || row.favoriteCount || 0,
+      clickCount: row.click_count || row.clickCount || 0,
+      popularityScore: row.popularity_score || row.popularityScore || 0,
+      // 位置資訊
       location:
         row.latitude && row.longitude
           ? {
@@ -83,9 +133,14 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
               latitude: row.latitude,
               longitude: row.longitude,
               venue: row.venue || undefined,
-              landmarks: row.landmarks ? JSON.parse(row.landmarks) : [],
+              landmarks: row.landmarks
+                ? typeof row.landmarks === 'string'
+                  ? row.landmarks.split(',').map((l) => l.trim())
+                  : []
+                : [],
             }
           : undefined,
+      // 時間資訊
       time: row.start_date
         ? {
             id: row.timeId || '',
@@ -95,10 +150,14 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
             startTime: row.start_time,
             endTime: row.end_time,
             timezone: row.timezone || 'Asia/Taipei',
-            isRecurring: row.isRecurring || false,
-            recurrenceRule: row.recurrenceRule ? JSON.parse(row.recurrenceRule) : undefined,
+            isRecurring: row.is_recurring || row.isRecurring || false,
+            recurrenceRule:
+              row.recurrence_rule || row.recurrenceRule
+                ? JSON.parse(row.recurrence_rule || row.recurrenceRule)
+                : undefined,
           }
         : undefined,
+      // 分類資訊
       categories: row.categories
         ? row.categories
             .split(',')
@@ -111,6 +170,8 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
             }))
             .filter((cat) => cat.name)
         : [],
+      // 活動連結（如果資料庫有此欄位）
+      url: row.url || undefined,
     };
 
     return data;
@@ -277,25 +338,28 @@ export const useActivitiesClient = (options: UseActivitiesOptions = {}) => {
               queryOptions.startDate = today.toISOString().split('T')[0];
               queryOptions.endDate = today.toISOString().split('T')[0];
               break;
-            case 'tomorrow':
+            case 'tomorrow': {
               const tomorrow = new Date(today);
               tomorrow.setDate(tomorrow.getDate() + 1);
               queryOptions.startDate = tomorrow.toISOString().split('T')[0];
               queryOptions.endDate = tomorrow.toISOString().split('T')[0];
               break;
+            }
             case 'this-week':
-            case 'weekend':
+            case 'weekend': {
               const weekEnd = new Date(today);
               weekEnd.setDate(weekEnd.getDate() + (7 - today.getDay()));
               queryOptions.startDate = today.toISOString().split('T')[0];
               queryOptions.endDate = weekEnd.toISOString().split('T')[0];
               break;
-            case 'this-month':
+            }
+            case 'this-month': {
               const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
               const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
               queryOptions.startDate = monthStart.toISOString().split('T')[0];
               queryOptions.endDate = monthEnd.toISOString().split('T')[0];
               break;
+            }
           }
         }
       }
