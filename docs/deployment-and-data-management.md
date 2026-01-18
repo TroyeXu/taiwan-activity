@@ -1,6 +1,7 @@
 # 台灣活動地圖 - 部署與資料管理完整指南
 
 ## 目錄
+
 1. [專案架構概述](#專案架構概述)
 2. [部署方式](#部署方式)
 3. [資料匯入指南](#資料匯入指南)
@@ -12,6 +13,7 @@
 ## 專案架構概述
 
 ### 技術架構
+
 - **前端框架**: Nuxt 4 + Vue 3
 - **樣式**: TailwindCSS + Element Plus
 - **資料庫**: SQLite (透過 sql.js 在瀏覽器執行)
@@ -19,11 +21,13 @@
 - **部署**: GitHub Pages (靜態網站)
 
 ### 資料載入策略
+
 ```
 使用者訪問網站 → 載入 sql.js → 下載 SQLite 檔案 → 在瀏覽器執行查詢
 ```
 
 優點：
+
 - 無需後端伺服器
 - 完全免費部署
 - 資料即時查詢
@@ -36,72 +40,77 @@
 ### 一、GitHub Pages 自動部署
 
 #### 1. 前置準備
+
 確認以下檔案已正確配置：
 
 **nuxt.config.ts**
+
 ```typescript
 export default defineNuxtConfig({
   app: {
-    baseURL: '/taiwan-activity/',  // 改成你的 repository 名稱
+    baseURL: '/taiwan-activity/', // 改成你的 repository 名稱
     buildAssetsDir: '/_nuxt/',
   },
   nitro: {
     preset: 'static',
   },
-  ssr: false,  // 單頁應用程式模式
-})
+  ssr: false, // 單頁應用程式模式
+});
 ```
 
 #### 2. GitHub Actions 設定
-建立 `.github/workflows/deploy.yml`：
+
+專案已提供 `.github/workflows/deploy-simple.yml`，如需調整可參考如下：
 
 ```yaml
-name: Deploy to GitHub Pages
+name: Simple Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
-      - name: Setup Node.js
+
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-          
+
       - name: Install dependencies
-        run: npm ci
-        
-      - name: Generate static site
+        run: npm install --legacy-peer-deps
+
+      - name: Build
         run: npm run generate
-        
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: './.output/public'
-          
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
+
+      - name: List output files
+        run: |
+          echo "=== Output directory structure ==="
+          ls -la .output/public/
+          echo "=== Check if tourism.sqlite exists ==="
+          ls -lh .output/public/tourism.sqlite || echo "tourism.sqlite not found!"
+
       - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./.output/public
+          force_orphan: true
+          enable_jekyll: false
+          keep_files: false
+          cname: # Leave empty unless you have a custom domain
 ```
 
 #### 3. 部署步驟
@@ -120,10 +129,12 @@ git commit -m "部署到 GitHub Pages"
 git push origin main
 
 # 4. 在 GitHub Repository 設定
-# Settings → Pages → Source: GitHub Actions
+# Settings → Pages → Source: Deploy from a branch
+# Branch: gh-pages / /
 ```
 
 #### 4. 訪問網站
+
 ```
 https://[你的用戶名].github.io/[repository名稱]/
 例如: https://troyexu.github.io/taiwan-activity/
@@ -132,6 +143,7 @@ https://[你的用戶名].github.io/[repository名稱]/
 ### 二、自訂域名部署
 
 #### 1. Vercel 部署
+
 ```bash
 # 安裝 Vercel CLI
 npm i -g vercel
@@ -141,6 +153,7 @@ vercel --prod
 ```
 
 #### 2. Netlify 部署
+
 ```bash
 # 建置檔案
 npm run generate
@@ -162,12 +175,12 @@ npm run generate
 const possibleUrls = [
   // GitHub Pages
   `https://[用戶名].github.io/[repo名]/tourism.sqlite`,
-  
+
   // jsDelivr CDN (推薦)
   `https://cdn.jsdelivr.net/gh/[用戶名]/[repo名]@main/public/tourism.sqlite`,
-  
+
   // GitHub Raw
-  `https://raw.githubusercontent.com/[用戶名]/[repo名]/main/public/tourism.sqlite`
+  `https://raw.githubusercontent.com/[用戶名]/[repo名]/main/public/tourism.sqlite`,
 ];
 ```
 
@@ -180,6 +193,7 @@ const possibleUrls = [
 #### 1. 核心資料表
 
 **activities 表** - 活動主表
+
 ```sql
 CREATE TABLE activities (
   id TEXT PRIMARY KEY,           -- 唯一識別碼 (如: "act-001")
@@ -194,6 +208,7 @@ CREATE TABLE activities (
 ```
 
 **locations 表** - 地點資訊
+
 ```sql
 CREATE TABLE locations (
   id TEXT PRIMARY KEY,
@@ -211,6 +226,7 @@ CREATE TABLE locations (
 ```
 
 **categories 表** - 分類
+
 ```sql
 CREATE TABLE categories (
   id TEXT PRIMARY KEY,
@@ -222,6 +238,7 @@ CREATE TABLE categories (
 ```
 
 **activity_times 表** - 時間資訊
+
 ```sql
 CREATE TABLE activity_times (
   id TEXT PRIMARY KEY,
@@ -260,13 +277,14 @@ CREATE TABLE activity_tags (
 #### 方式一：使用 SQL 腳本匯入
 
 1. **準備 SQL 檔案**
+
 ```sql
 -- import-data.sql
 BEGIN TRANSACTION;
 
 -- 插入活動
 INSERT INTO activities (id, name, description, summary, status, quality_score)
-VALUES 
+VALUES
   ('act-001', '2024台北音樂節', '年度最大音樂盛會...', '集結國內外知名音樂人...', 'active', 0.95),
   ('act-002', '陽明山花季', '春季賞花活動...', '櫻花、杜鵑盛開...', 'active', 0.90);
 
@@ -286,6 +304,7 @@ COMMIT;
 ```
 
 2. **執行匯入**
+
 ```bash
 # 使用 sqlite3 命令列工具
 sqlite3 public/tourism.sqlite < import-data.sql
@@ -309,8 +328,8 @@ const activities = [
     description: '年度最大音樂盛會...',
     summary: '集結國內外知名音樂人...',
     status: 'active',
-    quality_score: 0.95
-  }
+    quality_score: 0.95,
+  },
 ];
 
 // 插入資料
@@ -333,6 +352,7 @@ db.close();
 ```
 
 執行：
+
 ```bash
 node scripts/import-data.js
 ```
@@ -342,6 +362,7 @@ node scripts/import-data.js
 1. **準備 CSV 檔案**
 
 `data/activities.csv`:
+
 ```csv
 id,name,description,summary,status,quality_score
 act-001,2024台北音樂節,年度最大音樂盛會...,集結國內外知名音樂人...,active,0.95
@@ -351,6 +372,7 @@ act-002,陽明山花季,春季賞花活動...,櫻花、杜鵑盛開...,active,0.
 2. **建立匯入腳本**
 
 `scripts/import-csv.js`:
+
 ```javascript
 import Database from 'better-sqlite3';
 import { parse } from 'csv-parse/sync';
@@ -362,7 +384,7 @@ const db = new Database('public/tourism.sqlite');
 const csvContent = readFileSync('data/activities.csv', 'utf-8');
 const records = parse(csvContent, {
   columns: true,
-  skip_empty_lines: true
+  skip_empty_lines: true,
 });
 
 // 準備插入語句
@@ -401,12 +423,16 @@ const activityCount = db.prepare('SELECT COUNT(*) as count FROM activities').get
 console.log(`活動總數: ${activityCount.count}`);
 
 // 檢查沒有地點的活動
-const noLocation = db.prepare(`
+const noLocation = db
+  .prepare(
+    `
   SELECT a.id, a.name 
   FROM activities a
   LEFT JOIN locations l ON a.id = l.activity_id
   WHERE l.id IS NULL
-`).all();
+`
+  )
+  .all();
 
 if (noLocation.length > 0) {
   console.warn('⚠️ 以下活動沒有地點資訊:');
@@ -414,13 +440,17 @@ if (noLocation.length > 0) {
 }
 
 // 檢查資料完整性
-const stats = db.prepare(`
+const stats = db
+  .prepare(
+    `
   SELECT 
     (SELECT COUNT(*) FROM activities) as activities,
     (SELECT COUNT(*) FROM locations) as locations,
     (SELECT COUNT(*) FROM categories) as categories,
     (SELECT COUNT(*) FROM activity_times) as times
-`).get();
+`
+  )
+  .get();
 
 console.table(stats);
 
@@ -445,17 +475,17 @@ db.close();
       "summary": "簡短摘要（可選）",
       "status": "active",
       "quality_score": 0.85,
-      
+
       "location": {
         "address": "完整地址",
         "city": "台北市",
         "district": "信義區",
-        "latitude": 25.0330,
+        "latitude": 25.033,
         "longitude": 121.5654,
         "venue": "場地名稱（可選）",
         "landmarks": ["台北101", "信義商圈"]
       },
-      
+
       "time": {
         "start_date": "2024-03-15",
         "end_date": "2024-03-17",
@@ -463,10 +493,10 @@ db.close();
         "end_time": "22:00:00",
         "is_recurring": false
       },
-      
+
       "categories": ["music", "culture"],
       "tags": ["indoor", "family", "weekend"],
-      
+
       "media": {
         "images": [
           {
@@ -476,20 +506,20 @@ db.close();
         ],
         "videos": []
       },
-      
+
       "price": {
         "min": 500,
         "max": 1500,
         "currency": "TWD",
         "is_free": false
       },
-      
+
       "contact": {
         "phone": "02-2345-6789",
         "email": "info@example.com",
         "website": "https://example.com"
       },
-      
+
       "source": {
         "platform": "官方網站",
         "url": "https://source-url.com",
@@ -508,6 +538,7 @@ db.close();
 ### 二、必要欄位說明
 
 #### 必填欄位
+
 - `id`: 唯一識別碼（建議格式: "平台縮寫-時間戳-流水號"）
 - `name`: 活動名稱
 - `location.address`: 地址
@@ -515,6 +546,7 @@ db.close();
 - `time.start_date`: 開始日期
 
 #### 選填但重要欄位
+
 - `location.latitude` & `location.longitude`: 座標（用於地圖顯示）
 - `categories`: 分類（至少一個）
 - `quality_score`: 品質分數（0-1，用於排序）
@@ -522,6 +554,7 @@ db.close();
 ### 三、資料處理規則
 
 #### 1. ID 生成規則
+
 ```javascript
 // 範例: klook-20240115-001
 const generateId = (platform, index) => {
@@ -531,15 +564,16 @@ const generateId = (platform, index) => {
 ```
 
 #### 2. 城市名稱對應
+
 ```javascript
 const CITY_MAPPING = {
   // 常見別名對應
-  '臺北市': '台北市',
-  'taipei': '台北市',
-  '新北': '新北市',
+  臺北市: '台北市',
+  taipei: '台北市',
+  新北: '新北市',
   'new taipei': '新北市',
-  '桃園': '桃園市',
-  'taoyuan': '桃園市',
+  桃園: '桃園市',
+  taoyuan: '桃園市',
   // ... 其他對應
 };
 
@@ -549,6 +583,7 @@ const normalizeCity = (city) => {
 ```
 
 #### 3. 地區代碼判斷
+
 ```javascript
 const getRegion = (city) => {
   const REGION_MAP = {
@@ -556,9 +591,9 @@ const getRegion = (city) => {
     central: ['苗栗縣', '台中市', '彰化縣', '南投縣', '雲林縣'],
     south: ['嘉義市', '嘉義縣', '台南市', '高雄市', '屏東縣'],
     east: ['花蓮縣', '台東縣'],
-    islands: ['澎湖縣', '金門縣', '連江縣']
+    islands: ['澎湖縣', '金門縣', '連江縣'],
   };
-  
+
   for (const [region, cities] of Object.entries(REGION_MAP)) {
     if (cities.includes(city)) return region;
   }
@@ -567,24 +602,25 @@ const getRegion = (city) => {
 ```
 
 #### 4. 分類對應
+
 ```javascript
 const CATEGORY_MAP = {
   // 中文對應到英文 slug
-  '音樂': 'music',
-  '演唱會': 'music',
-  '音樂會': 'music',
-  '展覽': 'exhibition',
-  '美術': 'exhibition',
-  '藝術': 'culture',
-  '文化': 'culture',
-  '運動': 'sports',
-  '體育': 'sports',
-  '美食': 'food',
-  '市集': 'market',
-  '戶外': 'outdoor',
-  '親子': 'family',
-  '教育': 'education',
-  '講座': 'workshop'
+  音樂: 'music',
+  演唱會: 'music',
+  音樂會: 'music',
+  展覽: 'exhibition',
+  美術: 'exhibition',
+  藝術: 'culture',
+  文化: 'culture',
+  運動: 'sports',
+  體育: 'sports',
+  美食: 'food',
+  市集: 'market',
+  戶外: 'outdoor',
+  親子: 'family',
+  教育: 'education',
+  講座: 'workshop',
 };
 
 const mapCategory = (categoryText) => {
@@ -610,17 +646,17 @@ from bs4 import BeautifulSoup
 class ActivityCrawler:
     def __init__(self):
         self.activities = []
-        
+
     def crawl_website(self, url):
         """爬取網站資料"""
         response = requests.get(url)
         soup = BeautifulSoup(response.text, 'html.parser')
-        
+
         # 解析活動資料
         for item in soup.find_all('div', class_='activity-item'):
             activity = self.parse_activity(item)
             self.activities.append(activity)
-    
+
     def parse_activity(self, element):
         """解析單一活動"""
         return {
@@ -641,7 +677,7 @@ class ActivityCrawler:
                 'crawled_at': datetime.now().isoformat()
             }
         }
-    
+
     def save_to_json(self, filename='activities.json'):
         """儲存為 JSON"""
         data = {
@@ -652,15 +688,15 @@ class ActivityCrawler:
                 'crawler_version': '1.0.0'
             }
         }
-        
+
         with open(filename, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
-    
+
     def import_to_database(self, db_path='public/tourism.sqlite'):
         """直接匯入資料庫"""
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
-        
+
         for activity in self.activities:
             # 插入活動主表
             cursor.execute('''
@@ -673,7 +709,7 @@ class ActivityCrawler:
                 'active',
                 0.8
             ))
-            
+
             # 插入地點表
             location = activity['location']
             cursor.execute('''
@@ -686,7 +722,7 @@ class ActivityCrawler:
                 location['city'],
                 self.get_region(location['city'])
             ))
-        
+
         conn.commit()
         conn.close()
 
@@ -722,7 +758,7 @@ class ActivityCrawler {
     // 抓取活動資料
     const activities = await page.evaluate(() => {
       const items = document.querySelectorAll('.activity-item');
-      return Array.from(items).map(item => ({
+      return Array.from(items).map((item) => ({
         name: item.querySelector('.title')?.textContent?.trim(),
         address: item.querySelector('.address')?.textContent?.trim(),
         date: item.querySelector('.date')?.getAttribute('data-date'),
@@ -731,9 +767,7 @@ class ActivityCrawler {
     });
 
     // 處理資料
-    this.activities = activities.map((activity, index) => 
-      this.processActivity(activity, index)
-    );
+    this.activities = activities.map((activity, index) => this.processActivity(activity, index));
 
     await browser.close();
   }
@@ -745,13 +779,13 @@ class ActivityCrawler {
       location: {
         address: raw.address,
         city: this.extractCity(raw.address),
-        region: this.getRegion(raw.address)
+        region: this.getRegion(raw.address),
       },
       time: {
-        start_date: this.formatDate(raw.date)
+        start_date: this.formatDate(raw.date),
       },
       categories: this.detectCategories(raw.name),
-      quality_score: this.calculateQuality(raw)
+      quality_score: this.calculateQuality(raw),
     };
   }
 
@@ -759,7 +793,7 @@ class ActivityCrawler {
     const cityPatterns = [
       /^(台北市|新北市|桃園市|台中市|台南市|高雄市)/,
       /^(基隆市|新竹市|嘉義市)/,
-      /^(\S+縣)/
+      /^(\S+縣)/,
     ];
 
     for (const pattern of cityPatterns) {
@@ -775,7 +809,7 @@ class ActivityCrawler {
       central: ['苗栗縣', '台中市', '彰化縣', '南投縣', '雲林縣'],
       south: ['嘉義市', '嘉義縣', '台南市', '高雄市', '屏東縣'],
       east: ['花蓮縣', '台東縣'],
-      islands: ['澎湖縣', '金門縣', '連江縣']
+      islands: ['澎湖縣', '金門縣', '連江縣'],
     };
 
     for (const [region, cities] of Object.entries(regionMap)) {
@@ -803,7 +837,7 @@ class ActivityCrawler {
           name: activity.name,
           description: activity.description || '',
           status: 'active',
-          quality_score: activity.quality_score
+          quality_score: activity.quality_score,
         });
 
         // 插入地點
@@ -812,7 +846,7 @@ class ActivityCrawler {
           activity_id: activity.id,
           address: activity.location.address,
           city: activity.location.city,
-          region: activity.location.region
+          region: activity.location.region,
         });
       }
     });
@@ -827,8 +861,8 @@ class ActivityCrawler {
       metadata: {
         total_count: this.activities.length,
         crawl_date: new Date().toISOString().split('T')[0],
-        crawler_version: '1.0.0'
-      }
+        crawler_version: '1.0.0',
+      },
     };
 
     writeFileSync(filename, JSON.stringify(data, null, 2));
@@ -846,18 +880,21 @@ crawler.exportToJson();
 ### 五、資料品質要求
 
 #### 1. 必要欄位完整性
+
 - 每個活動必須有唯一 ID
 - 必須有活動名稱
 - 必須有地址和城市
 - 必須有開始日期
 
 #### 2. 資料格式正確性
+
 - 日期格式: YYYY-MM-DD
 - 時間格式: HH:MM:SS
 - 座標範圍: 緯度 21-26, 經度 119-122
 - 城市名稱必須是標準名稱
 
 #### 3. 資料品質分數計算
+
 ```javascript
 const calculateQualityScore = (activity) => {
   let score = 0;
@@ -902,38 +939,47 @@ const calculateQualityScore = (activity) => {
 ### 部署問題
 
 #### Q1: GitHub Pages 404 錯誤
+
 **解決方案**：
+
 1. 確認 `baseURL` 設定正確
 2. 確認 GitHub Pages 已啟用
 3. 等待 5-10 分鐘讓部署完成
 
 #### Q2: 資料庫載入失敗
+
 **解決方案**：
+
 1. 檢查瀏覽器控制台錯誤
 2. 確認 SQLite 檔案存在於 `public/` 目錄
 3. 檢查 CORS 設定
 
 #### Q3: 樣式或圖片失效
+
 **解決方案**：
 確保所有資源路徑都使用相對路徑或包含 baseURL
 
 ### 資料問題
 
 #### Q1: 匯入的資料沒有顯示
+
 **檢查步驟**：
+
 ```sql
 -- 檢查資料是否存在
 SELECT COUNT(*) FROM activities;
 
 -- 檢查關聯是否正確
-SELECT a.*, l.* 
+SELECT a.*, l.*
 FROM activities a
 LEFT JOIN locations l ON a.id = l.activity_id
 LIMIT 5;
 ```
 
 #### Q2: 篩選功能異常
+
 **檢查城市和分類資料**：
+
 ```sql
 -- 檢查城市資料
 SELECT DISTINCT city FROM locations;
@@ -943,17 +989,20 @@ SELECT * FROM categories;
 ```
 
 #### Q3: 地圖標記不顯示
+
 **檢查座標資料**：
+
 ```sql
 -- 檢查座標是否有效
-SELECT id, address, latitude, longitude 
-FROM locations 
+SELECT id, address, latitude, longitude
+FROM locations
 WHERE latitude IS NULL OR longitude IS NULL;
 ```
 
 ### 性能優化
 
 #### 1. 資料庫優化
+
 ```sql
 -- 建立索引
 CREATE INDEX idx_activities_status ON activities(status);
@@ -963,6 +1012,7 @@ CREATE INDEX idx_activity_times_dates ON activity_times(start_date, end_date);
 ```
 
 #### 2. 減少資料庫大小
+
 ```bash
 # 壓縮資料庫
 sqlite3 tourism.sqlite "VACUUM;"
@@ -972,7 +1022,9 @@ du -h tourism.sqlite
 ```
 
 #### 3. CDN 快取設定
+
 確保資料庫檔案有適當的快取頭：
+
 ```javascript
 // nuxt.config.ts
 export default defineNuxtConfig({
@@ -980,11 +1032,11 @@ export default defineNuxtConfig({
     publicAssets: [
       {
         baseURL: 'tourism.sqlite',
-        maxAge: 86400 // 快取一天
-      }
-    ]
-  }
-})
+        maxAge: 86400, // 快取一天
+      },
+    ],
+  },
+});
 ```
 
 ---
