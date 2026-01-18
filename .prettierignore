@@ -35,6 +35,12 @@ database/
 *.sqlite
 *.db
 
+# Crawler data and archives
+crawler/_legacy/
+crawler/data/
+crawler/outputs/
+crawler/test-report.json
+
 # Generated files
 .nitro/
 .cache/

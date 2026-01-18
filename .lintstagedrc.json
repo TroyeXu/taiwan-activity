@@ -1,4 +1,11 @@
 {
-  "*.{js,ts,vue}": ["eslint --fix", "prettier --write"],
-  "*.{json,md,css,scss}": ["prettier --write"]
+  "app/**/*.{js,ts,vue}": ["eslint --fix", "prettier --write"],
+  "server/**/*.{js,ts}": ["eslint --fix", "prettier --write"],
+  "scripts/**/*.{js,ts}": ["eslint --fix", "prettier --write"],
+  "crawler/src/**/*.{js,ts}": ["eslint --fix", "prettier --write"],
+  "crawler/scripts/**/*.{js,ts}": ["eslint --fix", "prettier --write"],
+  "app/**/*.{json,md,css,scss}": ["prettier --write"],
+  "server/**/*.{json,md,css,scss}": ["prettier --write"],
+  "docs/**/*.md": ["prettier --write"],
+  "*.{md,json,css,scss}": ["prettier --write"]
 }
